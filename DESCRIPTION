@@ -1,0 +1,19 @@
+Package: cassidyr
+Title: Connect to CassidyAI API
+Version: 0.0.0.9000
+Authors@R:
+    person("Jacob", "Dennen", , "jdenn0514@gmail.com", role = c("aut", "cre"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    httr2,
+    jsonlite,
+    rstudioapi,
+    shiny
+Suggests:
+    httptest2,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
