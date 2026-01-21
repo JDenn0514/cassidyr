@@ -3,19 +3,30 @@ Title: Connect to CassidyAI API
 Version: 0.0.0.9000
 Authors@R:
     person("Jacob", "Dennen", , "jdenn0514@gmail.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Description: Provides a comprehensive R interface to the CassidyAI API,
+    enabling seamless integration of AI-powered assistants into R workflows.
+    Create conversation threads, send messages, and build interactive chat
+    applications with context-aware AI assistance. Designed for survey
+    researchers, data analysts, and R developers who want to leverage
+    large language models in their work.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
+    cli,
     httr2,
-    jsonlite,
-    rstudioapi,
-    shiny
+    rlang
 Suggests:
-    httptest2,
-    testthat (>= 3.0.0)
+    adlgraphs,
+    bslib,
+    gert,
+    markdown,
+    rstudioapi,
+    skimr,
+    testthat (>= 3.0.0),
+    usethis,
+    withr
 Config/testthat/edition: 3
 URL: https://github.com/JDenn0514/cassidyr
 BugReports: https://github.com/JDenn0514/cassidyr/issues

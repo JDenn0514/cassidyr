@@ -1,3 +1,10 @@
 ^cassidyr\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^README\.Rmd$
+^tests/manual$
+^\.Renviron$
+^dev$
+^^\.*\\.Rproj$$
+^^\\.Rproj\\.user$$
+^tests/manual$
