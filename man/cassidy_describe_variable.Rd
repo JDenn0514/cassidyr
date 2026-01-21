@@ -22,13 +22,13 @@ including summary statistics, distribution, and potential issues.
 }
 \examples{
 \dontrun{
-# Describe a numeric variable
-cassidy_describe_variable(mtcars, "mpg")
+  # Describe a numeric variable
+  cassidy_describe_variable(mtcars, "mpg")
 
-# Describe a factor
-cassidy_describe_variable(iris, "Species")
+  # Describe a factor
+  cassidy_describe_variable(iris, "Species")
 
-# By position
-cassidy_describe_variable(mtcars, 1)
+  # By position
+  cassidy_describe_variable(mtcars, 1)
 }
 }

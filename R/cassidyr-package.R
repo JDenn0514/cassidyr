@@ -22,9 +22,9 @@
 #'   selectInput shinyApp showModal showNotification span tagList tags
 #'   textAreaInput uiOutput
 #' @importFrom skimr skim
-#' @importFrom stats setNames
+#' @importFrom stats quantile sd setNames
 #' @importFrom tools file_ext file_path_sans_ext R_user_dir toTitleCase
 #' @importFrom usethis edit_r_environ
-#' @importFrom utils capture.output tail
+#' @importFrom utils capture.output head object.size tail
 ## usethis namespace: end
 NULL

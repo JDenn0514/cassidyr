@@ -17,6 +17,9 @@ assistant's External Deployments settings.}
 
 \item{api_key}{Character. Your CassidyAI API key. Defaults to
 the \code{CASSIDY_API_KEY} environment variable.}
+
+\item{is_verbose}{Logical. Determines if the thread_id should be printed.
+Default is \code{FALSE}.}
 }
 \value{
 Character. The thread ID for the new conversation. Save this to

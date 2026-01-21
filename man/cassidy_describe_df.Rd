@@ -6,12 +6,16 @@
 \usage{
 cassidy_describe_df(
   data,
+  name = NULL,
   method = c("codebook", "skim", "basic"),
   include_summary = TRUE
 )
 }
 \arguments{
 \item{data}{A data frame or tibble}
+
+\item{name}{Optional character string to use as the data frame name.
+If NULL, attempts to use the name of the object passed to \code{data}.}
 
 \item{method}{Method to use: "codebook" (default), "skim", or "basic"}
 
@@ -30,25 +34,27 @@ The \code{method} parameter controls how the data frame is described:
 \itemize{
 \item \code{"codebook"}: Uses \code{adlgraphs::codebook()} if available,
 which provides comprehensive metadata including variable labels,
-value labels, transformations, and more. Falls back to "skim" if not installed.
+value labels, transformations, and more. Falls back to "skim" if not
+installed.
 \item \code{"skim"}: Uses \code{skimr::skim()} if available, which provides
-summary statistics organized by variable type. Falls back to "basic" if not installed.
+summary statistics organized by variable type. Falls back to "basic" if
+not installed.
 \item \code{"basic"}: Uses base R to provide a simple description with
 variable types and basic summaries.
 }
 }
 \examples{
 \dontrun{
-# Using codebook method (most detailed)
-desc <- cassidy_describe_df(mtcars, method = "codebook")
+  # Using codebook method (most detailed)
+  desc <- cassidy_describe_df(mtcars, method = "codebook")
 
-# Using skim method (statistical summaries)
-desc <- cassidy_describe_df(mtcars, method = "skim")
+  # With explicit name
+  desc <- cassidy_describe_df(my_data, name = "survey_responses", method = "skim")
 
-# Using basic method (lightweight)
-desc <- cassidy_describe_df(mtcars, method = "basic")
+  # Using basic method (lightweight)
+  desc <- cassidy_describe_df(mtcars, method = "basic")
 
-# Use in chat
-cassidy_chat("What analyses would you recommend?", context = desc)
+  # Use in chat
+  cassidy_chat("What analyses would you recommend?", context = desc)
 }
 }

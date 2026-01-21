@@ -1,7 +1,7 @@
-# ══════════════════════════════════════════════════════════════════════════════
+# ===========================================================================
 # LAYER 3: CHAT INTERFACE (Core)
 # High-level functions for conversational interactions with CassidyAI
-# ══════════════════════════════════════════════════════════════════════════════
+# ===========================================================================
 
 #' Create a stateful chat session
 #'
@@ -86,6 +86,7 @@ cassidy_session <- function(
 #'   Context is sent once at thread creation for efficiency.
 #' @param api_key Character. Your CassidyAI API key. Defaults to
 #'   the `CASSIDY_API_KEY` environment variable.
+#' @param timeout Numeric. Request timeout in seconds. Default is 120.
 #'
 #' @return A `cassidy_chat` S3 object containing:
 #'   \describe{
@@ -206,6 +207,7 @@ cassidy_chat <- function(
 #' @param message Character. The message to send.
 #' @param api_key Character. Your CassidyAI API key. Defaults to
 #'   the `CASSIDY_API_KEY` environment variable.
+#' @param timeout Numeric. Request timeout in seconds. Default is 120.
 #'
 #' @return A `cassidy_chat` object (same as [cassidy_chat()]).
 #'
@@ -337,9 +339,9 @@ chat.default <- function(x, message, ...) {
 }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ===========================================================================
 # S3 PRINT METHODS
-# ══════════════════════════════════════════════════════════════════════════════
+# ===========================================================================
 
 #' @export
 print.cassidy_session <- function(x, ...) {
@@ -360,7 +362,7 @@ print.cassidy_session <- function(x, ...) {
     # Show last 3 messages
     recent <- utils::tail(x$messages, 3)
     for (msg in recent) {
-      role_icon <- if (msg$role == "user") "→" else "←"
+      role_icon <- if (msg$role == "user") "-->" else "<--"
       role_color <- if (msg$role == "user") "blue" else "green"
 
       # Truncate long messages
@@ -394,9 +396,9 @@ print.cassidy_chat <- function(x, ...) {
   invisible(x)
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ===========================================================================
 # HELPER: Extract text from response
-# ══════════════════════════════════════════════════════════════════════════════
+# ===========================================================================
 
 #' Extract text content from a chat result
 #'

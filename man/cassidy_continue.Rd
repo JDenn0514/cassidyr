@@ -19,6 +19,8 @@ previous interaction.}
 
 \item{api_key}{Character. Your CassidyAI API key. Defaults to
 the \code{CASSIDY_API_KEY} environment variable.}
+
+\item{timeout}{Numeric. Request timeout in seconds. Default is 120.}
 }
 \value{
 A \code{cassidy_chat} object (same as \code{\link[=cassidy_chat]{cassidy_chat()}}).

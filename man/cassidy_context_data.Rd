@@ -9,7 +9,8 @@ cassidy_context_data(detailed = FALSE, method = c("codebook", "skim", "basic"))
 \arguments{
 \item{detailed}{Whether to include detailed summaries of each data frame}
 
-\item{method}{Method to use for detailed summaries: "codebook", "skim", or "basic"}
+\item{method}{Method to use for detailed summaries: "codebook", "skim", or
+"basic"}
 }
 \value{
 Character string with formatted data frame information
@@ -20,14 +21,14 @@ useful for giving Cassidy context about available data.
 }
 \examples{
 \dontrun{
-# Load some data
-data(mtcars)
-data(iris)
+  # Load some data
+  data(mtcars)
+  data(iris)
 
-# Basic summary
-cassidy_context_data()
+  # Basic summary
+  cassidy_context_data()
 
-# Detailed summary
-cassidy_context_data(detailed = TRUE)
+  # Detailed summary
+  cassidy_context_data(detailed = TRUE)
 }
 }

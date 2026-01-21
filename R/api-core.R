@@ -53,6 +53,8 @@
 #'   assistant's External Deployments settings.
 #' @param api_key Character. Your CassidyAI API key. Defaults to
 #'   the `CASSIDY_API_KEY` environment variable.
+#' @param is_verbose Logical. Determines if the thread_id should be printed.
+#'   Default is `FALSE`.
 #'
 #' @return Character. The thread ID for the new conversation. Save this to
 #'   continue the conversation with [cassidy_send_message()].

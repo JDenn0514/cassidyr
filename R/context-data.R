@@ -77,7 +77,7 @@ cassidy_context_data <- function(
         name,
         "**: ",
         dims[1],
-        " obs × ",
+        " obs x ",
         dims[2],
         " vars\n"
       )
@@ -236,13 +236,13 @@ cassidy_describe_variable <- function(data, variable, max_unique = 10) {
       desc <- paste0(
         desc,
         "- Q1: ",
-        .format_num(quantile(var_data, 0.25, na.rm = TRUE)),
+        .format_num(stats::quantile(var_data, 0.25, na.rm = TRUE)),
         "\n"
       )
       desc <- paste0(
         desc,
         "- Median: ",
-        .format_num(median(var_data, na.rm = TRUE)),
+        .format_num(stats::median(var_data, na.rm = TRUE)),
         "\n"
       )
       desc <- paste0(
@@ -254,7 +254,7 @@ cassidy_describe_variable <- function(data, variable, max_unique = 10) {
       desc <- paste0(
         desc,
         "- Q3: ",
-        .format_num(quantile(var_data, 0.75, na.rm = TRUE)),
+        .format_num(stats::quantile(var_data, 0.75, na.rm = TRUE)),
         "\n"
       )
       desc <- paste0(
@@ -266,7 +266,7 @@ cassidy_describe_variable <- function(data, variable, max_unique = 10) {
       desc <- paste0(
         desc,
         "- SD: ",
-        .format_num(sd(var_data, na.rm = TRUE)),
+        .format_num(stats::sd(var_data, na.rm = TRUE)),
         "\n"
       )
     }
@@ -433,7 +433,7 @@ cassidy_detect_issues <- function(
         data_name,
         "\n\n",
         nrow(data),
-        " observations × ",
+        " observations x ",
         ncol(data),
         " variables\n\n"
       )
@@ -475,7 +475,7 @@ cassidy_detect_issues <- function(
         data_name,
         "\n\n",
         nrow(data),
-        " observations × ",
+        " observations x ",
         ncol(data),
         " variables\n\n"
       )
@@ -509,7 +509,7 @@ cassidy_detect_issues <- function(
     data_name,
     "\n\n",
     dims[1],
-    " observations × ",
+    " observations x ",
     dims[2],
     " variables\n\n"
   )

@@ -7,6 +7,7 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![R-CMD-check](https://github.com/JDenn0514/cassidyr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/JDenn0514/cassidyr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 **cassidyr** is an R client for the
@@ -18,14 +19,15 @@ workflows.
 
 - 🤖 **Simple API Client**: Create threads, send messages, and manage
   conversations
-- 💬 **Interactive Chat** (coming soon): Launch Shiny-based chat
-  interfaces
-- 📊 **Context-Aware** (coming soon): Automatically gather project
-  context from your R environment
-- 🔧 **IDE Integration** (coming soon): RStudio addins for AI-assisted
-  coding
-- 📋 **Survey Research Tools** (coming soon): Specialized functions for
-  survey analysis workflows
+- 📊 **Context-Aware**: Automatically gather project and data context
+  for better AI responses
+- 💬 **Interactive Chat**: Launch a Shiny-based chat interface with
+  `cassidy_app()`
+- 💾 **Conversation Persistence**: Auto-save and restore chat history
+- 📋 **Copy Code Button**: One-click copy for code blocks in chat
+  responses
+- 🔧 **IDE Integration** (coming soon): RStudio/Positron addins for
+  AI-assisted coding
 
 ## Installation
 
@@ -39,14 +41,12 @@ pak::pak("JDenn0514/cassidyr")
 
 ## Setup
 
-Before using cassidyr, you’ll need:
+Before using cassidyr, you’ll need: 1. **CassidyAI Account**: Sign up at
+[cassidyai.com](https://www.cassidyai.com/) 2. **API Key**: Generate one
+from Organization Settings → API Keys 3. **Assistant ID**: Find this in
+your assistant’s External Deployments settings
 
-1.  CassidyAI Account: Sign up at cassidyai.com
-2.  API Key: Generate one from Organization Settings → API Keys
-3.  Assistant ID: Find this in your assistant’s External Deployments
-    settings
-
-Store your credentials securely in your .Renviron file:
+Store your credentials securely in your `.Renviron` file:
 
 ``` r
 # Open your .Renviron file
@@ -61,72 +61,113 @@ usethis::edit_r_environ()
 
 ## Quick Start
 
+### Interactive Chat App
+
+The easiest way to use cassidyr is through the interactive Shiny chat
+interface:
+
 ``` r
 library(cassidyr)
 
-# Option 1: Manual thread management (more control)
-thread_id <- cassidy_create_thread()
-response <- cassidy_send_message(thread_id, "What is the tidyverse?")
-print(response)
+# Launch the chat app
+cassidy_app()
+```
 
-# Continue the conversation
-response2 <- cassidy_send_message(thread_id, "Which package should I use for data cleaning?")
+Features include: - Context sidebar for managing project/data/file
+context - Conversation history with save/load - One-click code copying -
+Mobile-responsive design
 
-# Option 2: Simplified workflow (handles threads automatically)
+### Programmatic Chat
+
+For scripting and automation:
+
+``` r
+library(cassidyr)
+
+# Simple one-off chat
 result <- cassidy_chat("How do I create a bar plot in ggplot2?")
 print(result$response)
 
-# Continue with the same thread
+# Continue the conversation
 result <- cassidy_chat(
   "Can you show me an example with the mtcars dataset?",
   thread_id = result$thread_id
 )
 
+# Or use session-based chat for interactive use
+session <- cassidy_session()
+chat(session, "What is the tidyverse?")
+chat(session, "Which package should I use for data cleaning?")
+```
+
+### Low-Level API Access
+
+For more control over thread management:
+
+``` r
+# Create a thread
+thread_id <- cassidy_create_thread()
+
+# Send messages
+response <- cassidy_send_message(thread_id, "What is the tidyverse?")
+print(response)
+
 # Retrieve conversation history
-thread <- cassidy_get_thread(result$thread_id)
+thread <- cassidy_get_thread(thread_id)
+
+# List all threads
 threads <- cassidy_list_threads()
+```
+
+### Context Gathering
+
+Provide rich context to improve AI responses:
+
+``` r
+# Gather project context
+ctx <- cassidy_context_project(level = "standard")
+
+# Describe a data frame
+cassidy_describe_df(mtcars)
+
+# Create a cassidy.md configuration file
+use_cassidy_md()
 ```
 
 ## Roadmap
 
-cassidyr is under active development. Upcoming features (subject to
-change) include:
+cassidyr is under active development. Current status and upcoming
+features:
 
-#### Phase 1.5: Interactive Chat UI
+### ✅ Complete
 
-- cassidy_app() - Launch a Shiny chat interface
-- Session history and export
-- Context selection controls
+- **Phase 1: API Layer** - Thread creation, messaging, history retrieval
+- **Phase 2: Context System** - Project, data, and file context
+  gathering
+- **Phase 3: Interactive Chat** - Shiny app with persistence, copy code
+  button
 
-#### Phase 2: Context System
+### ⏳ In Progress
 
-- cassidy_context_project() - Gather project-level context
-- cassidy_context_data() - Summarize data frames
-- cassidy.md configuration files
+- **Phase 4: IDE Integration**
+  - `cassidy_document_function()` - Generate roxygen2 docs
+  - `cassidy_explain_selection()` - Explain selected code
+  - `cassidy_refactor_selection()` - Improve code quality
+  - `cassidy_debug_error()` - Help debug errors
 
-#### Phase 3: IDE Integration
+### 🔮 Future
 
-- cassidy_document_function() - Generate roxygen2 docs
-- cassidy_explain_selection() - Explain code
-- cassidy_refactor_selection() - Improve code quality
-
-#### Phase 4: Agent System
-
-- cassidy_agent() - Iterative problem solving
-- cassidy_execute_code() - Safe code execution
-- Multi-step workflows
-
-#### Phase 5: Survey Research Tools
-
-- cassidy_interpret_efa() - EFA interpretation
-- cassidy_write_methods() - Generate methods sections
-- cassidy_codebook() - Variable documentation
+- **Phase 5: Agent System** - Iterative problem solving, safe code
+  execution
+- **Phase 6: Survey Research Tools** - EFA interpretation, methods
+  sections, codebooks
 
 ## Design Philosophy
 
 cassidyr is built with three core principles:
 
-1.  **Security First**: No credentials in code, secure by default
+1.  **Security First**: No credentials in code, secure environment
+    variables
 2.  **Tidyverse Style**: Consistent naming (`cassidy_*`), pipe-friendly
     functions
 3.  **Modular Design**: Core API separate from specialized tools, easy
@@ -146,11 +187,9 @@ persistent assistants, knowledge bases, and organizational context.
 
 ## Getting Help
 
-- 📖 [Documentation](https://jdenn0514.github.io/cassidyr/) (coming
-  soon)
+- 📖 [Documentation](https://jdenn0514.github.io/cassidyr/)
 - 🐛 [Report bugs](https://github.com/JDenn0514/cassidyr/issues)
 - 💬 [Ask questions](https://github.com/JDenn0514/cassidyr/discussions)
-- 📧 Email: <your.email@example.com>
 
 ## Code of Conduct
 

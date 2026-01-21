@@ -67,7 +67,7 @@
   # Try file.edit (works in most IDEs including Positron)
   tryCatch(
     {
-      file.edit(file_path)
+      utils::file.edit(file_path)
       invisible(TRUE)
     },
     error = function(e) {

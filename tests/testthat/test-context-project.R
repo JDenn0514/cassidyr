@@ -60,18 +60,18 @@ test_that("print.cassidy_context works and returns invisibly", {
   expect_invisible(print(ctx))
 })
 
-# Test cassidy_describe_files --------------------------------------------------
+# Test cassidy_file_summary --------------------------------------------------
 
-test_that("cassidy_describe_files handles empty directory", {
+test_that("cassidy_file_summary handles empty directory", {
   withr::with_tempdir({
-    result <- cassidy_describe_files()
+    result <- cassidy_file_summary()
 
     expect_type(result, "character")
     expect_match(result, "No files found|R scripts: 0")
   })
 })
 
-test_that("cassidy_describe_files counts file types correctly", {
+test_that("cassidy_file_summary counts file types correctly", {
   withr::with_tempdir({
     # Create test files
     writeLines("# R code", "test1.R")
@@ -79,7 +79,7 @@ test_that("cassidy_describe_files counts file types correctly", {
     writeLines("# Rmd", "analysis.Rmd")
     writeLines("data", "data.csv")
 
-    result <- cassidy_describe_files()
+    result <- cassidy_file_summary()
 
     expect_match(result, "R scripts: 2")
     expect_match(result, "R Markdown files: 1")
@@ -87,14 +87,14 @@ test_that("cassidy_describe_files counts file types correctly", {
   })
 })
 
-test_that("cassidy_describe_files detects directories", {
+test_that("cassidy_file_summary detects directories", {
   withr::with_tempdir({
     dir.create("R")
     dir.create("data")
     dir.create("tests")
     writeLines("# code", "R/utils.R")
 
-    result <- cassidy_describe_files()
+    result <- cassidy_file_summary()
 
     expect_match(result, "Key directories:")
     expect_match(result, "R")
@@ -103,7 +103,7 @@ test_that("cassidy_describe_files detects directories", {
   })
 })
 
-test_that("cassidy_describe_files detects package structure", {
+test_that("cassidy_file_summary detects package structure", {
   withr::with_tempdir({
     # Create minimal DESCRIPTION file
     desc <- c(
@@ -113,18 +113,18 @@ test_that("cassidy_describe_files detects package structure", {
     )
     writeLines(desc, "DESCRIPTION")
 
-    result <- cassidy_describe_files()
+    result <- cassidy_file_summary()
 
     expect_match(result, "Package name: testpkg")
   })
 })
 
-test_that("cassidy_describe_files detailed parameter works", {
+test_that("cassidy_file_summary detailed parameter works", {
   withr::with_tempdir({
     writeLines("# R code", "test.R")
 
-    basic <- cassidy_describe_files(detailed = FALSE)
-    detailed <- cassidy_describe_files(detailed = TRUE)
+    basic <- cassidy_file_summary(level = "standard")
+    detailed <- cassidy_file_summary(level = "standard")
 
     # Detailed should have more content
     expect_gte(nchar(detailed), nchar(basic))

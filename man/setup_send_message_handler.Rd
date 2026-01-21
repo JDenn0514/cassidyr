@@ -8,7 +8,6 @@ setup_send_message_handler(
   input,
   session,
   conv_manager,
-  context_text,
   assistant_id,
   api_key,
   timeout

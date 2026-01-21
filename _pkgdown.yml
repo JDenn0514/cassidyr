@@ -1,0 +1,99 @@
+url: https://jdenn0514.github.io/cassidyr/
+template:
+  bootstrap: 5
+  bslib:
+    font_scale: 1.0
+    base_font: {google: "Roboto"}
+    code_font: {google: "Inter"}
+    heading_font: {google: "Roboto"}
+    bg: "#fcfbf9"         # lighten springwood background
+    fg: "#000000"         # contrast ratio: 15.76 for text
+    primary: "#14A2FCFF"  # light blue link text
+    navbar-bg: "#e5f3f7"  # change nav bar background
+    navbar-light-hover-color: "#14A2FCFF"
+
+development:
+  mode: auto
+
+navbar:
+  type: "light"
+  bg: "#e5f3f7"  # apparently this plus navbar-bg needs to be set to same color?
+  pill-active: "#000000"
+  structure:
+    left:  [home, reference, articles, news]
+    right: [github]
+
+
+reference:
+  - title: Chat Interface
+    desc: Interactive chat with AI assistants
+    contents:
+      - cassidy_app
+      - cassidy_chat
+      - cassidy_session
+      - cassidy_continue
+      - chat
+      - chat_text
+
+  - title: API Functions
+    desc: Low-level API interaction
+    contents:
+      - cassidy_create_thread
+      - cassidy_send_message
+      - cassidy_get_thread
+      - cassidy_list_threads
+
+  - title: Context Gathering
+    desc: Collect project and data context for AI assistance
+    contents:
+      - cassidy_context_project
+      - cassidy_context_data
+      - cassidy_context_env
+      - cassidy_context_combined
+      - cassidy_context_git
+
+  - title: Data Description
+    desc: Describe data frames and detect issues
+    contents:
+      - cassidy_describe_df
+      - cassidy_describe_variable
+      - cassidy_detect_issues
+
+  - title: File Context
+    desc: Read and summarize files
+    contents:
+      - cassidy_describe_file
+      - cassidy_file_summary
+      - cassidy_read_context_file
+
+  - title: Environment Info
+    desc: Gather R session information
+    contents:
+      - cassidy_list_objects
+      - cassidy_session_info
+
+  - title: Conversation Management
+    desc: Save, load, and export conversations
+    contents:
+      - cassidy_save_conversation
+      - cassidy_load_conversation
+      - cassidy_list_conversations
+      - cassidy_delete_conversation
+      - cassidy_export_conversation
+
+  - title: Code Helpers
+    desc: Write code and files from chat responses
+    contents:
+      - cassidy_write_code
+      - cassidy_write_file
+
+  - title: Script Tools
+    desc: Transform and document R scripts
+    contents:
+      - cassidy_script_to_quarto
+      - cassidy_comment_script
+
+  - title: Configuration
+    desc: Setup and configuration
+    contents:
+      - use_cassidy_md

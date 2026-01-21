@@ -15,3 +15,4 @@
 # Optional: Ignore local test mocks (if you want to keep real ones locally)
 # tests/testthat/app.cassidyai.com/
 # But DO commit the redacted ones for CI/CD
+docs

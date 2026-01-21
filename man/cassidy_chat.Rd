@@ -28,6 +28,8 @@ Context is sent once at thread creation for efficiency.}
 
 \item{api_key}{Character. Your CassidyAI API key. Defaults to
 the \code{CASSIDY_API_KEY} environment variable.}
+
+\item{timeout}{Numeric. Request timeout in seconds. Default is 120.}
 }
 \value{
 A \code{cassidy_chat} S3 object containing:

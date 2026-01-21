@@ -86,7 +86,7 @@ update_package_imports <- function(
   # Step 5: Write file if not dry run
   if (!dry_run) {
     writeLines(new_content, package_file_path)
-    cat(sprintf("✓ Updated %s\n", package_file_path))
+    cat(sprintf("Updated %s\n", package_file_path))
     cat("Don't forget to run devtools::document() to update NAMESPACE!\n")
   } else {
     cat("DRY RUN MODE - No files were changed.\n")

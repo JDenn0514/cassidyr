@@ -12,6 +12,7 @@ Provides a comprehensive R interface to the CassidyAI API, enabling seamless int
 Useful links:
 \itemize{
   \item \url{https://github.com/JDenn0514/cassidyr}
+  \item \url{https://jdenn0514.github.io/cassidyr/}
   \item Report bugs at \url{https://github.com/JDenn0514/cassidyr/issues}
 }
 

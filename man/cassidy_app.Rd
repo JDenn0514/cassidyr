@@ -7,6 +7,7 @@
 cassidy_app(
   assistant_id = Sys.getenv("CASSIDY_ASSISTANT_ID"),
   api_key = Sys.getenv("CASSIDY_API_KEY"),
+  new_chat = FALSE,
   context_level = c("standard", "minimal", "comprehensive"),
   include_data = TRUE,
   include_files = NULL,
@@ -21,14 +22,19 @@ Defaults to \code{CASSIDY_ASSISTANT_ID} environment variable.}
 \item{api_key}{Character. The Cassidy API key.
 Defaults to \code{CASSIDY_API_KEY} environment variable.}
 
-\item{context_level}{Character. Level of context to include:
-"minimal", "standard", or "comprehensive". Default is "standard".}
+\item{new_chat}{Logical. If \code{TRUE}, starts a fresh conversation with new
+context. If \code{FALSE} (default), resumes the most recent conversation.}
+
+\item{context_level}{Character. Level of context to include when starting
+a new chat: "minimal", "standard", or "comprehensive". Default is
+"standard". Ignored when \code{new_chat = FALSE}.}
 
 \item{include_data}{Logical. Whether to include data frame context
-from the global environment. Default is TRUE.}
+from the global environment when starting a new chat. Default is TRUE.
+Ignored when \code{new_chat = FALSE}.}
 
 \item{include_files}{Character vector of file paths to include in initial
-context.}
+context when starting a new chat. Ignored when \code{new_chat = FALSE}.}
 
 \item{timeout}{Numeric. API timeout in seconds. Default is 300.}
 
@@ -46,47 +52,42 @@ and supports conversation persistence.
 The app provides:
 \itemize{
 \item Real-time chat with Cassidy AI
-\item Automatic project context injection
+\item Automatic project context injection (on new chats)
 \item Conversation history with sidebar navigation
 \item Ability to switch between multiple conversations
 \item Mobile-responsive design
 }
-\subsection{Console Blocking and Conversation Persistence}{
+\subsection{Continuing vs Starting New}{
 
-This function blocks your R console while the app is running. However,
-\strong{conversations are automatically saved} when you close the app, so you
-can safely:
-\enumerate{
-\item Close the app (click the stop button or close the browser)
-\item Run any R code you need in the console
-\item Relaunch with \code{cassidy_app()}
-\item Select your previous conversation from the sidebar to continue
+By default (\code{new_chat = FALSE}), the app resumes your most recent
+conversation. This is useful when you close the app to run code and
+want to continue discussing results.
+
+Use \code{new_chat = TRUE} when you want to start fresh with updated project
+context. This is recommended when:
+\itemize{
+\item You've made significant changes to your code
+\item You're starting a new task or topic
+\item You want to include different files in context
 }
-
-Recent conversations appear in the sidebar under "Recent" and are sorted
-by last activity. Use \code{\link[=cassidy_list_conversations]{cassidy_list_conversations()}} to see saved
-conversations programmatically.
 }
 }
 \examples{
 \dontrun{
-  # Launch the chat app
+  # Resume most recent conversation (default)
   cassidy_app()
 
-  # With comprehensive project context
-  cassidy_app(context_level = "comprehensive")
+  # Start a new conversation with standard context
+  cassidy_app(new_chat = TRUE)
 
-  # Include specific files in context
-  cassidy_app(include_files = c("R/my-analysis.R", "data/codebook.md"))
+  # Start new with comprehensive context
+  cassidy_app(new_chat = TRUE, context_level = "comprehensive")
 
-  # Typical workflow:
-  # 1. cassidy_app()
-  # 2. Chat with Cassidy, get code suggestions
-  # 3. Close the app
-  # 4. Run/test the suggested code
-  # 5. cassidy_app()
-  # 6. Select previous conversation from sidebar
-  # 7. Continue discussing results
+  # Start new with specific files
+  cassidy_app(
+    new_chat = TRUE,
+    include_files = c("R/my-analysis.R", "data/codebook.md")
+  )
 }
 
 }

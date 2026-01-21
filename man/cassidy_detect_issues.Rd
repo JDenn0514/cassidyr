@@ -29,10 +29,10 @@ constant columns, high cardinality, etc.
 }
 \examples{
 \dontrun{
-# Check for issues
-issues <- cassidy_detect_issues(mtcars)
+  # Check for issues
+  issues <- cassidy_detect_issues(mtcars)
 
-# More sensitive missing data detection
-issues <- cassidy_detect_issues(mtcars, missing_threshold = 10)
+  # More sensitive missing data detection
+  issues <- cassidy_detect_issues(mtcars, missing_threshold = 10)
 }
 }

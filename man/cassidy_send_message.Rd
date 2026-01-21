@@ -2,7 +2,7 @@
 % Please edit documentation in R/api-core.R
 \name{cassidy_send_message}
 \alias{cassidy_send_message}
-\title{Send a message to a CassidyAI thread}
+\title{Send Message to Cassidy Thread}
 \usage{
 cassidy_send_message(
   thread_id,
@@ -14,33 +14,24 @@ cassidy_send_message(
 \arguments{
 \item{thread_id}{Character. The thread ID from \code{\link[=cassidy_create_thread]{cassidy_create_thread()}}.}
 
-\item{message}{Character. The message to send to the assistant.}
+\item{message}{Character. The message content to send.}
 
-\item{api_key}{Character. Your CassidyAI API key. Defaults to
-the \code{CASSIDY_API_KEY} environment variable.}
+\item{api_key}{Character. Cassidy API key. Defaults to
+\code{CASSIDY_API_KEY} environment variable.}
 
 \item{timeout}{Numeric. Request timeout in seconds. Default is 120.}
 }
 \value{
-A \code{cassidy_response} S3 object with:
-\describe{
-\item{content}{The assistant's response text}
-\item{thread_id}{The thread ID for this conversation}
-\item{timestamp}{When the response was received}
-\item{raw}{Full API response for debugging}
+A \code{cassidy_response} object containing:
+\itemize{
+\item \code{content}: The assistant's response text
+\item \code{thread_id}: The thread ID
+\item \code{timestamp}: When the response was received
 }
 }
 \description{
-Sends a message to an existing CassidyAI conversation thread and returns
-the assistant's response. The assistant will have access to all previous
-messages in the thread for context.
-}
-\examples{
-\dontrun{
-  thread_id <- cassidy_create_thread()
-  response <- cassidy_send_message(thread_id, "Hello, world!")
-  print(response)
-}
+Sends a message to an existing Cassidy thread and retrieves the assistant's
+response.
 }
 \seealso{
 Other api-functions: 

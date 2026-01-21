@@ -44,7 +44,7 @@ setup_context_data_renderer <- function(output, input, conv_manager) {
               shiny::span(class = "data-name", df_name),
               shiny::span(
                 class = "data-dims",
-                paste0(df_info$rows, " × ", df_info$cols)
+                paste0(df_info$rows, " x ", df_info$cols)
               )
             )
           ),
@@ -790,9 +790,9 @@ REQUEST_FILE:([^\
 
   # Thresholds (tuned for typical R package files)
   # These are conservative to avoid hitting API limits
-  TIER_1_MAX_LINES <- 2000 # ~50-60K chars → FULL content
-  TIER_2_MAX_LINES <- 5000 # ~120K chars → SUMMARY with previews
-  # Above that → INDEX only
+  TIER_1_MAX_LINES <- 2000 # ~50-60K chars --> FULL content
+  TIER_2_MAX_LINES <- 5000 # ~120K chars --> SUMMARY with previews
+  # Above that --> INDEX only
 
   # Additional heuristic: if individual files are very large, drop to summary sooner
   max_single_file <- max(file_line_counts, na.rm = TRUE)

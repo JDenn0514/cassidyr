@@ -2,11 +2,11 @@
 % Please edit documentation in R/chat-server-handlers.R
 \name{setup_new_chat_handler}
 \alias{setup_new_chat_handler}
-\title{Setup new chat handler}
+\title{Setup new chat handler with context options modal}
 \usage{
 setup_new_chat_handler(input, session, conv_manager)
 }
 \description{
-Setup new chat handler
+Setup new chat handler with context options modal
 }
 \keyword{internal}

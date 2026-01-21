@@ -87,7 +87,7 @@ cassidy_list_objects <- function(envir = .GlobalEnv, detailed = FALSE) {
       )
 
       if (detailed) {
-        size_mb <- format(object.size(obj), units = "MB")
+        size_mb <- format(utils::object.size(obj), units = "MB")
         df_info <- paste0(df_info, " (", size_mb, ")")
       }
 
@@ -97,7 +97,7 @@ cassidy_list_objects <- function(envir = .GlobalEnv, detailed = FALSE) {
       functions <- c(functions, func_info)
     } else if (detailed) {
       obj_class <- class(obj)[1]
-      obj_size <- format(object.size(obj), units = "auto")
+      obj_size <- format(utils::object.size(obj), units = "auto")
       other <- c(
         other,
         paste0("- `", obj_name, "` (", obj_class, ", ", obj_size, ")")
@@ -120,7 +120,7 @@ cassidy_list_objects <- function(envir = .GlobalEnv, detailed = FALSE) {
     # Limit functions to first 10 if many
     if (length(functions) > 10) {
       func_display <- c(
-        head(functions, 10),
+        utils::head(functions, 10),
         paste0("... and ", length(functions) - 10, " more")
       )
     } else {

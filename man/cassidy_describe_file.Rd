@@ -9,7 +9,8 @@ cassidy_describe_file(
   max_lines = Inf,
   lines = NULL,
   line_range = NULL,
-  show_line_numbers = TRUE
+  show_line_numbers = TRUE,
+  level = c("full", "summary", "index")
 )
 }
 \arguments{
@@ -28,6 +29,14 @@ all lines (subject to \code{max_lines}).}
 
 \item{show_line_numbers}{Logical; if \code{TRUE}, prepends line numbers to each
 line. Useful for discussing specific line numbers. Defaults to \code{TRUE}.}
+
+\item{level}{Character; detail level for file content. One of:
+\itemize{
+\item \code{"full"}: Complete file contents (default)
+\item \code{"summary"}: Function signatures + key excerpts
+\item \code{"index"}: Metadata and function listing only
+Used by chat system to manage context size. Most users should use default.
+}}
 }
 \value{
 A \code{cassidy_context} object containing the formatted file contents.
@@ -47,6 +56,13 @@ You can read files in three ways:
 \item Specific lines: Use \code{lines = c(1, 5, 10:20)}
 \item Line range: Use \code{line_range = c(10, 50)}
 }
+
+The \code{level} parameter controls detail:
+\itemize{
+\item \code{"full"}: Best for detailed code review, includes all content
+\item \code{"summary"}: Good for understanding structure without full content
+\item \code{"index"}: Minimal metadata, useful when you have many files
+}
 }
 \examples{
 \dontrun{
@@ -56,8 +72,8 @@ You can read files in three ways:
   # Read specific lines (useful for focusing on a function)
   ctx <- cassidy_describe_file("R/my-function.R", lines = 45:120)
 
-  # Read a range of lines
-  ctx <- cassidy_describe_file("R/my-function.R", line_range = c(10, 50))
+  # Read with summary level (less detail)
+  ctx <- cassidy_describe_file("R/my-function.R", level = "summary")
 
   # Ask Cassidy to review specific code
   cassidy_chat(

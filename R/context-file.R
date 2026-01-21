@@ -319,7 +319,7 @@ cassidy_file_summary <- function(
     output <- paste0(output, "\n### R Files:\n")
 
     max_files <- if (level == "comprehensive") 20 else 10
-    files_to_show <- head(r_files, max_files)
+    files_to_show <- utils::head(r_files, max_files)
 
     for (f in files_to_show) {
       file_path <- file.path(path, f)
@@ -572,7 +572,7 @@ cassidy_file_summary <- function(
 
   output <- "\n### Function Details:\n"
 
-  files_to_parse <- head(r_files, 15)
+  files_to_parse <- utils::head(r_files, 15)
 
   for (f in files_to_parse) {
     file_path <- file.path(path, f)
