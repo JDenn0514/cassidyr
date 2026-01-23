@@ -2,14 +2,19 @@
 
 ## Project Overview
 
-**cassidyr** is an R package that provides a client for the CassidyAI API, enabling seamless integration of AI-powered assistants into R workflows. The package is designed with a security-first approach, tidyverse-style conventions, and follows R package development best practices.
+**cassidyr** is an R package that provides a client for the CassidyAI API,
+enabling seamless integration of AI-powered assistants into R workflows. The
+package is designed with a security-first approach, tidyverse-style conventions,
+and follows R package development best practices.
 
 ## Package Information
 
 - **Name:** cassidyr
 - **Purpose:** R client for CassidyAI API with context-aware chat capabilities
-- **Target Audience:** R users who want to integrate AI assistance into their workflows
-- **Current Status:** Phase 3 complete (Interactive Shiny Chatbot), ready for Phase 4 (IDE Integration)
+- **Target Audience:** R users who want to integrate AI assistance into their
+  workflows
+- **Current Status:** Phase 3 complete (Interactive Shiny Chatbot), ready for
+  Phase 4 (IDE Integration)
 
 ## Architecture & Design Philosophy
 

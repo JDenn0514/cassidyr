@@ -58,6 +58,7 @@ reference:
       - cassidy_describe_df
       - cassidy_describe_variable
       - cassidy_detect_issues
+      - cassidy_describe_codebook
 
   - title: File Context
     desc: Read and summarize files

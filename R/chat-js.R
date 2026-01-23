@@ -56,20 +56,59 @@ chat_app_js <- function() {
     clipboard,
     "</button>');
         $pre.parent().append($btn);
+      });
+    }
 
-        $btn.on('click', function(e) {
-          e.stopPropagation();
-          var text = $pre.text();
-          navigator.clipboard.writeText(text).then(function() {
-            $btn.text('",
+    // Use event delegation for copy button clicks
+    $(document).on('click', '.copy-code-btn', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      var $btn = $(this);
+      var $pre = $btn.siblings('pre');
+      var text = $pre.text();
+
+      // Try modern clipboard API first, fallback to execCommand
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          $btn.text('",
     checkmark,
     "');
-            setTimeout(function() { $btn.text('",
+          setTimeout(function() { $btn.text('",
     clipboard,
     "'); }, 1500);
-          });
+        }).catch(function(err) {
+          fallbackCopy(text, $btn);
         });
-      });
+      } else {
+        fallbackCopy(text, $btn);
+      }
+    });
+
+    // Fallback copy method for older browsers or non-HTTPS
+    function fallbackCopy(text, $btn) {
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        $btn.text('",
+    checkmark,
+    "');
+        setTimeout(function() { $btn.text('",
+    clipboard,
+    "'); }, 1500);
+      } catch (err) {
+        console.error('Copy failed:', err);
+        $btn.text('Error');
+        setTimeout(function() { $btn.text('",
+    clipboard,
+    "'); }, 1500);
+      }
+      document.body.removeChild(textarea);
     }
   "
   )

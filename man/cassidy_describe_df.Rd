@@ -38,7 +38,7 @@ Can use different methods to generate the description.
 \details{
 The \code{method} parameter controls how the data frame is described:
 \itemize{
-\item \code{"codebook"}: Uses \code{codebook_for_llm()} which provides
+\item \code{"codebook"}: Uses \code{cassidy_describe_codebook()} which provides
 a compact, markdown-formatted description optimized for LLM consumption,
 including variable labels, value labels, factor levels, and more
 \item \code{"skim"}: Uses \code{skimr::skim()} if available, which provides
