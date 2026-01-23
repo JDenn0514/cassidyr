@@ -1,0 +1,313 @@
+# cassidyr
+
+**cassidyr** is an R client for the
+[CassidyAI](https://www.cassidyai.com/) API, providing a clean and
+intuitive interface to integrate AI-powered assistants into your R
+workflows.
+
+## Features
+
+- 🤖 **Simple API Client**: Create threads, send messages, and manage
+  conversations
+- 📊 **Context-Aware**: Automatically gather project and data context
+  for better AI responses
+- 💬 **Interactive Chat**: Launch a Shiny-based chat interface with
+  [`cassidy_app()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_app.md)
+- 💾 **Conversation Persistence**: Auto-save and restore chat history
+- 📋 **Copy Code Button**: One-click copy for code blocks in chat
+  responses
+- 🔧 **IDE Integration** (coming soon): RStudio/Positron addins for
+  AI-assisted coding
+
+## Installation
+
+You can install the development version of cassidyr from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("pak")
+pak::pak("JDenn0514/cassidyr")
+```
+
+## Setup
+
+Before using cassidyr, you’ll need: 1. **CassidyAI Account**: Sign up at
+[cassidyai.com](https://www.cassidyai.com/) 2. **API Key**: Generate one
+from Organization Settings → API Keys 3. **Assistant ID**: Find this in
+your assistant’s External Deployments settings
+
+Store your credentials securely in your `.Renviron` file:
+
+``` r
+# Open your .Renviron file
+usethis::edit_r_environ()
+
+# Add these lines (with your actual credentials):
+# CASSIDY_API_KEY = "your_api_key_here"
+# CASSIDY_ASSISTANT_ID = "your_assistant_id_here"
+
+# Save, close, and restart R
+```
+
+## Quick Start
+
+### Interactive Chat App
+
+The easiest way to use cassidyr is through the interactive Shiny chat
+interface:
+
+``` r
+library(cassidyr)
+
+# Launch the chat app
+cassidy_app()
+```
+
+Features include: - Context sidebar for managing project/data/file
+context - Conversation history with save/load - One-click code copying -
+Mobile-responsive design
+
+### Programmatic Chat
+
+For scripting and automation:
+
+``` r
+library(cassidyr)
+
+# Simple one-off chat
+result <- cassidy_chat("How do I create a bar plot in ggplot2?")
+print(result$response)
+
+# Continue the conversation
+result <- cassidy_chat(
+  "Can you show me an example with the mtcars dataset?",
+  thread_id = result$thread_id
+)
+
+# Or use session-based chat for interactive use
+session <- cassidy_session()
+chat(session, "What is the tidyverse?")
+chat(session, "Which package should I use for data cleaning?")
+```
+
+### Low-Level API Access
+
+For more control over thread management:
+
+``` r
+# Create a thread
+thread_id <- cassidy_create_thread()
+
+# Send messages
+response <- cassidy_send_message(thread_id, "What is the tidyverse?")
+print(response)
+
+# Retrieve conversation history
+thread <- cassidy_get_thread(thread_id)
+
+# List all threads
+threads <- cassidy_list_threads()
+```
+
+### Context Gathering
+
+Provide rich context to improve AI responses:
+
+``` r
+# Gather project context
+ctx <- cassidy_context_project(level = "standard")
+
+# Describe a data frame
+cassidy_describe_df(mtcars)
+
+# Create a cassidy.md configuration file
+use_cassidy_md()
+```
+
+## Roadmap
+
+cassidyr is under active development. Current status and upcoming
+features:
+
+### ✅ Complete
+
+- **Phase 1: API Layer** - Thread creation, messaging, history retrieval
+- **Phase 2: Context System** - Project, data, and file context
+  gathering
+- **Phase 3: Interactive Chat** - Shiny app with persistence, copy code
+  button
+
+### ⏳ In Progress
+
+- **Phase 4: IDE Integration**
+  - `cassidy_document_function()` - Generate roxygen2 docs
+  - `cassidy_explain_selection()` - Explain selected code
+  - `cassidy_refactor_selection()` - Improve code quality
+  - `cassidy_debug_error()` - Help debug errors
+
+### 🔮 Future
+
+- **Phase 5: Agent System** - Iterative problem solving, safe code
+  execution
+- **Phase 6: Survey Research Tools** - EFA interpretation, methods
+  sections, codebooks
+
+## Design Philosophy
+
+cassidyr is built with three core principles:
+
+1.  **Security First**: No credentials in code, secure environment
+    variables
+2.  **Tidyverse Style**: Consistent naming (`cassidy_*`), pipe-friendly
+    functions
+3.  **Modular Design**: Core API separate from specialized tools, easy
+    to extend
+
+## Related Packages
+
+- [**ellmer**](https://ellmer.tidyverse.org/): Multi-provider LLM client
+  (OpenAI, Claude, etc.)
+- [**btw**](https://posit-dev.github.io/btw/): Toolkit for connecting R
+  and LLMs
+- [**shinychat**](https://posit-dev.github.io/shinychat/): Chat UI
+  components for Shiny
+
+cassidyr is specifically designed for CassidyAI’s unique features like
+persistent assistants, knowledge bases, and organizational context.
+
+## Getting Help
+
+- 📖 [Documentation](https://jdenn0514.github.io/cassidyr/)
+- 🐛 [Report bugs](https://github.com/JDenn0514/cassidyr/issues)
+- 💬 [Ask questions](https://github.com/JDenn0514/cassidyr/discussions)
+
+## Code of Conduct
+
+Please note that cassidyr is released with a [Contributor Code of
+Conduct](https://contributor-covenant.org/version/2/1/CODE_OF_CONDUCT.html).
+By contributing to this project, you agree to abide by its terms.
+
+## License
+
+MIT © Jacob Dennen
+
+# Package index
+
+## Chat Interface
+
+Interactive chat with AI assistants
+
+- [`cassidy_app()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_app.md)
+  : Launch Cassidy Interactive Chat Application
+- [`cassidy_chat()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_chat.md)
+  : Chat with CassidyAI
+- [`cassidy_session()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_session.md)
+  : Create a stateful chat session
+- [`cassidy_continue()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_continue.md)
+  : Continue an existing conversation
+- [`chat()`](https://jdenn0514.github.io/cassidyr/reference/chat.md) :
+  Send a message within a session
+- [`chat_text()`](https://jdenn0514.github.io/cassidyr/reference/chat_text.md)
+  : Extract text content from a chat result
+
+## API Functions
+
+Low-level API interaction
+
+- [`cassidy_create_thread()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_create_thread.md)
+  : Create a new CassidyAI conversation thread
+- [`cassidy_send_message()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_send_message.md)
+  : Send Message to Cassidy Thread
+- [`cassidy_get_thread()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_get_thread.md)
+  : Retrieve conversation history from a thread
+- [`cassidy_list_threads()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_threads.md)
+  : List all threads for an assistant
+
+## Context Gathering
+
+Collect project and data context for AI assistance
+
+- [`cassidy_context_project()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_project.md)
+  : Gather project context
+- [`cassidy_context_data()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_data.md)
+  : Gather context from data frames in environment
+- [`cassidy_context_env()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_env.md)
+  : Get current environment snapshot
+- [`cassidy_context_combined()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_combined.md)
+  : Combine Multiple Contexts
+- [`cassidy_context_git()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_git.md)
+  : Get Git repository status and recent commits
+
+## Data Description
+
+Describe data frames and detect issues
+
+- [`cassidy_describe_df()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_df.md)
+  : Describe a data frame for AI context
+- [`cassidy_describe_variable()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_variable.md)
+  : Describe a single variable in detail
+- [`cassidy_detect_issues()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_detect_issues.md)
+  : Detect potential data quality issues
+- [`cassidy_describe_codebook()`](https://jdenn0514.github.io/cassidyr/reference/codebook_for_llm.md)
+  : Format data frame description for LLM context
+
+## File Context
+
+Read and summarize files
+
+- [`cassidy_describe_file()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_file.md)
+  : Read File Contents as Context
+- [`cassidy_file_summary()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_file_summary.md)
+  : Summarize Project Files
+- [`cassidy_read_context_file()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_read_context_file.md)
+  : Read cassidy.md or similar context configuration files
+
+## Environment Info
+
+Gather R session information
+
+- [`cassidy_list_objects()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_objects.md)
+  : List objects in global environment
+- [`cassidy_session_info()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_session_info.md)
+  : Get session info formatted for LLM
+
+## Conversation Management
+
+Save, load, and export conversations
+
+- [`cassidy_save_conversation()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_save_conversation.md)
+  : Save a conversation to disk
+- [`cassidy_load_conversation()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_load_conversation.md)
+  : Load a conversation from disk
+- [`cassidy_list_conversations()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_conversations.md)
+  : List all saved conversations
+- [`cassidy_delete_conversation()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_delete_conversation.md)
+  : Delete a saved conversation
+- [`cassidy_export_conversation()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_export_conversation.md)
+  : Export a conversation as Markdown
+
+## Code Helpers
+
+Write code and files from chat responses
+
+- [`cassidy_write_code()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_write_code.md)
+  : Write Cassidy code to file and show explanation in console
+- [`cassidy_write_file()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_write_file.md)
+  : Write Cassidy response to a file
+
+## Script Tools
+
+Transform and document R scripts
+
+- [`cassidy_script_to_quarto()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_script_to_quarto.md)
+  : Generate a Quarto document skeleton from an R script
+- [`cassidy_comment_script()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_comment_script.md)
+  : Add explanatory comments to an R script
+
+## Configuration
+
+Setup and configuration
+
+- [`use_cassidy_md()`](https://jdenn0514.github.io/cassidyr/reference/use_cassidy_md.md)
+  : Create a cassidy.md configuration file
+
