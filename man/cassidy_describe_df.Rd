@@ -8,7 +8,9 @@ cassidy_describe_df(
   data,
   name = NULL,
   method = c("codebook", "skim", "basic"),
-  include_summary = TRUE
+  include_summary = TRUE,
+  max_vars = NULL,
+  show_sample = TRUE
 )
 }
 \arguments{
@@ -20,6 +22,10 @@ If NULL, attempts to use the name of the object passed to \code{data}.}
 \item{method}{Method to use: "codebook" (default), "skim", or "basic"}
 
 \item{include_summary}{Include statistical summaries (for "basic" method)}
+
+\item{max_vars}{Maximum variables to show (NULL = all)}
+
+\item{show_sample}{Include sample values? (Default: TRUE)}
 }
 \value{
 An object of class \code{cassidy_df_description} containing the
@@ -32,10 +38,9 @@ Can use different methods to generate the description.
 \details{
 The \code{method} parameter controls how the data frame is described:
 \itemize{
-\item \code{"codebook"}: Uses \code{adlgraphs::codebook()} if available,
-which provides comprehensive metadata including variable labels,
-value labels, transformations, and more. Falls back to "skim" if not
-installed.
+\item \code{"codebook"}: Uses \code{codebook_for_llm()} which provides
+a compact, markdown-formatted description optimized for LLM consumption,
+including variable labels, value labels, factor levels, and more
 \item \code{"skim"}: Uses \code{skimr::skim()} if available, which provides
 summary statistics organized by variable type. Falls back to "basic" if
 not installed.

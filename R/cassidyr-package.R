@@ -3,7 +3,6 @@
 "_PACKAGE"
 
 ## usethis namespace: start
-#' @importFrom adlgraphs codebook
 #' @importFrom bslib bs_theme page_fillable
 #' @importFrom cli cli_abort cli_alert_info cli_alert_success cli_alert_warning
 #'   cli_h1 cli_h2 cli_h3 cli_rule cli_text cli_warn
@@ -22,9 +21,11 @@
 #'   selectInput shinyApp showModal showNotification span tagList tags
 #'   textAreaInput uiOutput
 #' @importFrom skimr skim
-#' @importFrom stats quantile sd setNames
+#' @importFrom stats median quantile sd setNames
+#' @importFrom stringi stri_unescape_unicode
 #' @importFrom tools file_ext file_path_sans_ext R_user_dir toTitleCase
 #' @importFrom usethis edit_r_environ
-#' @importFrom utils capture.output head object.size tail
+#' @importFrom utils capture.output file.edit head object.size tail
+#' @importFrom vctrs vec_ptype_abbr
 ## usethis namespace: end
 NULL

@@ -1,5 +1,16 @@
 #' @keywords internal
 chat_app_js <- function() {
+  paste0(
+    .js_sidebar_toggles(),
+    .js_copy_buttons(),
+    .js_shiny_handlers(),
+    .js_textarea_behavior(),
+    .js_init(),
+    .js_helper_functions()
+  )
+}
+
+.js_sidebar_toggles <- function() {
   "
   $(document).ready(function() {
     // Context sidebar toggle (LEFT)
@@ -20,7 +31,15 @@ chat_app_js <- function() {
     $('#close_history_sidebar').on('click', function() {
       $('#history_sidebar').addClass('collapsed');
     });
+  "
+}
 
+.js_copy_buttons <- function() {
+  clipboard <- stringi::stri_unescape_unicode("\\U0001F4CB")
+  checkmark <- stringi::stri_unescape_unicode("\\u2713")
+
+  paste0(
+    "
     // Add copy buttons to code blocks
     function addCopyButtons() {
       $('.chat-messages pre').each(function() {
@@ -33,20 +52,31 @@ chat_app_js <- function() {
         $pre.wrap('<div class=\"code-block-wrapper\"></div>');
 
         // Add copy button
-        var $btn = $('<button class=\"copy-code-btn\" title=\"Copy code\">📋</button>');
+        var $btn = $('<button class=\"copy-code-btn\" title=\"Copy code\">",
+    clipboard,
+    "</button>');
         $pre.parent().append($btn);
 
         $btn.on('click', function(e) {
           e.stopPropagation();
           var text = $pre.text();
           navigator.clipboard.writeText(text).then(function() {
-            $btn.text('✓');
-            setTimeout(function() { $btn.text('📋'); }, 1500);
+            $btn.text('",
+    checkmark,
+    "');
+            setTimeout(function() { $btn.text('",
+    clipboard,
+    "'); }, 1500);
           });
         });
       });
     }
+  "
+  )
+}
 
+.js_shiny_handlers <- function() {
+  "
     // Auto-scroll to bottom when new messages arrive
     Shiny.addCustomMessageHandler('scrollToBottom', function(message) {
       setTimeout(function() {
@@ -85,7 +115,11 @@ chat_app_js <- function() {
         $('#user_input').focus();
       }
     });
+  "
+}
 
+.js_textarea_behavior <- function() {
+  "
     // Auto-resize textarea
     $('#user_input').on('input', function() {
       this.style.height = 'auto';
@@ -99,7 +133,11 @@ chat_app_js <- function() {
         $('#send').click();
       }
     });
+  "
+}
 
+.js_init <- function() {
+  "
     // Initial scroll to bottom and add copy buttons
     setTimeout(function() {
       var container = $('.chat-messages');
@@ -109,7 +147,11 @@ chat_app_js <- function() {
       addCopyButtons();
     }, 300);
   });
+  "
+}
 
+.js_helper_functions <- function() {
+  "
   // Toggle context sections (collapsible)
   function toggleContextSection(sectionName) {
     var section = $('#context_section_' + sectionName).closest('.context-section');

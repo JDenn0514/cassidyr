@@ -101,7 +101,6 @@ cassidy_app <- function(
   # Check for required packages
   rlang::check_installed("shiny", reason = "to use cassidy_app()")
   rlang::check_installed("bslib", reason = "to use cassidy_app()")
-  rlang::check_installed("shinychat", reason = "to use cassidy_app()")
   rlang::check_installed("S7", reason = "to use cassidy_app()")
 
   # ---- Gather context (only for new chats) ----

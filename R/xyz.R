@@ -1,8 +1,10 @@
 #' Detect and update package imports
 #'
 #' @param pkg_path Path to your package root directory
-#' @param package_file Name of your package documentation file (default: "cassidyr-package.R")
-#' @param dry_run If TRUE, shows what would be changed without writing (default: TRUE)
+#' @param package_file Name of your package documentation file (default:
+#'   "cassidyr-package.R")
+#' @param dry_run Logical. If `TRUE`, shows what would be changed without
+#'   writing. Default is `TRUE`
 #' @noRd
 update_package_imports <- function(
   pkg_path = ".",

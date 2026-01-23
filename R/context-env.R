@@ -81,7 +81,7 @@ cassidy_list_objects <- function(envir = .GlobalEnv, detailed = FALSE) {
         obj_name,
         "`: ",
         dims[1],
-        " obs × ",
+        " obs x ",
         dims[2],
         " vars"
       )

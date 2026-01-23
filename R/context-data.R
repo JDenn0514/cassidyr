@@ -97,14 +97,15 @@ cassidy_context_data <- function(
 #'   If NULL, attempts to use the name of the object passed to `data`.
 #' @param method Method to use: "codebook" (default), "skim", or "basic"
 #' @param include_summary Include statistical summaries (for "basic" method)
+#' @param max_vars Maximum variables to show (NULL = all)
+#' @param show_sample Include sample values? (Default: TRUE)
 #'
 #' @details
 #' The \code{method} parameter controls how the data frame is described:
 #' \itemize{
-#'   \item \code{"codebook"}: Uses \code{adlgraphs::codebook()} if available,
-#'     which provides comprehensive metadata including variable labels,
-#'     value labels, transformations, and more. Falls back to "skim" if not
-#'     installed.
+#'   \item \code{"codebook"}: Uses \code{codebook_for_llm()} which provides
+#'     a compact, markdown-formatted description optimized for LLM consumption,
+#'     including variable labels, value labels, factor levels, and more
 #'   \item \code{"skim"}: Uses \code{skimr::skim()} if available, which provides
 #'     summary statistics organized by variable type. Falls back to "basic" if
 #'     not installed.
@@ -134,7 +135,9 @@ cassidy_describe_df <- function(
   data,
   name = NULL,
   method = c("codebook", "skim", "basic"),
-  include_summary = TRUE
+  include_summary = TRUE,
+  max_vars = NULL,
+  show_sample = TRUE
 ) {
   if (!is.data.frame(data)) {
     cli::cli_abort("{.arg data} must be a data frame")
@@ -143,16 +146,12 @@ cassidy_describe_df <- function(
   method <- match.arg(method)
 
   # Use provided name or try to get from call
-  data_name <- if (!is.null(name)) {
-    name
-  } else {
-    deparse(substitute(data))
-  }
+  data_name <- name %||% deparse(substitute(data))
 
   # Try methods in order of preference
   description <- switch(
     method,
-    codebook = .describe_with_codebook(data, data_name),
+    codebook = .describe_with_codebook(data, data_name, max_vars, show_sample),
     skim = .describe_with_skim(data, data_name),
     basic = .describe_basic(data, data_name, include_summary)
   )
@@ -415,47 +414,22 @@ cassidy_detect_issues <- function(
   }
 }
 
-# Helper functions for describe_df (keeping from previous version)
-.describe_with_codebook <- function(data, data_name) {
-  if (!requireNamespace("adlgraphs", quietly = TRUE)) {
-    cli::cli_alert_info(
-      "{.pkg adlgraphs} not installed, falling back to {.code skim} method"
-    )
-    return(.describe_with_skim(data, data_name))
-  }
-
-  tryCatch(
-    {
-      cb <- suppressMessages(adlgraphs::codebook(data))
-
-      description <- paste0(
-        "# Data Frame: ",
-        data_name,
-        "\n\n",
-        nrow(data),
-        " observations x ",
-        ncol(data),
-        " variables\n\n"
-      )
-
-      description <- paste0(
-        description,
-        "## Codebook (via adlgraphs::codebook)\n\n"
-      )
-
-      cb_text <- utils::capture.output(print(cb, n = Inf))
-      description <- paste0(description, paste(cb_text, collapse = "\n"))
-
-      attr(description, "method_used") <- "codebook"
-      description
-    },
-    error = function(e) {
-      cli::cli_alert_warning(
-        "Error using {.pkg adlgraphs}, falling back to {.code skim} method"
-      )
-      .describe_with_skim(data, data_name)
-    }
+# Helper: Use codebook_for_llm for LLM-optimized output
+.describe_with_codebook <- function(
+  data,
+  data_name,
+  max_vars = NULL,
+  show_sample = TRUE
+) {
+  description <- codebook_for_llm(
+    data = data,
+    name = data_name,
+    max_vars = max_vars,
+    show_sample = show_sample
   )
+
+  attr(description, "method_used") <- "codebook"
+  description
 }
 
 .describe_with_skim <- function(data, data_name) {
