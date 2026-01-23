@@ -18,7 +18,8 @@ cassidy_detect_issues(
 
 \item{outlier_method}{Method for outlier detection: "iqr" or "zscore"}
 
-\item{outlier_threshold}{Threshold for outlier detection (default: 3 for IQR, 3 for z-score)}
+\item{outlier_threshold}{Threshold for outlier detection (default: 3 for IQR,
+3 for z-score)}
 }
 \value{
 A list with detected issues
