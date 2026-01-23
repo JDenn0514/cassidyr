@@ -53,7 +53,7 @@ description text
 The `method` parameter controls how the data frame is described:
 
 - `"codebook"`: Uses
-  [`cassidy_describe_codebook()`](https://jdenn0514.github.io/cassidyr/reference/codebook_for_llm.md)
+  [`cassidy_describe_codebook()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_codebook.md)
   which provides a compact, markdown-formatted description optimized for
   LLM consumption, including variable labels, value labels, factor
   levels, and more

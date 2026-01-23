@@ -248,7 +248,7 @@ Describe data frames and detect issues
   : Describe a single variable in detail
 - [`cassidy_detect_issues()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_detect_issues.md)
   : Detect potential data quality issues
-- [`cassidy_describe_codebook()`](https://jdenn0514.github.io/cassidyr/reference/codebook_for_llm.md)
+- [`cassidy_describe_codebook()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_codebook.md)
   : Format data frame description for LLM context
 
 ## File Context
