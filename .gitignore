@@ -16,3 +16,7 @@
 # tests/testthat/app.cassidyai.com/
 # But DO commit the redacted ones for CI/CD
 docs
+inst/doc
+**/.quarto/
+/doc/
+/Meta/

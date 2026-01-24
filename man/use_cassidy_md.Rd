@@ -2,16 +2,20 @@
 % Please edit documentation in R/context-project.R
 \name{use_cassidy_md}
 \alias{use_cassidy_md}
-\title{Create a cassidy.md configuration file}
+\title{Create a CASSIDY.md configuration file}
 \usage{
 use_cassidy_md(
   path = ".",
+  location = c("root", "hidden", "local"),
   template = c("default", "package", "analysis", "survey"),
   open = interactive()
 )
 }
 \arguments{
 \item{path}{Directory where to create the file (default: current directory)}
+
+\item{location}{Where to create the file: "root" (CASSIDY.md),
+"hidden" (.cassidy/CASSIDY.md), or "local" (CASSIDY.local.md for .gitignore)}
 
 \item{template}{Template to use: "default", "package", "analysis", or "survey"}
 
@@ -21,36 +25,33 @@ use_cassidy_md(
 Invisibly returns TRUE if file was created, FALSE if cancelled
 }
 \description{
-Creates a project-specific configuration file that Cassidy can read
-for additional context about your project. This file will be automatically
-included when using \code{cassidy_context_project()}.
+Creates a project-specific configuration file that provides automatic context
+when you start \code{cassidy_app()}. Follows similar conventions to Claude Code's
+CLAUDE.md files, but uses CASSIDY.md naming.
 }
 \details{
-The cassidy.md file is a markdown file that provides context about your
-project to AI assistants. It can include information about:
+You can create project memory files in several locations:
 \itemize{
-\item Project goals and objectives
-\item Coding preferences and style guidelines
-\item Key files and their purposes
-\item Common tasks and workflows
-\item Domain-specific terminology
+\item \code{CASSIDY.md} - Project-level, checked into git (location = "root")
+\item \code{.cassidy/CASSIDY.md} - Project-level in hidden directory (location = "hidden")
+\item \code{CASSIDY.local.md} - Local-only, auto-gitignored (location = "local")
 }
 
-The file will be automatically read by \code{cassidy_context_project()}
-and included in the context sent to Cassidy.
+These files are automatically loaded when you start \code{cassidy_app()}.
+You can also create modular rules in \code{.cassidy/rules/*.md} files.
 }
 \examples{
 \dontrun{
-# Create a default cassidy.md file
+# Create CASSIDY.md in project root
 use_cassidy_md()
+
+# Create in .cassidy/ directory (keeps root clean)
+use_cassidy_md(location = "hidden")
+
+# Create local-only file (not shared with team)
+use_cassidy_md(location = "local")
 
 # Create a package development template
 use_cassidy_md(template = "package")
-
-# Create an analysis project template
-use_cassidy_md(template = "analysis")
-
-# Create for survey research
-use_cassidy_md(template = "survey")
 }
 }

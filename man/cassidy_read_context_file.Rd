@@ -2,32 +2,36 @@
 % Please edit documentation in R/context-project.R
 \name{cassidy_read_context_file}
 \alias{cassidy_read_context_file}
-\title{Read cassidy.md or similar context configuration files}
+\title{Read CASSIDY.md or similar context configuration files}
 \usage{
-cassidy_read_context_file(path = ".", file_name = NULL)
+cassidy_read_context_file(path = ".", recursive = FALSE, include_user = TRUE)
 }
 \arguments{
-\item{path}{Directory to search for config files (default: current directory)}
+\item{path}{Directory to search (default: current directory)}
 
-\item{file_name}{The specific config file name (e.g., "cassidy.md"). If NULL,
-the default, will search for "cassidy.md", ".cassidy.md", "CASSIDY.md",
-".cassidyrc", "ai-context.md", ".ai-context.md".}
+\item{recursive}{Whether to search parent directories (default: FALSE).
+When TRUE, searches up the directory tree like Claude Code does.
+For R packages, FALSE is recommended for predictability.}
+
+\item{include_user}{Whether to include user-level memory from ~/.cassidy/
+(default: TRUE)}
 }
 \value{
 Character string with config file contents, or NULL if none found
 }
 \description{
-Looks for project-specific configuration files that provide context
-about the project, coding preferences, and common tasks.
+Looks for project-specific configuration files. By default, only searches
+the current working directory and user-level location (~/.cassidy/).
 }
 \examples{
 \dontrun{
-# Read config file
+# Read project and user-level config (default, recommended)
 config <- cassidy_read_context_file()
 
-# Check if config exists
-if (!is.null(cassidy_read_context_file())) {
-  message("Config file found")
-}
+# Only search current directory (no user-level)
+config <- cassidy_read_context_file(include_user = FALSE)
+
+# Search parent directories (Claude Code style)
+config <- cassidy_read_context_file(recursive = TRUE)
 }
 }

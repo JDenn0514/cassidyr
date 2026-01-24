@@ -1,4 +1,4 @@
-#'Generate a Quarto document skeleton from an R script
+#' Generate a Quarto document skeleton from an R script
 #'
 #' @description
 #' Reads an R script and asks CassidyAI to create a Quarto document that

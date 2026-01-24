@@ -289,65 +289,85 @@ cassidy_context_git <- function(
 # Cassidy.md reader and helpers ------------------------------------------
 # ------------------------------------------------------------------------
 
-#' Read cassidy.md or similar context configuration files
+#' Read CASSIDY.md or similar context configuration files
 #'
-#' Looks for project-specific configuration files that provide context
-#' about the project, coding preferences, and common tasks.
+#' Looks for project-specific configuration files. By default, only searches
+#' the current working directory and user-level location (~/.cassidy/).
 #'
-#' @param path Directory to search for config files (default: current directory)
-#' @param file_name The specific config file name (e.g., "cassidy.md"). If NULL,
-#'   the default, will search for "cassidy.md", ".cassidy.md", "CASSIDY.md",
-#'   ".cassidyrc", "ai-context.md", ".ai-context.md".
+#' @param path Directory to search (default: current directory)
+#' @param recursive Whether to search parent directories (default: FALSE).
+#'   When TRUE, searches up the directory tree like Claude Code does.
+#'   For R packages, FALSE is recommended for predictability.
+#' @param include_user Whether to include user-level memory from ~/.cassidy/
+#'   (default: TRUE)
 #'
 #' @return Character string with config file contents, or NULL if none found
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Read config file
+#' # Read project and user-level config (default, recommended)
 #' config <- cassidy_read_context_file()
 #'
-#' # Check if config exists
-#' if (!is.null(cassidy_read_context_file())) {
-#'   message("Config file found")
-#' }
+#' # Only search current directory (no user-level)
+#' config <- cassidy_read_context_file(include_user = FALSE)
+#'
+#' # Search parent directories (Claude Code style)
+#' config <- cassidy_read_context_file(recursive = TRUE)
 #' }
 cassidy_read_context_file <- function(
   path = ".",
-  file_name = NULL
+  recursive = FALSE,
+  include_user = TRUE
 ) {
-  if (!is.null(file_name)) {
-    # Specific file requested
-    config_files <- file_name
-  } else {
-    # Look for config files in order of preference
-    config_files <- c(
-      "cassidy.md",
-      ".cassidy.md",
-      "CASSIDY.md",
-      ".cassidyrc",
-      "ai-context.md",
-      ".ai-context.md"
-    )
+  all_configs <- list()
+
+  # Normalize path
+  path <- normalizePath(path, mustWork = FALSE)
+
+  # 1. User-level memory first (lowest priority)
+  if (include_user) {
+    user_configs <- .read_user_configs()
+    if (length(user_configs) > 0) {
+      all_configs <- c(all_configs, user_configs)
+    }
   }
 
-  full_paths <- file.path(path, config_files)
-  found_files <- full_paths[file.exists(full_paths)]
+  # 2. Project-level memory
+  if (recursive) {
+    # Search up the directory tree (Claude Code behavior)
+    current_path <- path
+    root_path <- .get_root_path()
 
-  if (length(found_files) == 0) {
+    while (current_path != root_path) {
+      configs <- .read_configs_in_dir(current_path)
+      if (length(configs) > 0) {
+        all_configs <- c(all_configs, configs)
+      }
+
+      # Move up one directory
+      parent_path <- dirname(current_path)
+      if (parent_path == current_path) {
+        break
+      } # Reached root
+      current_path <- parent_path
+    }
+  } else {
+    # Only search current directory (default, recommended for R packages)
+    configs <- .read_configs_in_dir(path)
+    if (length(configs) > 0) {
+      all_configs <- configs
+    }
+  }
+
+  if (length(all_configs) == 0) {
     return(NULL)
   }
 
-  # Read all found config files
-  configs <- lapply(found_files, function(f) {
-    content <- readLines(f, warn = FALSE)
-    list(file = basename(f), content = paste(content, collapse = "\n"))
-  })
+  # Format all found configs
+  config_text <- "## Project Memory\n\n"
 
-  # Format for context
-  config_text <- "## Project Configuration\n\n"
-
-  for (cfg in configs) {
+  for (cfg in all_configs) {
     config_text <- paste0(
       config_text,
       "### From ",
@@ -361,58 +381,251 @@ cassidy_read_context_file <- function(
   config_text
 }
 
-#' Create a cassidy.md configuration file
+# Helper: Read user-level configs
+.read_user_configs <- function() {
+  configs <- list()
+
+  user_cassidy_dir <- path.expand("~/.cassidy")
+
+  if (!dir.exists(user_cassidy_dir)) {
+    return(configs)
+  }
+
+  # Check for user-level CASSIDY.md
+  user_file <- file.path(user_cassidy_dir, "CASSIDY.md")
+  if (file.exists(user_file)) {
+    content <- tryCatch(
+      {
+        lines <- readLines(user_file, warn = FALSE)
+        paste(lines, collapse = "\n")
+      },
+      error = function(e) NULL
+    )
+
+    if (!is.null(content) && nchar(content) > 0) {
+      configs[[length(configs) + 1]] <- list(
+        file = "~/.cassidy/CASSIDY.md",
+        content = content,
+        path = user_file
+      )
+    }
+  }
+
+  # Check for user-level rules
+  user_rules_dir <- file.path(user_cassidy_dir, "rules")
+  if (dir.exists(user_rules_dir)) {
+    rule_configs <- .read_rules_directory(
+      user_rules_dir,
+      prefix = "~/.cassidy/rules/"
+    )
+    if (length(rule_configs) > 0) {
+      configs <- c(configs, rule_configs)
+    }
+  }
+
+  configs
+}
+
+# Helper: Read all config files in a single directory
+.read_configs_in_dir <- function(dir_path) {
+  configs <- list()
+
+  # Files to look for (in order of precedence)
+  config_files <- c(
+    # Project-level
+    "CASSIDY.md",
+    "CASSIDY.local.md",
+    # Hidden .cassidy directory
+    ".cassidy/CASSIDY.md",
+    ".cassidy/CASSIDY.local.md",
+    # Legacy names (backwards compatibility)
+    "cassidy.md",
+    ".cassidy.md"
+  )
+
+  # Check each file
+  for (file in config_files) {
+    full_path <- file.path(dir_path, file)
+    if (file.exists(full_path)) {
+      content <- tryCatch(
+        {
+          lines <- readLines(full_path, warn = FALSE)
+          paste(lines, collapse = "\n")
+        },
+        error = function(e) NULL
+      )
+
+      if (!is.null(content) && nchar(content) > 0) {
+        # Store relative path for display
+        rel_path <- .make_relative_path(full_path, getwd())
+        configs[[length(configs) + 1]] <- list(
+          file = rel_path,
+          content = content,
+          path = full_path
+        )
+      }
+    }
+  }
+
+  # Also check for .cassidy/rules/ directory
+  rules_dir <- file.path(dir_path, ".cassidy", "rules")
+  if (dir.exists(rules_dir)) {
+    rule_configs <- .read_rules_directory(rules_dir)
+    if (length(rule_configs) > 0) {
+      configs <- c(configs, rule_configs)
+    }
+  }
+
+  configs
+}
+
+# Helper: Read all .md files from rules directory
+.read_rules_directory <- function(rules_dir, prefix = NULL) {
+  configs <- list()
+
+  # Find all .md files recursively
+  md_files <- list.files(
+    rules_dir,
+    pattern = "\\.md$",
+    full.names = TRUE,
+    recursive = TRUE
+  )
+
+  for (md_file in md_files) {
+    content <- tryCatch(
+      {
+        lines <- readLines(md_file, warn = FALSE)
+        paste(lines, collapse = "\n")
+      },
+      error = function(e) NULL
+    )
+
+    if (!is.null(content) && nchar(content) > 0) {
+      # Store relative path for display
+      if (!is.null(prefix)) {
+        # For user-level rules, use the prefix
+        rel_name <- basename(md_file)
+        if (dirname(md_file) != rules_dir) {
+          # Include subdirectory structure
+          rel_name <- sub(paste0("^", rules_dir, "/"), "", md_file)
+        }
+        rel_path <- paste0(prefix, rel_name)
+      } else {
+        rel_path <- .make_relative_path(md_file, getwd())
+      }
+
+      configs[[length(configs) + 1]] <- list(
+        file = rel_path,
+        content = content,
+        path = md_file
+      )
+    }
+  }
+
+  configs
+}
+
+# Helper: Get root path (OS-specific)
+.get_root_path <- function() {
+  if (.Platform$OS.type == "windows") {
+    # On Windows, get the root of current drive
+    drive <- substr(getwd(), 1, 2)
+    paste0(drive, "/")
+  } else {
+    # On Unix-like systems
+    "/"
+  }
+}
+
+# Helper: Make a path relative to a base directory
+.make_relative_path <- function(path, base) {
+  # Normalize both paths
+  path <- normalizePath(path, mustWork = FALSE)
+  base <- normalizePath(base, mustWork = FALSE)
+
+  # Try to make relative
+  if (startsWith(path, base)) {
+    rel <- substring(path, nchar(base) + 2) # +2 to skip trailing /
+    if (nchar(rel) > 0) return(rel)
+  }
+
+  # Fall back to basename if can't make relative
+  basename(path)
+}
+
+
+#' Create a CASSIDY.md configuration file
 #'
-#' Creates a project-specific configuration file that Cassidy can read
-#' for additional context about your project. This file will be automatically
-#' included when using \code{cassidy_context_project()}.
+#' Creates a project-specific configuration file that provides automatic context
+#' when you start \code{cassidy_app()}. Follows similar conventions to Claude Code's
+#' CLAUDE.md files, but uses CASSIDY.md naming.
 #'
 #' @param path Directory where to create the file (default: current directory)
+#' @param location Where to create the file: "root" (CASSIDY.md),
+#'   "hidden" (.cassidy/CASSIDY.md), or "local" (CASSIDY.local.md for .gitignore)
 #' @param template Template to use: "default", "package", "analysis", or "survey"
 #' @param open Whether to open the file for editing (default: TRUE in interactive sessions)
 #'
 #' @details
-#' The cassidy.md file is a markdown file that provides context about your
-#' project to AI assistants. It can include information about:
+#' You can create project memory files in several locations:
 #' \itemize{
-#'   \item Project goals and objectives
-#'   \item Coding preferences and style guidelines
-#'   \item Key files and their purposes
-#'   \item Common tasks and workflows
-#'   \item Domain-specific terminology
+#'   \item \code{CASSIDY.md} - Project-level, checked into git (location = "root")
+#'   \item \code{.cassidy/CASSIDY.md} - Project-level in hidden directory (location = "hidden")
+#'   \item \code{CASSIDY.local.md} - Local-only, auto-gitignored (location = "local")
 #' }
 #'
-#' The file will be automatically read by \code{cassidy_context_project()}
-#' and included in the context sent to Cassidy.
+#' These files are automatically loaded when you start \code{cassidy_app()}.
+#' You can also create modular rules in \code{.cassidy/rules/*.md} files.
 #'
 #' @return Invisibly returns TRUE if file was created, FALSE if cancelled
 #'
 #' @export
 #' @examples
 #' \dontrun{
-#' # Create a default cassidy.md file
+#' # Create CASSIDY.md in project root
 #' use_cassidy_md()
+#'
+#' # Create in .cassidy/ directory (keeps root clean)
+#' use_cassidy_md(location = "hidden")
+#'
+#' # Create local-only file (not shared with team)
+#' use_cassidy_md(location = "local")
 #'
 #' # Create a package development template
 #' use_cassidy_md(template = "package")
-#'
-#' # Create an analysis project template
-#' use_cassidy_md(template = "analysis")
-#'
-#' # Create for survey research
-#' use_cassidy_md(template = "survey")
 #' }
 use_cassidy_md <- function(
   path = ".",
+  location = c("root", "hidden", "local"),
   template = c("default", "package", "analysis", "survey"),
   open = interactive()
 ) {
+  location <- match.arg(location)
   template <- match.arg(template)
 
-  file_path <- file.path(path, "cassidy.md")
+  # Determine file path based on location
+  file_name <- switch(
+    location,
+    root = "CASSIDY.md",
+    hidden = ".cassidy/CASSIDY.md",
+    local = "CASSIDY.local.md"
+  )
+
+  file_path <- file.path(path, file_name)
+
+  # Create .cassidy directory if needed
+  if (location == "hidden") {
+    cassidy_dir <- file.path(path, ".cassidy")
+    if (!dir.exists(cassidy_dir)) {
+      dir.create(cassidy_dir, recursive = TRUE)
+      cli::cli_alert_success("Created {.path .cassidy/} directory")
+    }
+  }
 
   if (file.exists(file_path)) {
-    cli::cli_alert_warning("cassidy.md already exists at {.path {file_path}}")
+    cli::cli_alert_warning(
+      "{.file {file_name}} already exists at {.path {dirname(file_path)}}"
+    )
     if (!interactive() || !.ask_overwrite()) {
       cli::cli_alert_info("Cancelled. No changes made.")
       return(invisible(FALSE))
@@ -428,13 +641,18 @@ use_cassidy_md <- function(
   )
 
   writeLines(content, file_path)
-  cli::cli_alert_success("Created {.path cassidy.md}")
+  cli::cli_alert_success("Created {.path {file_name}}")
   cli::cli_alert_info(
     "Edit this file to customize AI assistance for your project"
   )
   cli::cli_alert_info(
-    "This file will be automatically included in project context"
+    "This file will be automatically loaded when you start {.fn cassidy_app}"
   )
+
+  # Add CASSIDY.local.md to .gitignore if creating local file
+  if (location == "local") {
+    .add_to_gitignore(path, "CASSIDY.local.md")
+  }
 
   # Try to open in editor (IDE-agnostic)
   if (open) {
@@ -442,6 +660,28 @@ use_cassidy_md <- function(
   }
 
   invisible(TRUE)
+}
+
+# Helper: Add entry to .gitignore
+.add_to_gitignore <- function(path, entry) {
+  gitignore_path <- file.path(path, ".gitignore")
+
+  # Read existing .gitignore
+  if (file.exists(gitignore_path)) {
+    lines <- readLines(gitignore_path, warn = FALSE)
+    # Check if entry already exists
+    if (any(grepl(paste0("^", entry, "$"), lines))) {
+      return(invisible(NULL)) # Already in .gitignore
+    }
+    # Append to existing
+    lines <- c(lines, "", entry)
+  } else {
+    # Create new .gitignore
+    lines <- entry
+  }
+
+  writeLines(lines, gitignore_path)
+  cli::cli_alert_success("Added {.file {entry}} to {.path .gitignore}")
 }
 
 # Template functions (keeping your originals)
@@ -474,6 +714,7 @@ use_cassidy_md <- function(
     "<!-- Any other context that would be helpful -->"
   )
 }
+
 
 .cassidy_md_package <- function() {
   c(

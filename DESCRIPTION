@@ -29,8 +29,12 @@ Imports:
     usethis,
     vctrs
 Suggests:
+    knitr,
+    quarto,
+    rmarkdown,
     testthat (>= 3.0.0),
     withr
 Config/testthat/edition: 3
 URL: https://github.com/JDenn0514/cassidyr, https://jdenn0514.github.io/cassidyr/
 BugReports: https://github.com/JDenn0514/cassidyr/issues
+VignetteBuilder: quarto, knitr
