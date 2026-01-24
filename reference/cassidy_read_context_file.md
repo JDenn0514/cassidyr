@@ -1,25 +1,30 @@
-# Read cassidy.md or similar context configuration files
+# Read CASSIDY.md or similar context configuration files
 
-Looks for project-specific configuration files that provide context
-about the project, coding preferences, and common tasks.
+Looks for project-specific configuration files. By default, only
+searches the current working directory and user-level location
+(~/.cassidy/).
 
 ## Usage
 
 ``` r
-cassidy_read_context_file(path = ".", file_name = NULL)
+cassidy_read_context_file(path = ".", recursive = FALSE, include_user = TRUE)
 ```
 
 ## Arguments
 
 - path:
 
-  Directory to search for config files (default: current directory)
+  Directory to search (default: current directory)
 
-- file_name:
+- recursive:
 
-  The specific config file name (e.g., "cassidy.md"). If NULL, the
-  default, will search for "cassidy.md", ".cassidy.md", "CASSIDY.md",
-  ".cassidyrc", "ai-context.md", ".ai-context.md".
+  Whether to search parent directories (default: FALSE). When TRUE,
+  searches up the directory tree like Claude Code does. For R packages,
+  FALSE is recommended for predictability.
+
+- include_user:
+
+  Whether to include user-level memory from ~/.cassidy/ (default: TRUE)
 
 ## Value
 
@@ -29,12 +34,13 @@ Character string with config file contents, or NULL if none found
 
 ``` r
 if (FALSE) { # \dontrun{
-# Read config file
+# Read project and user-level config (default, recommended)
 config <- cassidy_read_context_file()
 
-# Check if config exists
-if (!is.null(cassidy_read_context_file())) {
-  message("Config file found")
-}
+# Only search current directory (no user-level)
+config <- cassidy_read_context_file(include_user = FALSE)
+
+# Search parent directories (Claude Code style)
+config <- cassidy_read_context_file(recursive = TRUE)
 } # }
 ```

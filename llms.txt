@@ -260,7 +260,7 @@ Read and summarize files
 - [`cassidy_file_summary()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_file_summary.md)
   : Summarize Project Files
 - [`cassidy_read_context_file()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_read_context_file.md)
-  : Read cassidy.md or similar context configuration files
+  : Read CASSIDY.md or similar context configuration files
 
 ## Environment Info
 
@@ -309,5 +309,11 @@ Transform and document R scripts
 Setup and configuration
 
 - [`use_cassidy_md()`](https://jdenn0514.github.io/cassidyr/reference/use_cassidy_md.md)
-  : Create a cassidy.md configuration file
+  : Create a CASSIDY.md configuration file
 
+# Articles
+
+### All vignettes
+
+- [Managing Project Memory in
+  cassidyr](https://jdenn0514.github.io/cassidyr/articles/project-memory.md):
