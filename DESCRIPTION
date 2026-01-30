@@ -20,6 +20,7 @@ Imports:
     devtools,
     gert,
     httr2,
+    markdown,
     rlang,
     rstudioapi,
     S7,
