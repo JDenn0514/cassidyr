@@ -12,7 +12,9 @@
 <link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Managing Project Memory in cassidyr">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="project-memory_files/libs/quarto-html/popper.min.js"></script><script src="project-memory_files/libs/quarto-html/tippy.umd.min.js"></script><link href="project-memory_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="project-memory_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Managing Project Memory in cassidyr">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -35,7 +37,9 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/project-memory.html">Managing Project Memory in cassidyr</a></li>
+<li><a class="dropdown-item" href="../articles/context-system.html">Understanding the Context System</a></li>
+    <li><a class="dropdown-item" href="../articles/getting_started.html">Getting Started with cassidyr</a></li>
+    <li><a class="dropdown-item" href="../articles/project-memory.html">Managing Project Memory in cassidyr</a></li>
   </ul>
 </li>
       </ul>
@@ -46,46 +50,38 @@
 
 
   </div>
-</nav><div class="container template-article">
-
-
-
-
+</nav><div class="container template-quarto">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Managing Project Memory in cassidyr</h1>
-            
-      
-      <small class="dont-index">Source: <a href="https://github.com/JDenn0514/cassidyr/blob/master/vignettes/project-memory.Rmd" class="external-link"><code>vignettes/project-memory.Rmd</code></a></small>
-      <div class="d-none name"><code>project-memory.Rmd</code></div>
+
+
+
+
+      <small class="dont-index">Source: <a href="https://github.com/JDenn0514/cassidyr/blob/master/vignettes/project-memory.qmd" class="external-link"><code>vignettes/project-memory.qmd</code></a></small>
+      <div class="d-none name"><code></code></div>
     </div>
 
-    
-    
-<div class="section level2">
-<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+
+
+
+
+
+    <section class="section level2"><h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>This vignette explains how to manage <em>cassidyr</em>’s project
-memory across sessions using different memory locations and best
-practices.</p>
-<p>The <em>cassidyr</em> package can remember your preferences, project
-context, and coding guidelines across chat sessions. When you launch
-<code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>, it automatically loads project memory files
-to provide relevant context to the AI assistant.</p>
-</div>
-<div class="section level2">
-<h2 id="memory-types-and-locations">Memory Types and Locations<a class="anchor" aria-label="anchor" href="#memory-types-and-locations"></a>
+<p>This vignette explains how to manage <em>cassidyr</em>’s project memory across sessions using different memory locations and best practices.</p>
+<p>The <em>cassidyr</em> package can remember your preferences, project context, and coding guidelines across chat sessions. When you launch <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>, it automatically loads project memory files to provide relevant context to the AI assistant.</p>
+</section><section class="section level2"><h2 id="memory-types-and-locations">Memory Types and Locations<a class="anchor" aria-label="anchor" href="#memory-types-and-locations"></a>
 </h2>
-<p><em>cassidyr</em> offers multiple memory locations in a hierarchical
-structure, each serving a different purpose:</p>
-<table class="table">
+<p><em>cassidyr</em> offers multiple memory locations in a hierarchical structure, each serving a different purpose:</p>
+<table class="table caption-top">
 <colgroup>
-<col width="11%">
-<col width="20%">
-<col width="21%">
-<col width="30%">
-<col width="17%">
+<col style="width: 11%">
+<col style="width: 20%">
+<col style="width: 21%">
+<col style="width: 30%">
+<col style="width: 17%">
 </colgroup>
 <thead><tr class="header">
 <th>Memory Type</th>
@@ -101,8 +97,7 @@ structure, each serving a different purpose:</p>
 <code>./CASSIDY.md</code> or <code>./.cassidy/CASSIDY.md</code>
 </td>
 <td>Team-shared instructions for the project</td>
-<td>Project architecture, coding standards, workflows, analysis
-plan</td>
+<td>Project architecture, coding standards, workflows, analysis plan</td>
 <td>Team members via source control</td>
 </tr>
 <tr class="even">
@@ -128,68 +123,49 @@ plan</td>
 </tr>
 </tbody>
 </table>
-<p>All memory files are automatically loaded when you launch
-<code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>. Files are loaded in order from user-level to
-project-level, with project-specific settings taking precedence.</p>
+<p>All memory files are automatically loaded when you launch <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>. Files are loaded in order from user-level to project-level, with project-specific settings taking precedence.</p>
 <blockquote>
-<p><strong>Note:</strong> <code>CASSIDY.local.md</code> files are
-automatically added to <code>.gitignore</code>, making them ideal for
-private project-specific preferences that should not be checked into
-version control.</p>
+<p><strong>Note:</strong> <code>CASSIDY.local.md</code> files are automatically added to <code>.gitignore</code>, making them ideal for private project-specific preferences that should not be checked into version control.</p>
 </blockquote>
-</div>
-<div class="section level2">
-<h2 id="how-cassidyr-looks-up-memory-files">How cassidyr Looks Up Memory Files<a class="anchor" aria-label="anchor" href="#how-cassidyr-looks-up-memory-files"></a>
+</section><section class="section level2"><h2 id="how-cassidyr-looks-up-memory-files">How cassidyr Looks Up Memory Files<a class="anchor" aria-label="anchor" href="#how-cassidyr-looks-up-memory-files"></a>
 </h2>
 <p>By default, cassidyr searches for memory files in two locations:</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>
-<strong>User-level memory</strong>:
-<code>~/.cassidy/CASSIDY.md</code> and
-<code>~/.cassidy/rules/*.md</code>
+<strong>User-level memory</strong>: <code>~/.cassidy/CASSIDY.md</code> and <code>~/.cassidy/rules/*.md</code>
 <ul>
 <li>Your personal preferences that apply to all R projects</li>
 <li>Loaded first (lowest priority)</li>
 </ul>
 </li>
 <li>
-<strong>Project-level memory</strong>: Files in your current working
-directory
+<strong>Project-level memory</strong>: Files in your current working directory
 <ul>
 <li>
 <code>./CASSIDY.md</code> or <code>./.cassidy/CASSIDY.md</code>
 </li>
 <li>
-<code>./CASSIDY.local.md</code> (gitignored, personal project
-notes)</li>
+<code>./CASSIDY.local.md</code> (gitignored, personal project notes)</li>
 <li>
 <code>./.cassidy/rules/*.md</code> (modular rules)</li>
 <li>Loaded second (highest priority, overrides user-level)</li>
 </ul>
 </li>
 </ol>
-<p>This design keeps memory files discoverable and predictable - anyone
-who clones your R package will see exactly what context is being
-used.</p>
-<div class="section level4">
-<h4 id="optional-recursive-search">Optional: Recursive Search<a class="anchor" aria-label="anchor" href="#optional-recursive-search"></a>
+<p>This design keeps memory files discoverable and predictable - anyone who clones your R package will see exactly what context is being used.</p>
+<section class="level3"><h4 id="optional-recursive-search">Optional: Recursive Search<a class="anchor" aria-label="anchor" href="#optional-recursive-search"></a>
 </h4>
-<p>If you’re working in a large monorepo or nested project structure,
-you can enable upward recursive search:</p>
+<p>If you’re working in a large monorepo or nested project structure, you can enable upward recursive search:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Search parent directories (like Claude Code)</span></span>
 <span><span class="fu"><a href="../reference/cassidy_app.html">cassidy_app</a></span><span class="op">(</span>recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="setting-up-project-memory">Setting Up Project Memory<a class="anchor" aria-label="anchor" href="#setting-up-project-memory"></a>
+</section></section><section class="section level2"><h2 id="setting-up-project-memory">Setting Up Project Memory<a class="anchor" aria-label="anchor" href="#setting-up-project-memory"></a>
 </h2>
-<div class="section level3">
-<h3 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+<section class="level2"><h3 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h3>
-<p>The easiest way to create a project memory file is with the
-<code><a href="../reference/use_cassidy_md.html">use_cassidy_md()</a></code> function:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<p>The easiest way to create a project memory file is with the <code><a href="../reference/use_cassidy_md.html">use_cassidy_md()</a></code> function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JDenn0514/cassidyr" class="external-link">cassidyr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create CASSIDY.md in project root</span></span>
@@ -201,11 +177,11 @@ you can enable upward recursive search:</p>
 <span><span class="co"># Create local-only file (not shared with team)</span></span>
 <span><span class="fu"><a href="../reference/use_cassidy_md.html">use_cassidy_md</a></span><span class="op">(</span>location <span class="op">=</span> <span class="st">"local"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="choose-a-template">Choose a Template<a class="anchor" aria-label="anchor" href="#choose-a-template"></a>
+</section><section class="level2"><h3 id="choose-a-template">Choose a Template<a class="anchor" aria-label="anchor" href="#choose-a-template"></a>
 </h3>
 <p><em>cassidyr</em> provides several templates to get you started:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Default template - general purpose</span></span>
 <span><span class="fu"><a href="../reference/use_cassidy_md.html">use_cassidy_md</a></span><span class="op">(</span>template <span class="op">=</span> <span class="st">"default"</span><span class="op">)</span></span>
 <span></span>
@@ -218,73 +194,63 @@ you can enable upward recursive search:</p>
 <span><span class="co"># Survey research template</span></span>
 <span><span class="fu"><a href="../reference/use_cassidy_md.html">use_cassidy_md</a></span><span class="op">(</span>template <span class="op">=</span> <span class="st">"survey"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="manual-creation">Manual Creation<a class="anchor" aria-label="anchor" href="#manual-creation"></a>
+</section><section class="level2"><h3 id="manual-creation">Manual Creation<a class="anchor" aria-label="anchor" href="#manual-creation"></a>
 </h3>
-<p>You can also manually create a <code>CASSIDY.md</code> file. Here is
-a basic example:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu"># Project Context for Cassidy AI</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">## Project Overview</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>This is an R package for analyzing survey data with a focus on factor analysis</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>and scale reliability.</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">## Key Files</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="ss">- </span><span class="in">`R/factor_analysis.R`</span> - Main EFA/CFA functions</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="ss">- </span><span class="in">`R/reliability.R`</span> - Cronbach's alpha and omega calculations</span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="ss">- </span><span class="in">`data/survey_data.rda`</span> - Example dataset</span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="fu">## Coding Preferences</span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="ss">- </span>Style: tidyverse with native pipe <span class="in">`|&gt;`</span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="ss">- </span>Prefer <span class="in">`dplyr`</span> over base R for data manipulation</span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`ggplot2`</span> for all visualizations</span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="ss">- </span>Maximum line length: 80 characters</span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="ss">- </span>Always include roxygen2 documentation</span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a></span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="fu">## Common Tasks</span></span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="ss">- </span>Running factor analyses and interpreting results</span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="ss">- </span>Creating publication-quality tables</span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="ss">- </span>Writing methods sections in APA format</span>
-<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="ss">- </span>Generating codebooks</span>
-<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a></span>
-<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="fu">## Packages to Use</span></span>
-<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="ss">- </span><span class="in">`psych`</span> for factor analysis</span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="ss">- </span><span class="in">`lavaan`</span> for CFA</span>
-<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="ss">- </span><span class="in">`gt`</span> for tables</span>
-<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="ss">- </span><span class="in">`ggplot2`</span> for visualization</span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="file-structure-examples">File Structure Examples<a class="anchor" aria-label="anchor" href="#file-structure-examples"></a>
+<p>You can also manually create a <code>CASSIDY.md</code> file. Here is a basic example:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Project Context for Cassidy AI</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">## Project Overview</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>This is an R package for analyzing survey data with a focus on factor analysis</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>and scale reliability.</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Key Files</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`R/factor_analysis.R`</span> - Main EFA/CFA functions</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`R/reliability.R`</span> - Cronbach's alpha and omega calculations</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`data/survey_data.rda`</span> - Example dataset</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="fu">## Coding Preferences</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Style: tidyverse with native pipe <span class="in">`|&gt;`</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Prefer <span class="in">`dplyr`</span> over base R for data manipulation</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`ggplot2`</span> for all visualizations</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Maximum line length: 80 characters</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Always include roxygen2 documentation</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="fu">## Common Tasks</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Running factor analyses and interpreting results</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Creating publication-quality tables</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Writing methods sections in APA format</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Generating codebooks</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="fu">## Packages to Use</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`psych`</span> for factor analysis</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`lavaan`</span> for CFA</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`gt`</span> for tables</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`ggplot2`</span> for visualization</span></code></pre></div>
+</section></section><section class="section level2"><h2 id="file-structure-examples">File Structure Examples<a class="anchor" aria-label="anchor" href="#file-structure-examples"></a>
 </h2>
-<div class="section level3">
-<h3 id="basic-project">Basic Project<a class="anchor" aria-label="anchor" href="#basic-project"></a>
+<section class="level2"><h3 id="basic-project">Basic Project<a class="anchor" aria-label="anchor" href="#basic-project"></a>
 </h3>
 <p>For a simple analysis project:</p>
-<pre class="text"><code>my-analysis/
+<pre><code>my-analysis/
 ├── CASSIDY.md              # Project memory
 ├── data/
 ├── R/
 │   └── analysis.R
 └── output/</code></pre>
-</div>
-<div class="section level3">
-<h3 id="using-the--cassidy-directory">Using the <code>.cassidy</code> Directory<a class="anchor" aria-label="anchor" href="#using-the--cassidy-directory"></a>
+</section><section class="level2"><h3 id="using-the--cassidy-directory">Using the <code>.cassidy</code> Directory<a class="anchor" aria-label="anchor" href="#using-the--cassidy-directory"></a>
 </h3>
 <p>For keeping the root directory clean:</p>
-<pre class="text"><code>my-project/
+<pre><code>my-project/
 ├── .cassidy/
 │   ├── CASSIDY.md          # Main project instructions
 │   └── CASSIDY.local.md    # Your personal notes (gitignored)
 ├── R/
 ├── tests/
 └── vignettes/</code></pre>
-</div>
-<div class="section level3">
-<h3 id="large-project-with-rules">Large Project with Rules<a class="anchor" aria-label="anchor" href="#large-project-with-rules"></a>
+</section><section class="level2"><h3 id="large-project-with-rules">Large Project with Rules<a class="anchor" aria-label="anchor" href="#large-project-with-rules"></a>
 </h3>
 <p>For complex projects with multiple areas:</p>
-<pre class="text"><code>large-project/
+<pre><code>large-project/
 ├── .cassidy/
 │   ├── CASSIDY.md          # Main project instructions
 │   └── rules/
@@ -298,35 +264,25 @@ a basic example:</p>
 ├── R/
 ├── data-raw/
 └── analysis/</code></pre>
-</div>
-</div>
-<div class="section level2">
-<h2 id="modular-rules-with--cassidyrules">Modular Rules with <code>.cassidy/rules/</code><a class="anchor" aria-label="anchor" href="#modular-rules-with--cassidyrules"></a>
+</section></section><section class="section level2"><h2 id="modular-rules-with--cassidyrules">Modular Rules with <code>.cassidy/rules/</code>
+<a class="anchor" aria-label="anchor" href="#modular-rules-with--cassidyrules"></a>
 </h2>
-<p>For larger projects, organize instructions into multiple files using
-the <code>.cassidy/rules/</code> directory. This allows teams to
-maintain focused, well-organized rule files instead of one large
-<code>CASSIDY.md</code>.</p>
-<div class="section level3">
-<h3 id="basic-structure">Basic Structure<a class="anchor" aria-label="anchor" href="#basic-structure"></a>
+<p>For larger projects, organize instructions into multiple files using the <code>.cassidy/rules/</code> directory. This allows teams to maintain focused, well-organized rule files instead of one large <code>CASSIDY.md</code>.</p>
+<section class="level2"><h3 id="basic-structure">Basic Structure<a class="anchor" aria-label="anchor" href="#basic-structure"></a>
 </h3>
-<p>Place markdown files in your project’s <code>.cassidy/rules/</code>
-directory:</p>
-<pre class="text"><code>your-project/
+<p>Place markdown files in your project’s <code>.cassidy/rules/</code> directory:</p>
+<pre><code>your-project/
 ├── .cassidy/
 │   ├── CASSIDY.md          # Main project instructions
 │   └── rules/
 │       ├── r-style.md      # R coding style
 │       ├── testing.md      # Testing conventions
 │       └── visualization.md # Plotting preferences</code></pre>
-<p>All <code>.md</code> files in <code>.cassidy/rules/</code> are
-automatically loaded as project memory.</p>
-</div>
-<div class="section level3">
-<h3 id="organizing-with-subdirectories">Organizing with Subdirectories<a class="anchor" aria-label="anchor" href="#organizing-with-subdirectories"></a>
+<p>All <code>.md</code> files in <code>.cassidy/rules/</code> are automatically loaded as project memory.</p>
+</section><section class="level2"><h3 id="organizing-with-subdirectories">Organizing with Subdirectories<a class="anchor" aria-label="anchor" href="#organizing-with-subdirectories"></a>
 </h3>
 <p>Rules can be organized into subdirectories for better structure:</p>
-<pre class="text"><code>.cassidy/rules/
+<pre><code>.cassidy/rules/
 ├── r-code/
 │   ├── style.md
 │   ├── functions.md
@@ -340,71 +296,60 @@ automatically loaded as project memory.</p>
 │   └── validation.md
 └── general.md</code></pre>
 <p>All <code>.md</code> files are discovered recursively.</p>
-</div>
-<div class="section level3">
-<h3 id="sharing-rules-across-projects">Sharing Rules Across Projects<a class="anchor" aria-label="anchor" href="#sharing-rules-across-projects"></a>
+</section><section class="level2"><h3 id="sharing-rules-across-projects">Sharing Rules Across Projects<a class="anchor" aria-label="anchor" href="#sharing-rules-across-projects"></a>
 </h3>
-<p>You can use symbolic links to share common rules across multiple
-projects:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Symlink a shared rules directory (Unix/Mac)</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">ln</span> <span class="at">-s</span> ~/my-r-standards .cassidy/rules/shared</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co"># Symlink individual rule files</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="fu">ln</span> <span class="at">-s</span> ~/company-standards/r-style.md .cassidy/rules/r-style.md</span></code></pre></div>
-<p>On Windows, you can use junction points or directory symbolic
-links.</p>
+<p>You can use symbolic links to share common rules across multiple projects:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Symlink a shared rules directory (Unix/Mac)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ln</span> <span class="at">-s</span> ~/my-r-standards .cassidy/rules/shared</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Symlink individual rule files</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ln</span> <span class="at">-s</span> ~/company-standards/r-style.md .cassidy/rules/r-style.md</span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="example-rule-files">Example Rule Files<a class="anchor" aria-label="anchor" href="#example-rule-files"></a>
+<p>On Windows, you can use junction points or directory symbolic links.</p>
+</section></section><section class="section level2"><h2 id="example-rule-files">Example Rule Files<a class="anchor" aria-label="anchor" href="#example-rule-files"></a>
 </h2>
-<div class="section level3">
-<h3 id="cassidyrulesr-style-md">
+<section class="level2"><h3 id="cassidyrulesr-style-md">
 <code>.cassidy/rules/r-style.md</code><a class="anchor" aria-label="anchor" href="#cassidyrulesr-style-md"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu"># R Coding Style Guidelines</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a></span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">## Function Naming</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`snake_case`</span> for all function names</span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="ss">- </span>Prefix exported functions with package name (e.g., <span class="in">`mypackage_analyze()`</span>)</span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`.`</span> prefix for internal helpers</span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="fu">## Documentation</span></span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="ss">- </span>All exported functions must have complete roxygen2 documentation</span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="ss">- </span>Include <span class="in">`@examples`</span> with realistic use cases</span>
-<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="ss">- </span>Use markdown formatting (<span class="in">`@md`</span> in DESCRIPTION)</span>
-<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a></span>
-<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="fu">## Testing</span></span>
-<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`testthat 3e`</span> for all tests</span>
-<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="ss">- </span>Test names should follow: <span class="in">`test_that("function does X when Y")`</span></span>
-<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="ss">- </span>Aim for &gt;80% code coverage</span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="cassidyrulesvisualization-md">
+<div class="sourceCode" id="cb11"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># R Coding Style Guidelines</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">## Function Naming</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`snake_case`</span> for all function names</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Prefix exported functions with package name (e.g., <span class="in">`mypackage_analyze()`</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`.`</span> prefix for internal helpers</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="fu">## Documentation</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>All exported functions must have complete roxygen2 documentation</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Include <span class="in">`@examples`</span> with realistic use cases</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use markdown formatting (<span class="in">`@md`</span> in DESCRIPTION)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="fu">## Testing</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`testthat 3e`</span> for all tests</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Test names should follow: <span class="in">`test_that("function does X when Y")`</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Aim for &gt;80% code coverage</span></code></pre></div>
+</section><section class="level2"><h3 id="cassidyrulesvisualization-md">
 <code>.cassidy/rules/visualization.md</code><a class="anchor" aria-label="anchor" href="#cassidyrulesvisualization-md"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu"># Data Visualization Preferences</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="fu">## ggplot2 Standards</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="ss">- </span>Always use <span class="in">`theme_minimal()`</span> as base</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="ss">- </span>Use viridis color scales for continuous variables</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="ss">- </span>Include informative titles and axis labels</span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="ss">- </span>Save plots at 300 DPI for publications</span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a></span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="fu">## Default Settings</span></span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="ss">- </span>Figure width: 8 inches</span>
-<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="ss">- </span>Figure height: 6 inches</span>
-<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="ss">- </span>Font size: 12pt for body, 14pt for titles</span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="user-level-memory">User-Level Memory<a class="anchor" aria-label="anchor" href="#user-level-memory"></a>
+<div class="sourceCode" id="cb12"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Data Visualization Preferences</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">## ggplot2 Standards</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Always use <span class="in">`theme_minimal()`</span> as base</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use viridis color scales for continuous variables</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Include informative titles and axis labels</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Save plots at 300 DPI for publications</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">## Default Settings</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Figure width: 8 inches</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Figure height: 6 inches</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Font size: 12pt for body, 14pt for titles</span></code></pre></div>
+</section></section><section class="section level2"><h2 id="user-level-memory">User-Level Memory<a class="anchor" aria-label="anchor" href="#user-level-memory"></a>
 </h2>
-<p>Create personal preferences that apply to all your projects in
-<code>~/.cassidy/CASSIDY.md</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>You can also create a user-level memory file that applies to all your R projects:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create user-level memory directory</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"~/.cassidy"</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"~/.cassidy"</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create your personal CASSIDY.md</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"# My Personal R Preferences</span></span>
@@ -428,12 +373,11 @@ links.</p>
 <span>    file <span class="op">=</span> <span class="st">"~/.cassidy/CASSIDY.md"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="automatic-context-loading">Automatic Context Loading<a class="anchor" aria-label="anchor" href="#automatic-context-loading"></a>
+</section><section class="section level2"><h2 id="automatic-context-loading">Automatic Context Loading<a class="anchor" aria-label="anchor" href="#automatic-context-loading"></a>
 </h2>
-<p>When you start <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>, all memory files are
-automatically loaded:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>When you start <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>, all memory files are automatically loaded:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JDenn0514/cassidyr" class="external-link">cassidyr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Start app - automatically loads all CASSIDY.md files</span></span>
@@ -444,21 +388,18 @@ automatically loaded:</p>
 <span></span>
 <span><span class="co"># Start with comprehensive context</span></span>
 <span><span class="fu"><a href="../reference/cassidy_app.html">cassidy_app</a></span><span class="op">(</span>new_chat <span class="op">=</span> <span class="cn">TRUE</span>, context_level <span class="op">=</span> <span class="st">"comprehensive"</span><span class="op">)</span></span></code></pre></div>
+</div>
 <p>The app will:</p>
 <ul>
-<li>Search for and load all <code>CASSIDY.md</code> files up the
-directory tree.</li>
+<li>Search for and load all <code>CASSIDY.md</code> files up the directory tree.</li>
 <li>Load all files from <code>.cassidy/rules/</code> directories.</li>
-<li>Combine them with project context (Git status, file structure,
-etc.).</li>
+<li>Combine them with project context (Git status, file structure, etc.).</li>
 <li>Send everything to the AI assistant.</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="reading-memory-files-programmatically">Reading Memory Files Programmatically<a class="anchor" aria-label="anchor" href="#reading-memory-files-programmatically"></a>
+</ul></section><section class="section level2"><h2 id="reading-memory-files-programmatically">Reading Memory Files Programmatically<a class="anchor" aria-label="anchor" href="#reading-memory-files-programmatically"></a>
 </h2>
 <p>You can also read memory files directly:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Read all memory files recursively</span></span>
 <span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cassidy_read_context_file.html">cassidy_read_context_file</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -470,91 +411,67 @@ etc.).</li>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">config</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="memory-best-practices">Memory Best Practices<a class="anchor" aria-label="anchor" href="#memory-best-practices"></a>
+</section><section class="section level2"><h2 id="memory-best-practices">Memory Best Practices<a class="anchor" aria-label="anchor" href="#memory-best-practices"></a>
 </h2>
-<div class="section level3">
-<h3 id="be-specific">Be Specific<a class="anchor" aria-label="anchor" href="#be-specific"></a>
+<section class="level2"><h3 id="be-specific">Be Specific<a class="anchor" aria-label="anchor" href="#be-specific"></a>
 </h3>
-<p><strong>Good:</strong> Use 2-space indentation for R code and always
-include spaces around operators.</p>
+<p><strong>Good:</strong> Use 2-space indentation for R code and always include spaces around operators.</p>
 <p><strong>Not as good:</strong> Format code properly.</p>
-</div>
-<div class="section level3">
-<h3 id="use-structure-to-organize">Use Structure to Organize<a class="anchor" aria-label="anchor" href="#use-structure-to-organize"></a>
+</section><section class="level2"><h3 id="use-structure-to-organize">Use Structure to Organize<a class="anchor" aria-label="anchor" href="#use-structure-to-organize"></a>
 </h3>
-<p>Format each individual memory as a bullet point and group related
-memories under descriptive markdown headings:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">## Data Cleaning Guidelines</span></span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a></span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="ss">- </span>Remove outliers beyond 3 SD from mean.</span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="ss">- </span>Impute missing values using the mice package with m = 5 imputations.</span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="ss">- </span>Always create a <span class="in">`data/processed/`</span> directory for cleaned data.</span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a></span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="fu">## Visualization Standards</span></span>
-<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a></span>
-<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`theme_minimal()`</span> as base theme.</span>
-<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="ss">- </span>Color scheme: viridis for continuous, Set2 for categorical.</span>
-<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="ss">- </span>Always include confidence intervals in plots.</span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="review-periodically">Review Periodically<a class="anchor" aria-label="anchor" href="#review-periodically"></a>
+<p>Format each individual memory as a bullet point and group related memories under descriptive markdown headings:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data Cleaning Guidelines</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Remove outliers beyond 3 SD from mean.</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Impute missing values using the mice package with m = 5 imputations.</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Always create a <span class="in">`data/processed/`</span> directory for cleaned data.</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Visualization Standards</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use <span class="in">`theme_minimal()`</span> as base theme.</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Color scheme: viridis for continuous, Set2 for categorical.</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Always include confidence intervals in plots.</span></code></pre></div>
+</section><section class="level2"><h3 id="review-periodically">Review Periodically<a class="anchor" aria-label="anchor" href="#review-periodically"></a>
 </h3>
-<p>Update memory files as your project evolves to ensure Cassidy always
-has the most up-to-date information and context. This is especially
-important for:</p>
+<p>Update memory files as your project evolves to ensure Cassidy always has the most up-to-date information and context. This is especially important for:</p>
 <ul>
 <li>Changes in project goals or scope.</li>
 <li>New coding conventions adopted by the team.</li>
 <li>Updates to preferred packages or methods.</li>
 <li>New data sources or analytical approaches.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="keep-files-focused">Keep Files Focused<a class="anchor" aria-label="anchor" href="#keep-files-focused"></a>
+</ul></section><section class="level2"><h3 id="keep-files-focused">Keep Files Focused<a class="anchor" aria-label="anchor" href="#keep-files-focused"></a>
 </h3>
-<p>For large projects, prefer multiple focused rule files over one large
-<code>CASSIDY.md</code>:</p>
+<p>For large projects, prefer multiple focused rule files over one large <code>CASSIDY.md</code>:</p>
 <ul>
-<li>One topic per file: <code>testing.md</code>,
-<code>visualization.md</code>, <code>data-cleaning.md</code>.</li>
-<li>Descriptive filenames: The name should clearly indicate
-content.</li>
-<li>Organize with subdirectories: Group related rules (e.g.,
-<code>analysis/</code>, <code>reporting/</code>).</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="use-local-files-for-personal-settings">Use Local Files for Personal Settings<a class="anchor" aria-label="anchor" href="#use-local-files-for-personal-settings"></a>
+<li>One topic per file: <code>testing.md</code>, <code>visualization.md</code>, <code>data-cleaning.md</code>.</li>
+<li>Descriptive filenames: The name should clearly indicate content.</li>
+<li>Organize with subdirectories: Group related rules (e.g., <code>analysis/</code>, <code>reporting/</code>).</li>
+</ul></section><section class="level2"><h3 id="use-local-files-for-personal-settings">Use Local Files for Personal Settings<a class="anchor" aria-label="anchor" href="#use-local-files-for-personal-settings"></a>
 </h3>
-<p>Keep personal preferences in <code>CASSIDY.local.md</code> to avoid
-merge conflicts:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu"># My Local Preferences (CASSIDY.local.md)</span></span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a></span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="fu">## File Paths</span></span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="ss">- </span>My data: <span class="in">`~/Dropbox/research/project-data/`</span></span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="ss">- </span>Scratch directory: <span class="in">`~/scratch/project-temp/`</span></span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a></span>
-<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="fu">## Testing</span></span>
-<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="ss">- </span>Use small test dataset: <span class="in">`data/test_sample_100.rds`</span></span>
-<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="ss">- </span>Test API endpoint: http://localhost:8000</span>
-<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a></span>
-<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="fu">## Notes</span></span>
-<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="ss">- </span>Remember to use VPN when accessing remote database.</span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="example-workflows">Example Workflows<a class="anchor" aria-label="anchor" href="#example-workflows"></a>
+<p>Keep personal preferences in <code>CASSIDY.local.md</code> to avoid merge conflicts:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># My Local Preferences (CASSIDY.local.md)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">## File Paths</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>My data: <span class="in">`~/Dropbox/research/project-data/`</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Scratch directory: <span class="in">`~/scratch/project-temp/`</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Testing</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Use small test dataset: <span class="in">`data/test_sample_100.rds`</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Test API endpoint: http://localhost:8000</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="fu">## Notes</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Remember to use VPN when accessing remote database.</span></code></pre></div>
+</section></section><section class="section level2"><h2 id="example-workflows">Example Workflows<a class="anchor" aria-label="anchor" href="#example-workflows"></a>
 </h2>
-<div class="section level3">
-<h3 id="r-package-development">R Package Development<a class="anchor" aria-label="anchor" href="#r-package-development"></a>
+<section class="level2"><h3 id="r-package-development">R Package Development<a class="anchor" aria-label="anchor" href="#r-package-development"></a>
 </h3>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set up package memory</span></span>
 <span><span class="fu"><a href="../reference/use_cassidy_md.html">use_cassidy_md</a></span><span class="op">(</span>template <span class="op">=</span> <span class="st">"package"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Add specific rules</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">".cassidy/rules"</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">".cassidy/rules"</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create testing guidelines</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"# Testing Standards</span></span>
@@ -572,10 +489,10 @@ merge conflicts:</p>
 <span>    file <span class="op">=</span> <span class="st">".cassidy/rules/testing.md"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="data-analysis-project">Data Analysis Project<a class="anchor" aria-label="anchor" href="#data-analysis-project"></a>
+</section><section class="level2"><h3 id="data-analysis-project">Data Analysis Project<a class="anchor" aria-label="anchor" href="#data-analysis-project"></a>
 </h3>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set up analysis memory</span></span>
 <span><span class="fu"><a href="../reference/use_cassidy_md.html">use_cassidy_md</a></span><span class="op">(</span>template <span class="op">=</span> <span class="st">"analysis"</span><span class="op">)</span></span>
 <span></span>
@@ -602,10 +519,10 @@ merge conflicts:</p>
 <span>    append <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="survey-research">Survey Research<a class="anchor" aria-label="anchor" href="#survey-research"></a>
+</section><section class="level2"><h3 id="survey-research">Survey Research<a class="anchor" aria-label="anchor" href="#survey-research"></a>
 </h3>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set up survey memory</span></span>
 <span><span class="fu"><a href="../reference/use_cassidy_md.html">use_cassidy_md</a></span><span class="op">(</span>template <span class="op">=</span> <span class="st">"survey"</span><span class="op">)</span></span>
 <span></span>
@@ -632,22 +549,19 @@ merge conflicts:</p>
 <span>    append <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
+</section></section><section class="section level2"><h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
 </h2>
-<div class="section level3">
-<h3 id="memory-files-not-loading">Memory files not loading?<a class="anchor" aria-label="anchor" href="#memory-files-not-loading"></a>
+<section class="level2"><h3 id="memory-files-not-loading">Memory files not loading?<a class="anchor" aria-label="anchor" href="#memory-files-not-loading"></a>
 </h3>
 <p>Check that:</p>
 <ul>
-<li>Files are named correctly (<code>CASSIDY.md</code>, not
-<code>cassidy.txt</code>).</li>
+<li>Files are named correctly (<code>CASSIDY.md</code>, not <code>cassidy.txt</code>).</li>
 <li>Files are in the project directory or parent directories.</li>
 <li>File encoding is UTF-8.</li>
 </ul>
 <p>You can verify what is being loaded:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Check what memory files are found</span></span>
 <span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cassidy_read_context_file.html">cassidy_read_context_file</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">config</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
@@ -657,59 +571,121 @@ merge conflicts:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"No memory files found in directory tree\n"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="too-much-context">Too much context?<a class="anchor" aria-label="anchor" href="#too-much-context"></a>
+</section><section class="level2"><h3 id="too-much-context">Too much context?<a class="anchor" aria-label="anchor" href="#too-much-context"></a>
 </h3>
 <p>If you are hitting context limits:</p>
 <ul>
-<li>Use <code>CASSIDY.local.md</code> for personal notes instead of
-putting everything in <code>CASSIDY.md</code>.</li>
+<li>Use <code>CASSIDY.local.md</code> for personal notes instead of putting everything in <code>CASSIDY.md</code>.</li>
 <li>Be more concise in your memory files.</li>
 <li>Focus on the most important information.</li>
-<li>Use <code>context_level = "minimal"</code> when starting the
-app.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="files-in-subdirectories-not-loading">Files in subdirectories not loading?<a class="anchor" aria-label="anchor" href="#files-in-subdirectories-not-loading"></a>
+<li>Use <code>context_level = "minimal"</code> when starting the app.</li>
+</ul></section><section class="level2"><h3 id="files-in-subdirectories-not-loading">Files in subdirectories not loading?<a class="anchor" aria-label="anchor" href="#files-in-subdirectories-not-loading"></a>
 </h3>
-<p>Remember: <em>cassidyr</em> searches <em>up</em> the directory tree
-from your working directory, not down. If you have
-<code>project/subdir/CASSIDY.md</code> and you are working from
-<code>project/</code>, that file will not be loaded. It is only loaded
-when you work from <code>project/subdir/</code> or deeper.</p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
+<p>Remember: <em>cassidyr</em> searches <em>up</em> the directory tree from your working directory, not down. If you have <code>project/subdir/CASSIDY.md</code> and you are working from <code>project/</code>, that file will not be loaded. It is only loaded when you work from <code>project/subdir/</code> or deeper.</p>
+</section></section><section class="section level2"><h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <ul>
 <li>Use <code>CASSIDY.md</code> for team-shared project context.</li>
-<li>Use <code>CASSIDY.local.md</code> for personal project settings
-(auto-gitignored).</li>
-<li>Use <code>.cassidy/rules/</code> for modular, organized
-guidelines.</li>
-<li>Files are automatically loaded when you start
-<code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>.</li>
+<li>Use <code>CASSIDY.local.md</code> for personal project settings (auto-gitignored).</li>
+<li>Use <code>.cassidy/rules/</code> for modular, organized guidelines.</li>
+<li>Files are automatically loaded when you start <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>.</li>
 <li>Memory files are searched recursively up the directory tree.</li>
 <li>Be specific, use structure, and review periodically.</li>
 </ul>
-<p>For more information on context gathering and chat functionality,
-see:</p>
+<p>For more information on context gathering and chat functionality, see:</p>
 <ul>
 <li>
-<code>vignette("context-system")</code> — Understanding the context
-system.</li>
+<code><a href="../articles/context-system.html">vignette("context-system")</a></code> — Understanding the context system.</li>
 <li>
 <code><a href="../reference/cassidy_app.html">?cassidy_app</a></code> — Chat application documentation.</li>
 <li>
 <code><a href="../reference/use_cassidy_md.html">?use_cassidy_md</a></code> — Creating memory files.</li>
-</ul>
-</div>
-  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+</ul></section><script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config);
+    }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script></main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
-
 
 
     <footer><div class="pkgdown-footer-left">

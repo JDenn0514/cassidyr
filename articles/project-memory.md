@@ -141,49 +141,43 @@ and scale reliability.
 
 For a simple analysis project:
 
-``` text
-my-analysis/
-├── CASSIDY.md              # Project memory
-├── data/
-├── R/
-│   └── analysis.R
-└── output/
-```
+    my-analysis/
+    ├── CASSIDY.md              # Project memory
+    ├── data/
+    ├── R/
+    │   └── analysis.R
+    └── output/
 
 ### Using the `.cassidy` Directory
 
 For keeping the root directory clean:
 
-``` text
-my-project/
-├── .cassidy/
-│   ├── CASSIDY.md          # Main project instructions
-│   └── CASSIDY.local.md    # Your personal notes (gitignored)
-├── R/
-├── tests/
-└── vignettes/
-```
+    my-project/
+    ├── .cassidy/
+    │   ├── CASSIDY.md          # Main project instructions
+    │   └── CASSIDY.local.md    # Your personal notes (gitignored)
+    ├── R/
+    ├── tests/
+    └── vignettes/
 
 ### Large Project with Rules
 
 For complex projects with multiple areas:
 
-``` text
-large-project/
-├── .cassidy/
-│   ├── CASSIDY.md          # Main project instructions
-│   └── rules/
-│       ├── coding-style.md # Team coding standards
-│       ├── testing.md      # Testing conventions
-│       ├── data/
-│       │   └── cleaning.md # Data cleaning guidelines
-│       └── analysis/
-│           ├── eda.md      # EDA preferences
-│           └── modeling.md # Modeling approaches
-├── R/
-├── data-raw/
-└── analysis/
-```
+    large-project/
+    ├── .cassidy/
+    │   ├── CASSIDY.md          # Main project instructions
+    │   └── rules/
+    │       ├── coding-style.md # Team coding standards
+    │       ├── testing.md      # Testing conventions
+    │       ├── data/
+    │       │   └── cleaning.md # Data cleaning guidelines
+    │       └── analysis/
+    │           ├── eda.md      # EDA preferences
+    │           └── modeling.md # Modeling approaches
+    ├── R/
+    ├── data-raw/
+    └── analysis/
 
 ## Modular Rules with `.cassidy/rules/`
 
@@ -195,15 +189,13 @@ well-organized rule files instead of one large `CASSIDY.md`.
 
 Place markdown files in your project’s `.cassidy/rules/` directory:
 
-``` text
-your-project/
-├── .cassidy/
-│   ├── CASSIDY.md          # Main project instructions
-│   └── rules/
-│       ├── r-style.md      # R coding style
-│       ├── testing.md      # Testing conventions
-│       └── visualization.md # Plotting preferences
-```
+    your-project/
+    ├── .cassidy/
+    │   ├── CASSIDY.md          # Main project instructions
+    │   └── rules/
+    │       ├── r-style.md      # R coding style
+    │       ├── testing.md      # Testing conventions
+    │       └── visualization.md # Plotting preferences
 
 All `.md` files in `.cassidy/rules/` are automatically loaded as project
 memory.
@@ -212,21 +204,19 @@ memory.
 
 Rules can be organized into subdirectories for better structure:
 
-``` text
-.cassidy/rules/
-├── r-code/
-│   ├── style.md
-│   ├── functions.md
-│   └── packages.md
-├── analysis/
-│   ├── eda.md
-│   ├── modeling.md
-│   └── reporting.md
-├── data/
-│   ├── cleaning.md
-│   └── validation.md
-└── general.md
-```
+    .cassidy/rules/
+    ├── r-code/
+    │   ├── style.md
+    │   ├── functions.md
+    │   └── packages.md
+    ├── analysis/
+    │   ├── eda.md
+    │   ├── modeling.md
+    │   └── reporting.md
+    ├── data/
+    │   ├── cleaning.md
+    │   └── validation.md
+    └── general.md
 
 All `.md` files are discovered recursively.
 
@@ -287,12 +277,12 @@ On Windows, you can use junction points or directory symbolic links.
 
 ## User-Level Memory
 
-Create personal preferences that apply to all your projects in
-`~/.cassidy/CASSIDY.md`:
+You can also create a user-level memory file that applies to all your R
+projects:
 
 ``` r
 # Create user-level memory directory
-dir.create("~/.cassidy", showWarnings = FALSE)
+dir.create("~/.cassidy", showWarnings = FALSE, recursive = TRUE)
 
 # Create your personal CASSIDY.md
 cat("# My Personal R Preferences
@@ -439,7 +429,7 @@ conflicts:
 use_cassidy_md(template = "package")
 
 # Add specific rules
-dir.create(".cassidy/rules", recursive = TRUE)
+dir.create(".cassidy/rules", recursive = TRUE, showWarnings = FALSE)
 
 # Create testing guidelines
 cat("# Testing Standards
@@ -571,7 +561,8 @@ when you work from `project/subdir/` or deeper.
 
 For more information on context gathering and chat functionality, see:
 
-- `vignette("context-system")` — Understanding the context system.
+- [`vignette("context-system")`](https://jdenn0514.github.io/cassidyr/articles/context-system.md)
+  — Understanding the context system.
 - [`?cassidy_app`](https://jdenn0514.github.io/cassidyr/reference/cassidy_app.md)
   — Chat application documentation.
 - [`?use_cassidy_md`](https://jdenn0514.github.io/cassidyr/reference/use_cassidy_md.md)

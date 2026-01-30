@@ -11,6 +11,7 @@ gather_context(
   git = FALSE,
   data = TRUE,
   data_method = "basic",
-  files = NULL
+  files = NULL,
+  data_frames = NULL
 )
 ```
