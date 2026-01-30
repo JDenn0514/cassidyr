@@ -30,12 +30,12 @@ setup_context_data_renderer <- function(output, input, conv_manager) {
 
     lapply(names(dfs), function(df_name) {
       df_info <- dfs[[df_name]]
-      input_id <- paste0("ctx_data_", gsub("", "_", df_name))
-      refresh_id <- paste0("refresh_data_", gsub("", "_", df_name))
+      input_id <- paste0("ctx_data_", gsub("[^a-zA-Z0-9]", "_", df_name))
+      refresh_id <- paste0("refresh_data_", gsub("[^a-zA-Z0-9]", "_", df_name))
 
       shiny::div(
         class = "context-data-item",
-        id = paste0("data_item_", gsub("", "_", df_name)),
+        id = paste0("data_item_", gsub("[^a-zA-Z0-9]", "_", df_name)),
         shiny::checkboxInput(
           input_id,
           shiny::tagList(
@@ -85,7 +85,7 @@ setup_context_summary_renderer <- function(output, input, conv_manager) {
     dfs <- .get_env_dataframes()
     data_items <- c()
     for (df_name in names(dfs)) {
-      input_id <- paste0("ctx_data_", gsub("", "_", df_name))
+      input_id <- paste0("ctx_data_", gsub("[^a-zA-Z0-9]", "_", df_name))
       if (isTRUE(input[[input_id]])) {
         data_items <- c(data_items, df_name)
       }
@@ -181,8 +181,37 @@ setup_apply_context_handler <- function(
   shiny::observeEvent(input$apply_context, {
     cli::cli_alert_info("Applying context...")
 
-    # Gather context based on selections
-    context_text <- gather_selected_context(input, conv_manager)
+    # Gather context based on selections (incremental by default)
+    context_text <- gather_selected_context(
+      input,
+      conv_manager,
+      incremental = TRUE
+    )
+
+    # Get what was actually gathered (from attributes)
+    files_to_send <- attr(context_text, "files_to_send") %||% character()
+    data_to_send <- attr(context_text, "data_to_send") %||% character()
+
+    # Check if project items changed (config, session, git)
+    # These are always re-sent if selected, so check if any are selected
+    project_items_selected <- isTRUE(input$ctx_config) ||
+      isTRUE(input$ctx_session) ||
+      isTRUE(input$ctx_git)
+
+    # Check if there's anything new to send
+    if (
+      length(files_to_send) == 0 &&
+        length(data_to_send) == 0 &&
+        (is.null(context_text) || !nzchar(context_text))
+    ) {
+      shiny::showNotification(
+        "No new context to send - everything selected has already been sent",
+        type = "message",
+        duration = 3
+      )
+      cli::cli_alert_info("No new context to send")
+      return()
+    }
 
     if (is.null(context_text) || !nzchar(context_text)) {
       shiny::showNotification(
@@ -202,7 +231,7 @@ setup_apply_context_handler <- function(
     # Store in conversation manager
     conv_set_context(conv_manager, context_text)
 
-    # === NEW: SEND CONTEXT IMMEDIATELY ===
+    # === SEND CONTEXT ===
 
     # Ensure we have a conversation
     if (is.null(conv_current_id(conv_manager))) {
@@ -279,6 +308,33 @@ setup_apply_context_handler <- function(
         conv_set_context_sent(conv_manager, TRUE)
         conv_update_current(conv_manager, list(context_sent = TRUE))
 
+        # === NEW: Update sent tracking ===
+        current_sent_files <- conv_sent_context_files(conv_manager)
+        current_sent_data <- conv_sent_data_frames(conv_manager)
+
+        # Add newly sent items to tracking
+        conv_set_sent_context_files(
+          conv_manager,
+          union(current_sent_files, files_to_send)
+        )
+        conv_set_sent_data_frames(
+          conv_manager,
+          union(current_sent_data, data_to_send)
+        )
+
+        # Clear pending refresh queues
+        conv_set_pending_refresh_files(conv_manager, character())
+        conv_set_pending_refresh_data(conv_manager, character())
+
+        # Update conversation record for persistence
+        conv_update_current(
+          conv_manager,
+          list(
+            sent_context_files = conv_sent_context_files(conv_manager),
+            sent_data_frames = conv_sent_data_frames(conv_manager)
+          )
+        )
+
         # Clear loading state
         conv_set_loading(conv_manager, FALSE)
         session$sendCustomMessage("setLoading", FALSE)
@@ -287,11 +343,25 @@ setup_apply_context_handler <- function(
         # Remove sending notification
         shiny::removeNotification("context_sending")
 
-        # Success notification
+        # Success notification with details
+        new_files_count <- length(files_to_send)
+        new_data_count <- length(data_to_send)
+
+        detail_msg <- c()
+        if (new_files_count > 0) {
+          detail_msg <- c(detail_msg, paste0(new_files_count, " file(s)"))
+        }
+        if (new_data_count > 0) {
+          detail_msg <- c(detail_msg, paste0(new_data_count, " data frame(s)"))
+        }
+
         shiny::showNotification(
           shiny::tagList(
             shiny::icon("check"),
-            " Context sent successfully! Cassidy has acknowledged."
+            " Context sent successfully!",
+            if (length(detail_msg) > 0) {
+              paste0(" (", paste(detail_msg, collapse = ", "), ")")
+            }
           ),
           type = "message",
           duration = 5
@@ -336,40 +406,43 @@ setup_refresh_context_handler <- function(
   api_key,
   timeout
 ) {
-  # Refresh all
+  # Refresh all - queue ALL sent items for refresh
   shiny::observeEvent(input$refresh_all_context, {
+    # Queue all sent files for refresh
+    sent_files <- conv_sent_context_files(conv_manager)
+    conv_set_pending_refresh_files(conv_manager, sent_files)
+
+    # Queue all sent data for refresh
+    sent_data <- conv_sent_data_frames(conv_manager)
+    conv_set_pending_refresh_data(conv_manager, sent_data)
+
     shiny::showNotification(
-      "Refreshing all context...",
+      paste0(
+        "Queued ",
+        length(sent_files),
+        " file(s) and ",
+        length(sent_data),
+        " data frame(s) for refresh - click 'Apply Context'"
+      ),
       type = "message",
-      duration = 2
+      duration = 3
     )
 
-    # Re-gather context
-    context_text <- gather_selected_context(input, conv_manager)
-    if (!is.null(context_text)) {
-      conv_set_context(conv_manager, context_text)
-      conv_set_context_sent(conv_manager, FALSE) # Mark as needing to be sent
-    }
-
-    cli::cli_alert_success("All context refreshed")
+    cli::cli_alert_success("All sent context queued for refresh")
   })
 
-  # Individual refresh handlers - similar pattern
+  # Individual refresh handlers
   shiny::observeEvent(input$refresh_config, {
+    # Config is always re-sent if selected, just notify
     shiny::showNotification(
-      "Refreshed cassidy.md",
+      "cassidy.md will be refreshed with next 'Apply Context'",
       type = "message",
       duration = 2
     )
-
-    # Mark context as needing update
-    conv_set_context_sent(conv_manager, FALSE)
-    cli::cli_alert_success("Refreshed cassidy.md")
   })
 
-  # ... similar for other refresh buttons
+  # Data frame refresh handlers - queue for refresh
 
-  # Data frame refresh handlers
   shiny::observe({
     dfs <- .get_env_dataframes()
 
@@ -379,16 +452,23 @@ setup_refresh_context_handler <- function(
       shiny::observeEvent(
         input[[refresh_id]],
         {
-          shiny::showNotification(
-            paste("Refreshed", df_name),
-            type = "message",
-            duration = 2
+          # Add to pending refresh queue
+          current_pending <- conv_pending_refresh_data(conv_manager)
+          conv_set_pending_refresh_data(
+            conv_manager,
+            union(current_pending, df_name)
           )
 
-          # Mark context as needing update
-          conv_set_context_sent(conv_manager, FALSE)
+          shiny::showNotification(
+            paste(
+              df_name,
+              "queued for refresh - click 'Apply Context' to send"
+            ),
+            type = "message",
+            duration = 3
+          )
 
-          cli::cli_alert_success("Refreshed data frame: {df_name}")
+          cli::cli_alert_info("Queued data frame for refresh: {df_name}")
         },
         ignoreInit = TRUE
       )
@@ -396,30 +476,30 @@ setup_refresh_context_handler <- function(
   })
 }
 
+
 #' Setup file tree renderer
 #' @keywords internal
 setup_file_tree_renderer <- function(output, input, conv_manager) {
   # Render file count
   output$files_count_ui <- shiny::renderUI({
-    input$refresh_all_context
-    input$refresh_all_files
-    # Trigger on conversation change
+    # Only trigger on conversation change, not on refresh buttons
     conv_current_id(conv_manager)
 
     files <- conv_context_files(conv_manager)
     paste0("(", length(files), " selected)")
   })
 
-  # Render file tree
   output$context_files_tree_ui <- shiny::renderUI({
-    input$refresh_all_context
-    input$refresh_all_files
-    # Trigger on conversation change
+    # REMOVED: input$refresh_all_context and input$refresh_all_files
+    # Only depend on force refresh and conversation changes
+    input$force_file_tree_refresh
     conv_current_id(conv_manager)
 
-    # Get available files
+    # Get ALL files
     available_files <- .get_project_files()
     selected_files <- conv_context_files(conv_manager)
+    sent_files <- conv_sent_context_files(conv_manager)
+    pending_files <- conv_pending_refresh_files(conv_manager)
 
     if (length(available_files) == 0) {
       return(shiny::div(
@@ -429,11 +509,41 @@ setup_file_tree_renderer <- function(output, input, conv_manager) {
       ))
     }
 
-    # Group files by directory
-    file_tree <- .build_file_tree(available_files)
+    # Build nested tree structure
+    file_tree <- .build_file_tree_nested(available_files)
 
-    # Render tree
-    .render_file_tree(file_tree, selected_files)
+    # Render the tree
+    tree_ui <- .render_file_tree_nested(
+      file_tree,
+      selected_files,
+      sent_files = sent_files,
+      pending_files = pending_files,
+      path = "",
+      level = 0
+    )
+
+    # Add controls at the top
+    shiny::div(
+      shiny::div(
+        class = "file-tree-controls",
+        shiny::actionButton(
+          "expand_all_folders",
+          shiny::icon("folder-open"),
+          "Expand All",
+          class = "btn btn-sm btn-outline-secondary"
+        ),
+        shiny::actionButton(
+          "collapse_all_folders",
+          shiny::icon("folder"),
+          "Collapse All",
+          class = "btn btn-sm btn-outline-secondary"
+        )
+      ),
+      shiny::div(
+        class = "file-tree-container",
+        shiny::tagList(tree_ui)
+      )
+    )
   })
 }
 
@@ -441,246 +551,323 @@ setup_file_tree_renderer <- function(output, input, conv_manager) {
 #' Setup file selection handlers
 #' @keywords internal
 setup_file_selection_handlers <- function(input, session, conv_manager) {
-  # Individual file refresh handlers
+  # Refresh all files button
+  shiny::observeEvent(input$refresh_all_files, {
+    # Queue all sent files for refresh
+    sent_files <- conv_sent_context_files(conv_manager)
+    conv_set_pending_refresh_files(conv_manager, sent_files)
+
+    # Update visual state for all sent files - mark them as pending
+    for (file in sent_files) {
+      file_id <- gsub("[^a-zA-Z0-9]", "_", file)
+      session$sendCustomMessage(
+        "markFileAsPending",
+        list(fileId = file_id)
+      )
+    }
+
+    shiny::showNotification(
+      paste0(
+        "Queued ",
+        length(sent_files),
+        " file(s) for refresh - click 'Apply Context'"
+      ),
+      type = "message",
+      duration = 3
+    )
+    cli::cli_alert_info("All sent files queued for refresh")
+  })
+
+  # Individual file refresh handlers - use isolate to prevent cascading reactivity
   shiny::observe({
-    files <- .get_project_files()
+    files <- shiny::isolate(.get_project_files())
 
     lapply(files, function(file) {
-      file_id <- gsub("", "_", file)
+      file_id <- gsub("[^a-zA-Z0-9]", "_", file)
       refresh_id <- paste0("refresh_file_", file_id)
 
       shiny::observeEvent(
         input[[refresh_id]],
         {
-          # Check if file is in context
-          current_files <- conv_context_files(conv_manager)
+          # Check if file has been sent
+          sent_files <- conv_sent_context_files(conv_manager)
 
-          if (!(file %in% current_files)) {
+          if (!(file %in% sent_files)) {
             shiny::showNotification(
-              paste(basename(file), "is not in context. Select it first."),
+              paste(
+                basename(file),
+                "hasn't been sent yet. Select it and click 'Apply Context'."
+              ),
               type = "warning",
               duration = 3
             )
             return()
           }
 
-          # Re-read the file and update context
-          tryCatch(
-            {
-              file_ctx <- cassidy_describe_file(file)
-
-              # Update the stored context
-              context_text <- conv_context_text(conv_manager)
-              if (!is.null(context_text)) {
-                # Mark context as needing to be re-sent
-                conv_set_context_sent(conv_manager, FALSE)
-              }
-
-              shiny::showNotification(
-                shiny::tagList(
-                  shiny::icon("check"),
-                  paste(
-                    " Refreshed",
-                    basename(file),
-                    "- will be sent with next message"
-                  )
-                ),
-                type = "message",
-                duration = 3
-              )
-              cli::cli_alert_success("Refreshed file: {file}")
-            },
-            error = function(e) {
-              shiny::showNotification(
-                paste("Error refreshing", basename(file), ":", e$message),
-                type = "error",
-                duration = 5
-              )
-            }
+          # Add to pending refresh queue
+          current_pending <- conv_pending_refresh_files(conv_manager)
+          conv_set_pending_refresh_files(
+            conv_manager,
+            union(current_pending, file)
           )
-        },
-        ignoreInit = TRUE
-      )
-    })
-  })
 
-  # Refresh all files
-  shiny::observeEvent(input$refresh_all_files, {
-    shiny::showNotification(
-      "Refreshing file list...",
-      type = "message",
-      duration = 2
-    )
-  })
+          # Update visual state without re-rendering
+          session$sendCustomMessage(
+            "markFileAsPending",
+            list(fileId = file_id)
+          )
 
-  # Individual file refresh handlers
-  shiny::observe({
-    files <- .get_project_files()
-
-    lapply(files, function(file) {
-      file_id <- gsub("", "_", file)
-      refresh_id <- paste0("refresh_file_", file_id)
-
-      shiny::observeEvent(
-        input[[refresh_id]],
-        {
           shiny::showNotification(
-            paste("Refreshed", basename(file)),
+            paste(
+              basename(file),
+              "queued for refresh - click 'Apply Context' to send"
+            ),
             type = "message",
-            duration = 2
+            duration = 3
           )
-          cli::cli_alert_success("Refreshed file: {file}")
+
+          cli::cli_alert_info("Queued file for refresh: {file}")
         },
         ignoreInit = TRUE
       )
     })
   })
 }
+
 
 #' Get project files
 #' @keywords internal
-.get_project_files <- function() {
-  patterns <- c(
-    "\\.R$",
-    "\\.Rmd$",
-    "\\.qmd$",
-    "\\.md$",
-    "\\.txt$",
-    "\\.yml$",
-    "\\.yaml$"
+.get_project_files <- function(include_hidden = FALSE) {
+  # Get all files recursively
+  all_files <- list.files(
+    recursive = TRUE,
+    all.files = include_hidden,
+    no.. = TRUE # Don't include . and ..
   )
 
-  files <- unlist(lapply(patterns, function(p) {
-    list.files(pattern = p, recursive = TRUE, ignore.case = TRUE)
-  }))
+  # Exclude only truly unnecessary directories
+  exclude_patterns <- c(
+    "^\\.Rproj\\.user/", # RStudio temp files
+    "^renv/library/", # renv package cache (but keep renv.lock)
+    "^\\.git/", # Git internals
+    "^\\.quarto/" # Quarto cache
+  )
 
-  # Exclude common non-essential directories
-  exclude_patterns <- c("^renv/", "^\\.Rproj", "^packrat/", "^\\.git/")
   for (pattern in exclude_patterns) {
-    files <- files[!grepl(pattern, files)]
+    all_files <- all_files[!grepl(pattern, all_files)]
   }
 
-  sort(unique(files))
+  sort(all_files)
 }
 
-#' Build file tree structure
+
+#' Build nested file tree structure
 #' @keywords internal
-.build_file_tree <- function(files) {
+.build_file_tree_nested <- function(files) {
   tree <- list()
 
   for (file in files) {
-    parts <- strsplit(file, "/")[[1]]
-
-    if (length(parts) == 1) {
-      # Root level file
-      if (is.null(tree[["."]])) {
-        tree[["./"]] <- character()
-      }
-      tree[["./"]] <- c(tree[["./"]], file)
-    } else {
-      # File in subdirectory
-      dir <- paste(parts[-length(parts)], collapse = "/")
-      if (is.null(tree[[dir]])) {
-        tree[[dir]] <- character()
-      }
-      tree[[dir]] <- c(tree[[dir]], file)
-    }
+    tree <- .add_file_to_tree(tree, file)
   }
 
   tree
 }
 
-#' Render file tree UI
+#' Helper to add a single file to the tree
 #' @keywords internal
-.render_file_tree <- function(tree, selected_files) {
-  # Sort directories (root first, then alphabetically)
-  dirs <- names(tree)
-  dirs <- c(
-    dirs[dirs == "./"],
-    sort(dirs[dirs != "./"])
-  )
+.add_file_to_tree <- function(tree, file) {
+  parts <- strsplit(file, "/")[[1]]
 
-  lapply(dirs, function(dir) {
-    files <- tree[[dir]]
-    dir_display <- if (dir == "./") "Root" else dir
-    dir_id <- gsub("", "_", dir)
+  if (length(parts) == 1) {
+    # Root-level file
+    tree[["__files__"]] <- c(tree[["__files__"]], file)
+  } else {
+    # Recursive: add to subfolder
+    folder <- parts[1]
+    remaining_path <- paste(parts[-1], collapse = "/")
 
-    shiny::div(
-      class = "file-tree-folder",
-      id = paste0("folder_", dir_id),
-      # Folder header
-      shiny::div(
-        class = "file-tree-folder-header",
-        onclick = paste0("toggleFileFolder('", dir_id, "')"),
-        shiny::icon("chevron-down", class = "folder-chevron"),
-        shiny::icon("folder", class = "folder-icon"),
-        shiny::span(class = "folder-name", dir_display),
-        shiny::span(class = "folder-count", paste0("(", length(files), ")"))
-      ),
-      # Folder contents
-      shiny::div(
-        class = "file-tree-folder-contents",
-        lapply(files, function(file) {
-          .render_file_item(file, file %in% selected_files)
-        })
-      )
-    )
-  })
+    if (is.null(tree[[folder]])) {
+      tree[[folder]] <- list()
+    }
+
+    tree[[folder]] <- .add_file_to_tree(tree[[folder]], remaining_path)
+  }
+
+  tree
 }
 
-#' Render single file item
+
+#' Render nested file tree UI with collapsible folders
 #' @keywords internal
-.render_file_item <- function(file, is_selected) {
+.render_file_tree_nested <- function(
+  tree,
+  selected_files,
+  sent_files = character(),
+  pending_files = character(),
+  path = "",
+  level = 0
+) {
+  if (length(tree) == 0) {
+    return(NULL)
+  }
+
+  # Separate folders and files
+  folders <- names(tree)[names(tree) != "__files__"]
+  files <- tree[["__files__"]]
+
+  ui_elements <- list()
+
+  # Render folders first (sorted alphabetically)
+  for (folder in sort(folders)) {
+    folder_path <- if (nchar(path) > 0) paste0(path, "/", folder) else folder
+    folder_id <- gsub("[^a-zA-Z0-9]", "_", folder_path)
+
+    # Count total files in this folder (recursively)
+    file_count <- .count_files_in_tree(tree[[folder]])
+
+    # Create collapsible folder
+    ui_elements[[length(ui_elements) + 1]] <- shiny::div(
+      class = "file-tree-folder",
+      style = paste0("padding-left: ", level * 10, "px;"),
+
+      # Folder header (clickable to toggle)
+      shiny::div(
+        class = "file-tree-folder-header",
+        id = paste0("folder_header_", folder_id),
+        onclick = sprintf("toggleFolder('%s')", folder_id),
+
+        shiny::tags$span(
+          class = "folder-toggle-icon",
+          id = paste0("toggle_icon_", folder_id),
+          shiny::HTML("&#9654;") # Right-pointing triangle (collapsed)
+        ),
+        shiny::icon("folder", class = "folder-icon"),
+        shiny::tags$span(class = "folder-name", folder),
+        shiny::tags$span(
+          class = "folder-count",
+          paste0("(", file_count, ")")
+        )
+      ),
+
+      # Folder contents (initially hidden)
+      shiny::div(
+        class = "file-tree-folder-contents",
+        id = paste0("folder_contents_", folder_id),
+        style = "display: none;",
+        .render_file_tree_nested(
+          tree[[folder]],
+          selected_files,
+          sent_files = sent_files,
+          pending_files = pending_files,
+          path = folder_path,
+          level = level + 1
+        )
+      )
+    )
+  }
+
+  # Render files in this directory
+  if (!is.null(files) && length(files) > 0) {
+    for (file in sort(files)) {
+      # IMPORTANT: Reconstruct full path from current path + filename
+      full_file_path <- if (nchar(path) > 0) {
+        paste0(path, "/", file)
+      } else {
+        file
+      }
+
+      ui_elements[[length(ui_elements) + 1]] <- .render_file_item_nested(
+        full_file_path,
+        is_selected = full_file_path %in% selected_files,
+        is_sent = full_file_path %in% sent_files,
+        needs_refresh = full_file_path %in% pending_files,
+        level = level
+      )
+    }
+  }
+
+  ui_elements
+}
+
+
+#' Count total files in a tree (recursive helper)
+#' @keywords internal
+.count_files_in_tree <- function(tree) {
+  count <- 0
+
+  # Count files at this level
+  if (!is.null(tree[["__files__"]])) {
+    count <- length(tree[["__files__"]])
+  }
+
+  # Recursively count files in subdirectories
+  folders <- names(tree)[names(tree) != "__files__"]
+  for (folder in folders) {
+    count <- count + .count_files_in_tree(tree[[folder]])
+  }
+
+  count
+}
+
+#' Render single file item with proper indentation
+#' @keywords internal
+.render_file_item_nested <- function(
+  file,
+  is_selected,
+  is_sent,
+  needs_refresh = FALSE,
+  level
+) {
   file_id <- gsub("", "_", file)
-  file_ext <- tolower(tools::file_ext(file))
+  file_name <- basename(file)
 
-  # Determine icon based on extension
-  icon_class <- switch(
-    file_ext,
-    "r" = "r-file",
-    "rmd" = "md-file",
-    "qmd" = "qmd-file",
-    "md" = "md-file",
-    ""
-  )
+  # Determine CSS class based on state:
+  # Priority: needs_refresh > is_sent > is_selected
+  # - If needs refresh (already sent but queued for re-send): show as pending/orange
+  # - If sent: blue (sent)
+  # - If selected but not sent: green (pending)
+  # - Otherwise: no special class
+  item_class <- "file-tree-item"
 
-  icon_name <- switch(
-    file_ext,
-    "r" = "code",
-    "rmd" = "file-code",
-    "qmd" = "file-code",
-    "md" = "file-alt",
-    "yml" = "cog",
-    "yaml" = "cog",
-    "file"
-  )
+  if (needs_refresh) {
+    item_class <- paste(item_class, "pending")
+  } else if (is_sent) {
+    item_class <- paste(item_class, "sent")
+  } else if (is_selected) {
+    item_class <- paste(item_class, "pending")
+  }
 
   shiny::div(
-    class = paste("file-tree-item", if (is_selected) "selected" else ""),
+    class = item_class,
+    style = paste0("padding-left: ", level * 10 + 8, "px;"),
     id = paste0("file_item_", file_id),
-    # Checkbox (without label)
+    title = file,
+
+    # Checkbox - checked if sent OR selected
     shiny::tags$input(
       type = "checkbox",
       id = paste0("ctx_file_", file_id),
       class = "form-check-input file-checkbox",
-      checked = if (is_selected) "checked" else NULL
+      checked = if (is_selected || is_sent) "checked" else NULL
     ),
-    # Label as separate element
+
+    # File label
     shiny::tags$label(
       `for` = paste0("ctx_file_", file_id),
       class = "file-tree-label",
-      shiny::icon(icon_name, class = paste("file-icon", icon_class)),
-      shiny::span(class = "file-name", basename(file))
+      shiny::tags$span(class = "file-name", file_name)
     ),
+
     # Refresh button
     shiny::actionButton(
       paste0("refresh_file_", file_id),
       shiny::icon("sync"),
       class = "btn-icon-xs file-refresh-btn",
-      title = paste("Refresh", basename(file))
+      title = paste("Refresh", file_name)
     )
   )
 }
+
 
 #' Get data frames from global environment
 #' @keywords internal
@@ -748,6 +935,113 @@ REQUEST_FILE:([^\
     has_requests = TRUE,
     files = unique(requested_files)
   ))
+}
+
+
+#' Refresh context for a resumed conversation
+#' @keywords internal
+.refresh_conversation_context <- function(
+  previous_files,
+  previous_data = NULL,
+  conv_manager
+) {
+  context_parts <- list()
+
+  # Define unicode symbols
+  checkmark <- stringi::stri_unescape_unicode("\\u2713")
+  warning_sign <- stringi::stri_unescape_unicode("\\u26A0")
+
+  # 1. ALWAYS: Refresh CASSIDY.md files
+  memory_text <- cassidy_read_context_file()
+  if (!is.null(memory_text)) {
+    context_parts$memory <- memory_text
+    cli::cli_alert_success("{checkmark} Loaded fresh CASSIDY.md")
+  }
+
+  # 2. ALWAYS: R session info (lightweight, always useful)
+  context_parts$session <- paste0(
+    "## R Session Information\n\n",
+    "**R version:** ",
+    R.version.string,
+    "\n",
+    "**Platform:** ",
+    R.version$platform,
+    "\n",
+    "**Working directory:** ",
+    getwd(),
+    "\n"
+  )
+
+  # 3. Refresh previously selected files (if they still exist)
+  if (length(previous_files) > 0) {
+    cli::cli_alert_info("Refreshing {length(previous_files)} file{?s}...")
+
+    # Check which files still exist
+    existing_files <- previous_files[file.exists(previous_files)]
+
+    if (length(existing_files) < length(previous_files)) {
+      missing <- setdiff(previous_files, existing_files)
+      cli::cli_alert_warning(
+        "{warning_sign} {length(missing)} file{?s} no longer exist: {.file {missing}}"
+      )
+    }
+
+    if (length(existing_files) > 0) {
+      # Determine appropriate tier
+      tier_info <- .determine_file_context_tier(existing_files)
+
+      # Read files with appropriate tier
+      for (file_path in existing_files) {
+        file_ctx <- cassidy_describe_file(file_path, level = tier_info$tier)
+        if (!is.null(file_ctx)) {
+          context_parts[[paste0("file_", basename(file_path))]] <- file_ctx$text
+        }
+      }
+
+      cli::cli_alert_success(
+        "{checkmark} Refreshed {length(existing_files)} file{?s} ({tier_info$tier} tier)"
+      )
+
+      # Update the conversation manager with existing files
+      conv_set_context_files(conv_manager, existing_files)
+    }
+  }
+
+  # 4. Refresh previously selected data frames (if specified)
+  if (!is.null(previous_data) && length(previous_data) > 0) {
+    current_dfs <- .get_env_dataframes()
+    existing_dfs <- intersect(previous_data, names(current_dfs))
+
+    if (length(existing_dfs) > 0) {
+      cli::cli_alert_info("Refreshing {length(existing_dfs)} data frame{?s}...")
+
+      for (df_name in existing_dfs) {
+        df <- get(df_name, envir = globalenv())
+        df_desc <- cassidy_describe_df(df, name = df_name, method = "basic")
+        if (!is.null(df_desc)) {
+          context_parts[[paste0("data_", df_name)]] <- df_desc$text
+        }
+      }
+
+      cli::cli_alert_success(
+        "{checkmark} Refreshed {length(existing_dfs)} data frame{?s}"
+      )
+    }
+
+    if (length(existing_dfs) < length(previous_data)) {
+      missing_dfs <- setdiff(previous_data, existing_dfs)
+      cli::cli_alert_warning(
+        "{warning_sign} {length(missing_dfs)} data frame{?s} no longer in environment: {missing_dfs}"
+      )
+    }
+  }
+
+  # Combine all parts
+  if (length(context_parts) == 0) {
+    return(NULL)
+  }
+
+  paste(unlist(context_parts), collapse = "\n\n---\n\n")
 }
 
 
@@ -840,6 +1134,7 @@ REQUEST_FILE:([^\
   )
 }
 
+
 #' Gather context (unified function)
 #' @keywords internal
 gather_context <- function(
@@ -848,7 +1143,8 @@ gather_context <- function(
   git = FALSE,
   data = TRUE,
   data_method = "basic",
-  files = NULL
+  files = NULL,
+  data_frames = NULL
 ) {
   context_parts <- list()
 
@@ -904,10 +1200,16 @@ gather_context <- function(
     }
   }
 
-  # Data
+  # Data - use specific data_frames if provided, otherwise all
   if (data) {
     dfs <- .get_env_dataframes()
-    for (df_name in names(dfs)) {
+    df_names <- if (!is.null(data_frames)) {
+      intersect(data_frames, names(dfs))
+    } else {
+      names(dfs)
+    }
+
+    for (df_name in df_names) {
       df <- get(df_name, envir = globalenv())
       df_desc <- cassidy_describe_df(df, name = df_name, method = data_method)
       if (!is.null(df_desc)) {
@@ -916,32 +1218,15 @@ gather_context <- function(
     }
   }
 
-  # Files (with adaptive tiers)
+  # Files (send full content - let Claude manage its context)
   if (!is.null(files) && length(files) > 0) {
-    # Determine tier
-    total_lines <- sum(vapply(
-      files,
-      function(f) {
-        if (file.exists(f)) length(readLines(f, warn = FALSE)) else 0
-      },
-      integer(1)
-    ))
-
-    if (total_lines <= 1500 && length(files) <= 5) {
-      tier <- "full"
-    } else if (total_lines <= 4000 && length(files) <= 12) {
-      tier <- "summary"
-    } else {
-      tier <- "index"
-    }
-
     cli::cli_alert_info(
-      "File tier: {tier} ({length(files)} files, {total_lines} lines)"
+      "Adding {length(files)} file{?s} to context (full content)"
     )
 
     for (file_path in files) {
       if (file.exists(file_path)) {
-        file_ctx <- cassidy_describe_file(file_path, level = tier)
+        file_ctx <- cassidy_describe_file(file_path, level = "full")
         if (!is.null(file_ctx)) {
           context_parts[[paste0("file_", basename(file_path))]] <- file_ctx$text
         }
@@ -955,6 +1240,7 @@ gather_context <- function(
   }
   paste(unlist(context_parts), collapse = "\n\n---\n\n")
 }
+
 
 #' Gather context for chat app
 #' @keywords internal
@@ -970,25 +1256,22 @@ gather_chat_context <- function(context_level, include_data, include_files) {
   )
 }
 
-
 #' Gather context based on sidebar selections
 #' @keywords internal
-gather_selected_context <- function(input, conv_manager) {
+gather_selected_context <- function(input, conv_manager, incremental = TRUE) {
   # Get selected files from conv_manager and UI
   selected_files <- conv_context_files(conv_manager)
   available_files <- .get_project_files()
 
   for (file_path in available_files) {
-    file_id <- gsub("", "_", file_path)
-    input_id <- paste0("ctx_file_", file_id)
+    input_id <- paste0("ctx_file_", gsub("[^a-zA-Z0-9]", "_", file_path))
     if (isTRUE(input[[input_id]]) && !(file_path %in% selected_files)) {
       selected_files <- c(selected_files, file_path)
     }
   }
 
   for (file_path in available_files) {
-    file_id <- gsub("", "_", file_path)
-    input_id <- paste0("ctx_file_", file_id)
+    input_id <- paste0("ctx_file_", gsub("[^a-zA-Z0-9]", "_", file_path))
     if (!is.null(input[[input_id]]) && !isTRUE(input[[input_id]])) {
       selected_files <- setdiff(selected_files, file_path)
     }
@@ -1001,19 +1284,56 @@ gather_selected_context <- function(input, conv_manager) {
   selected_data <- names(dfs)[vapply(
     names(dfs),
     function(df_name) {
-      input_id <- paste0("ctx_data_", gsub("", "_", df_name))
+      input_id <- paste0("ctx_data_", gsub("[^a-zA-Z0-9]", "_", df_name))
       isTRUE(input[[input_id]])
     },
     logical(1)
   )]
 
-  # Call unified function
-  gather_context(
+  # === NEW: Calculate what actually needs to be sent ===
+  if (incremental) {
+    sent_files <- conv_sent_context_files(conv_manager)
+    sent_data <- conv_sent_data_frames(conv_manager)
+    pending_files <- conv_pending_refresh_files(conv_manager)
+    pending_data <- conv_pending_refresh_data(conv_manager)
+
+    # Only gather new + refreshed items
+    files_to_send <- union(
+      setdiff(selected_files, sent_files),
+      pending_files
+    )
+
+    data_to_send <- union(
+      setdiff(selected_data, sent_data),
+      pending_data
+    )
+  } else {
+    # Full send (for new conversations)
+    files_to_send <- selected_files
+    data_to_send <- selected_data
+  }
+
+  # Store what we're about to send for later tracking update
+  attr_files <- files_to_send
+  attr_data <- data_to_send
+
+  # Call unified function with filtered items
+  result <- gather_context(
     config = isTRUE(input$ctx_config),
     session = isTRUE(input$ctx_session),
     git = isTRUE(input$ctx_git),
-    data = length(selected_data) > 0,
+    data = length(data_to_send) > 0,
     data_method = input$data_description_method %||% "basic",
-    files = selected_files
+    files = files_to_send,
+    # Pass specific data frames to gather
+    data_frames = data_to_send
   )
+
+  # Attach metadata about what was gathered
+  if (!is.null(result)) {
+    attr(result, "files_to_send") <- attr_files
+    attr(result, "data_to_send") <- attr_data
+  }
+
+  result
 }

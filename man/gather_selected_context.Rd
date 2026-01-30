@@ -4,7 +4,7 @@
 \alias{gather_selected_context}
 \title{Gather context based on sidebar selections}
 \usage{
-gather_selected_context(input, conv_manager)
+gather_selected_context(input, conv_manager, incremental = TRUE)
 }
 \description{
 Gather context based on sidebar selections

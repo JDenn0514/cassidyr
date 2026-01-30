@@ -4,7 +4,7 @@
 \alias{.get_project_files}
 \title{Get project files}
 \usage{
-.get_project_files()
+.get_project_files(include_hidden = FALSE)
 }
 \description{
 Get project files

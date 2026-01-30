@@ -9,8 +9,4 @@ setup_message_renderer(output, conv_manager)
 \description{
 Setup message rendering handlers
 }
-\keyword{Setup}
-\keyword{handlers}
 \keyword{internal}
-\keyword{message}
-\keyword{rendering}

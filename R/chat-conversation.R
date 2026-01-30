@@ -12,7 +12,13 @@ ConversationManager <- S7::new_class(
     context_sent = S7::class_any,
     context_files = S7::class_any,
     is_loading = S7::class_any,
-    context_text = S7::class_any
+    context_text = S7::class_any,
+    # NEW: Track what's actually been sent to Cassidy
+    sent_context_files = S7::class_any,
+    sent_data_frames = S7::class_any,
+    # NEW: Track items queued for refresh (re-send)
+    pending_refresh_files = S7::class_any,
+    pending_refresh_data = S7::class_any
   ),
   constructor = function() {
     S7::new_object(
@@ -22,7 +28,12 @@ ConversationManager <- S7::new_class(
       context_sent = shiny::reactiveVal(FALSE),
       context_files = shiny::reactiveVal(character()),
       is_loading = shiny::reactiveVal(FALSE),
-      context_text = shiny::reactiveVal(NULL)
+      context_text = shiny::reactiveVal(NULL),
+      # NEW: Initialize tracking
+      sent_context_files = shiny::reactiveVal(character()),
+      sent_data_frames = shiny::reactiveVal(character()),
+      pending_refresh_files = shiny::reactiveVal(character()),
+      pending_refresh_data = shiny::reactiveVal(character())
     )
   }
 )
@@ -97,6 +108,48 @@ conv_context_text <- S7::new_generic("conv_context_text", "x")
 #' @keywords internal
 conv_set_context <- S7::new_generic("conv_set_context", "x")
 
+# NEW: Generics for sent tracking
+#' Get sent context files
+#' @keywords internal
+conv_sent_context_files <- S7::new_generic("conv_sent_context_files", "x")
+
+#' Set sent context files
+#' @keywords internal
+conv_set_sent_context_files <- S7::new_generic(
+  "conv_set_sent_context_files",
+  "x"
+)
+
+#' Get sent data frames
+#' @keywords internal
+conv_sent_data_frames <- S7::new_generic("conv_sent_data_frames", "x")
+
+#' Set sent data frames
+#' @keywords internal
+conv_set_sent_data_frames <- S7::new_generic("conv_set_sent_data_frames", "x")
+
+#' Get pending refresh files
+#' @keywords internal
+conv_pending_refresh_files <- S7::new_generic("conv_pending_refresh_files", "x")
+
+#' Set pending refresh files
+#' @keywords internal
+conv_set_pending_refresh_files <- S7::new_generic(
+  "conv_set_pending_refresh_files",
+  "x"
+)
+
+#' Get pending refresh data frames
+#' @keywords internal
+conv_pending_refresh_data <- S7::new_generic("conv_pending_refresh_data", "x")
+
+#' Set pending refresh data frames
+#' @keywords internal
+conv_set_pending_refresh_data <- S7::new_generic(
+  "conv_set_pending_refresh_data",
+  "x"
+)
+
 # ---- Methods ----
 
 S7::method(conv_get_all, ConversationManager) <- function(x) {
@@ -140,6 +193,55 @@ S7::method(conv_context_text, ConversationManager) <- function(x) {
 
 S7::method(conv_set_context, ConversationManager) <- function(x, value) {
   x@context_text(value)
+  invisible(x)
+}
+
+# NEW: Methods for sent tracking
+S7::method(conv_sent_context_files, ConversationManager) <- function(x) {
+  x@sent_context_files()
+}
+
+S7::method(conv_set_sent_context_files, ConversationManager) <- function(
+  x,
+  value
+) {
+  x@sent_context_files(value)
+  invisible(x)
+}
+
+S7::method(conv_sent_data_frames, ConversationManager) <- function(x) {
+  x@sent_data_frames()
+}
+
+S7::method(conv_set_sent_data_frames, ConversationManager) <- function(
+  x,
+  value
+) {
+  x@sent_data_frames(value)
+  invisible(x)
+}
+
+S7::method(conv_pending_refresh_files, ConversationManager) <- function(x) {
+  x@pending_refresh_files()
+}
+
+S7::method(conv_set_pending_refresh_files, ConversationManager) <- function(
+  x,
+  value
+) {
+  x@pending_refresh_files(value)
+  invisible(x)
+}
+
+S7::method(conv_pending_refresh_data, ConversationManager) <- function(x) {
+  x@pending_refresh_data()
+}
+
+S7::method(conv_set_pending_refresh_data, ConversationManager) <- function(
+  x,
+  value
+) {
+  x@pending_refresh_data(value)
   invisible(x)
 }
 
@@ -204,6 +306,9 @@ S7::method(conv_create_new, ConversationManager) <- function(
     thread_id = NULL,
     context_sent = FALSE,
     context_files = character(),
+    # NEW: Initialize sent tracking in conversation record
+    sent_context_files = character(),
+    sent_data_frames = character(),
     created_at = Sys.time()
   )
 
@@ -215,14 +320,29 @@ S7::method(conv_create_new, ConversationManager) <- function(
   x@context_sent(FALSE)
   x@context_files(character())
   x@is_loading(FALSE)
+  # NEW: Clear all tracking for new conversation
+  x@sent_context_files(character())
+  x@sent_data_frames(character())
+  x@pending_refresh_files(character())
+  x@pending_refresh_data(character())
 
   if (!is.null(session)) {
     session$sendCustomMessage("clearInput", list())
+    # Clear UI checkboxes for new conversation - use character() not list()
+    session$sendCustomMessage(
+      "syncFileCheckboxes",
+      list(sent = character(), selected = character())
+    )
+    session$sendCustomMessage(
+      "syncDataCheckboxes",
+      list(sent = character(), selected = character())
+    )
   }
 
   cli::cli_alert_success("Created new conversation")
   invisible(new_id)
 }
+
 
 S7::method(conv_switch_to, ConversationManager) <- function(
   x,
@@ -242,11 +362,57 @@ S7::method(conv_switch_to, ConversationManager) <- function(
     conv <- convs[[idx]]
     x@current_id(conv_id)
     x@context_sent(conv$context_sent)
-    x@context_files(conv$context_files)
+    x@context_files(conv$context_files %||% character())
     x@is_loading(FALSE)
+    # Restore sent tracking from conversation
+    x@sent_context_files(conv$sent_context_files %||% character())
+    x@sent_data_frames(conv$sent_data_frames %||% character())
+    # Clear pending on switch (start fresh)
+    x@pending_refresh_files(character())
+    x@pending_refresh_data(character())
 
     if (!is.null(session)) {
       session$sendCustomMessage("clearInput", list())
+
+      # Sync checkboxes: combine sent + selected (context_files)
+      # Sent files should be checked AND show as sent (blue)
+      # Selected-but-not-sent should be checked AND show as pending (green)
+      all_selected <- union(
+        conv$sent_context_files %||% character(),
+        conv$context_files %||% character()
+      )
+
+      # IMPORTANT: Don't use list() for empty vectors - use character()
+      session$sendCustomMessage(
+        "syncFileCheckboxes",
+        list(
+          sent = if (length(conv$sent_context_files) > 0) {
+            conv$sent_context_files
+          } else {
+            character()
+          },
+          selected = if (length(all_selected) > 0) {
+            all_selected
+          } else {
+            character()
+          }
+        )
+      )
+      session$sendCustomMessage(
+        "syncDataCheckboxes",
+        list(
+          sent = if (length(conv$sent_data_frames) > 0) {
+            conv$sent_data_frames
+          } else {
+            character()
+          },
+          selected = if (length(conv$sent_data_frames) > 0) {
+            conv$sent_data_frames
+          } else {
+            character()
+          }
+        )
+      )
     }
 
     cli::cli_alert_info("Switched to conversation: {conv$title}")
@@ -267,11 +433,20 @@ S7::method(conv_delete, ConversationManager) <- function(x, conv_id) {
       x@current_id(convs[[1]]$id)
       x@context_sent(convs[[1]]$context_sent)
       x@context_files(convs[[1]]$context_files)
+      # NEW: Restore sent tracking from new current conversation
+      x@sent_context_files(convs[[1]]$sent_context_files %||% character())
+      x@sent_data_frames(convs[[1]]$sent_data_frames %||% character())
     } else {
       x@current_id(NULL)
       x@context_sent(FALSE)
       x@context_files(character())
+      # NEW: Clear sent tracking
+      x@sent_context_files(character())
+      x@sent_data_frames(character())
     }
+    # NEW: Clear pending on delete
+    x@pending_refresh_files(character())
+    x@pending_refresh_data(character())
   }
 
   cli::cli_alert_success("Deleted conversation")
@@ -362,9 +537,23 @@ S7::method(conv_load_and_set, ConversationManager) <- function(
     x@context_sent(conv$context_sent)
     x@context_files(conv$context_files %||% character())
     x@is_loading(FALSE)
+    # NEW: Restore sent tracking from loaded conversation
+    x@sent_context_files(conv$sent_context_files %||% character())
+    x@sent_data_frames(conv$sent_data_frames %||% character())
+    x@pending_refresh_files(character())
+    x@pending_refresh_data(character())
 
     if (!is.null(session)) {
       session$sendCustomMessage("clearInput", list())
+      # NEW: Sync UI checkboxes
+      session$sendCustomMessage(
+        "syncFileCheckboxes",
+        conv$sent_context_files %||% list()
+      )
+      session$sendCustomMessage(
+        "syncDataCheckboxes",
+        conv$sent_data_frames %||% list()
+      )
     }
 
     cli::cli_alert_success("Loaded conversation: {conv$title}")

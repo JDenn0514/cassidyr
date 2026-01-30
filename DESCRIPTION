@@ -16,10 +16,10 @@ RoxygenNote: 7.3.3
 Imports:
     bslib,
     cli,
+    commonmark,
     devtools,
     gert,
     httr2,
-    markdown,
     rlang,
     rstudioapi,
     S7,
@@ -29,6 +29,8 @@ Imports:
     usethis,
     vctrs
 Suggests:
+    base64enc,
+    htmltools,
     knitr,
     quarto,
     rmarkdown,

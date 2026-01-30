@@ -810,7 +810,7 @@ use_cassidy_md <- function(
     "- **Factor analysis:** [EFA, CFA, preferences]",
     "- **Scale reliability:** [Cronbach's alpha, omega]",
     "- **Statistical tests:** [preferred methods]",
-    "- **Packages:** [psych, lavaan, semTools, adlgraphs, etc.]",
+    "- **Packages:** [survey, psych, lavaan, semTools, adlgraphs, etc.]",
     "",
     "## Reporting Standards",
     "- **Effect sizes:** Always report",

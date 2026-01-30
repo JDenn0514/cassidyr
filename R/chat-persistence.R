@@ -51,13 +51,23 @@ cassidy_load_conversation <- function(conv_id) {
   }
 
   tryCatch(
-    readRDS(path),
+    {
+      conv <- readRDS(path)
+
+      # Ensure backwards compatibility with new tracking fields
+      conv$sent_context_files <- conv$sent_context_files %||% character()
+      conv$sent_data_frames <- conv$sent_data_frames %||% character()
+      conv$context_files <- conv$context_files %||% character()
+
+      conv
+    },
     error = function(e) {
       cli::cli_warn("Could not load conversation {conv_id}: {e$message}")
       NULL
     }
   )
 }
+
 
 #' List all saved conversations
 #'

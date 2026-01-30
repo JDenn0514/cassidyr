@@ -1,7 +1,5 @@
 #' Setup message rendering handlers
 #' @keywords internal
-#' Setup message rendering handlers
-#' @keywords internal
 setup_message_renderer <- function(output, conv_manager) {
   output$messages <- shiny::renderUI({
     conv <- conv_get_current(conv_manager)
@@ -33,10 +31,43 @@ setup_message_renderer <- function(output, conv_manager) {
 
     # Render messages
     message_elements <- lapply(msg_list, function(msg) {
+      rendered_content <- commonmark::markdown_html(msg$content)
+
+      # Check for downloadable files in assistant messages
+      download_html <- ""
+      if (msg$role == "assistant") {
+        files <- .detect_downloadable_files(msg$content)
+        if (
+          length(files) > 0 &&
+            rlang::is_installed("base64enc") &&
+            rlang::is_installed("htmltools")
+        ) {
+          download_links <- vapply(
+            seq_along(files),
+            function(i) {
+              .create_download_link_html(
+                files[[i]]$content,
+                files[[i]]$filename,
+                i
+              )
+            },
+            character(1)
+          )
+          download_html <- paste(download_links, collapse = "\n")
+        }
+      }
+
       shiny::div(
         class = paste0("message message-", msg$role),
         shiny::div(class = "message-role", msg$role),
-        shiny::div(shiny::HTML(markdown::renderMarkdown(text = msg$content)))
+        shiny::div(shiny::HTML(rendered_content)),
+        if (nzchar(download_html)) {
+          shiny::div(
+            class = "message-downloads",
+            style = "margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid #eee;",
+            shiny::HTML(download_html)
+          )
+        }
       )
     })
 
@@ -365,8 +396,6 @@ setup_new_chat_handler <- function(input, session, conv_manager) {
   })
 }
 
-#' Setup handler for confirming new chat with context
-#' @keywords internal
 setup_new_chat_confirm_handler <- function(
   input,
   session,
@@ -402,11 +431,104 @@ setup_new_chat_confirm_handler <- function(
     # Create new conversation
     conv_create_new(conv_manager, session)
 
-    # Store context for this conversation
+    # Store context
     conv_set_context(conv_manager, context_text)
     conv_set_context_sent(conv_manager, FALSE)
 
-    cli::cli_alert_success("New conversation created with fresh context")
+    # === AUTO-SEND CONTEXT ===
+    if (!is.null(context_text) && nzchar(context_text)) {
+      # Show loading
+      conv_set_loading(conv_manager, TRUE)
+      session$sendCustomMessage("setLoading", TRUE)
+
+      shiny::showNotification(
+        "Sending context to Cassidy...",
+        id = "context_sending",
+        type = "message",
+        duration = NULL
+      )
+
+      tryCatch(
+        {
+          # Create thread
+          thread_id <- cassidy_create_thread(
+            assistant_id = assistant_id,
+            api_key = api_key
+          )
+          conv_update_current(conv_manager, list(thread_id = thread_id))
+          cli::cli_alert_success("Created new conversation thread")
+
+          # Send context
+          context_message <- paste0(
+            "# Project Context\n\n",
+            context_text,
+            "\n\n---\n\n",
+            "I've shared my project context with you. Please acknowledge that you've received it ",
+            "and let me know you're ready to help with this project."
+          )
+
+          response <- cassidy_send_message(
+            thread_id = thread_id,
+            message = context_message,
+            api_key = api_key,
+            timeout = timeout
+          )
+
+          # Add messages to UI
+          conv_add_message(
+            conv_manager,
+            "system",
+            sprintf(
+              "**System:** Applied context (%s characters)",
+              format(nchar(context_text), big.mark = ",")
+            )
+          )
+
+          conv_add_message(conv_manager, "assistant", response$content)
+
+          # Mark as sent
+          conv_set_context_sent(conv_manager, TRUE)
+          conv_update_current(conv_manager, list(context_sent = TRUE))
+
+          # Clear loading
+          conv_set_loading(conv_manager, FALSE)
+          session$sendCustomMessage("setLoading", FALSE)
+          session$sendCustomMessage("scrollToBottom", list())
+
+          # Remove sending notification
+          shiny::removeNotification("context_sending")
+
+          # Success notification
+          shiny::showNotification(
+            "Context sent successfully! Cassidy is ready.",
+            type = "message",
+            duration = 5
+          )
+
+          cli::cli_alert_success("New conversation created with fresh context")
+        },
+        error = function(e) {
+          # Clear loading
+          conv_set_loading(conv_manager, FALSE)
+          session$sendCustomMessage("setLoading", FALSE)
+
+          # Remove sending notification
+          shiny::removeNotification("context_sending")
+
+          # Error notification
+          shiny::showNotification(
+            paste("Error sending context:", e$message),
+            type = "error",
+            duration = 8
+          )
+
+          cli::cli_warn("Failed to send context: {e$message}")
+          cli::cli_alert_info(
+            "Context saved - use 'Apply Context' button to retry"
+          )
+        }
+      )
+    }
   })
 }
 

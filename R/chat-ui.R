@@ -155,14 +155,202 @@ cassidy_app <- function(
       session$clientData$url_search,
       {
         if (!is.null(resume_id)) {
-          # Resume previous conversation
+          # === RESUME PREVIOUS CONVERSATION ===
           cli::cli_alert_info("Resuming conversation: {resume_id}")
           conv_load_and_set(conv_manager, resume_id, session)
+
+          # Get the loaded conversation to see what was selected
+          conv <- conv_get_current(conv_manager)
+          previous_files <- conv$context_files %||% character(0)
+          previous_data <- conv$context_data %||% character(0)
+
+          if (length(previous_files) > 0) {
+            conv_set_context_files(conv_manager, previous_files)
+            cli::cli_alert_success(
+              "Restored {length(previous_files)} file selection{?s}"
+            )
+          }
+
+          if (length(previous_files) > 0) {
+            conv_set_context_files(conv_manager, previous_files)
+            cli::cli_alert_success(
+              "Restored {length(previous_files)} file selection{?s}"
+            )
+
+            # Force file tree to re-render with updated selections
+            session$sendCustomMessage("triggerFileTreeRefresh", list())
+          }
+
+          # === RESTORE SIDEBAR UI STATE ===
+          cli::cli_alert_info("Restoring context selections...")
+
+          # Restore data frame checkboxes
+          if (length(previous_data) > 0) {
+            for (df_name in previous_data) {
+              df_id <- gsub("[^a-zA-Z0-9]", "_", df_name)
+              input_id <- paste0("ctx_data_", df_id)
+              shiny::updateCheckboxInput(session, input_id, value = TRUE)
+            }
+          }
+
+          # === REFRESH AND SEND CONTEXT ===
+          cli::cli_alert_info("Refreshing context with latest data...")
+
+          refreshed_context <- .refresh_conversation_context(
+            previous_files = previous_files,
+            previous_data = previous_data,
+            conv_manager = conv_manager
+          )
+
+          if (!is.null(refreshed_context) && !is.null(conv$thread_id)) {
+            conv_set_context(conv_manager, refreshed_context)
+
+            # Show loading state
+            conv_set_loading(conv_manager, TRUE)
+            session$sendCustomMessage("setLoading", TRUE)
+
+            shiny::showNotification(
+              "Sending refreshed context to Cassidy...",
+              id = "context_refresh_sending",
+              type = "message",
+              duration = NULL
+            )
+
+            tryCatch(
+              {
+                # Send refreshed context
+                context_message <- paste0(
+                  "# Refreshed Project Context\n\n",
+                  "I'm resuming our conversation. Here's the latest project context:\n\n",
+                  refreshed_context,
+                  "\n\n---\n\n",
+                  "Please acknowledge that you have the updated context. ",
+                  "We can continue where we left off."
+                )
+
+                response <- cassidy_send_message(
+                  thread_id = conv$thread_id,
+                  message = context_message,
+                  api_key = api_key,
+                  timeout = timeout
+                )
+
+                # Add system message
+                conv_add_message(
+                  conv_manager,
+                  "system",
+                  sprintf(
+                    "**System:** Refreshed context on resume (%s characters)",
+                    format(nchar(refreshed_context), big.mark = ",")
+                  )
+                )
+
+                # Add Cassidy's acknowledgment
+                conv_add_message(conv_manager, "assistant", response$content)
+
+                # Mark as sent
+                conv_set_context_sent(conv_manager, TRUE)
+
+                # Clear loading
+                conv_set_loading(conv_manager, FALSE)
+                session$sendCustomMessage("setLoading", FALSE)
+                session$sendCustomMessage("scrollToBottom", list())
+
+                shiny::removeNotification("context_refresh_sending")
+
+                shiny::showNotification(
+                  "Context refreshed and sent!",
+                  type = "message",
+                  duration = 3
+                )
+
+                cli::cli_alert_success("Refreshed context sent to Cassidy")
+              },
+              error = function(e) {
+                conv_set_loading(conv_manager, FALSE)
+                session$sendCustomMessage("setLoading", FALSE)
+                shiny::removeNotification("context_refresh_sending")
+
+                shiny::showNotification(
+                  paste("Error sending refreshed context:", e$message),
+                  type = "warning",
+                  duration = 5
+                )
+
+                cli::cli_alert_warning(
+                  "Failed to send refreshed context: {e$message}"
+                )
+                cli::cli_alert_info(
+                  "Context stored locally - use 'Apply Context' to retry"
+                )
+              }
+            )
+          } else if (!is.null(refreshed_context)) {
+            # No thread_id yet, just store context
+            conv_set_context(conv_manager, refreshed_context)
+            cli::cli_alert_success(
+              "Context refreshed from disk (will send with first message)"
+            )
+          }
         } else {
-          # Create new conversation and set initial context
+          # === NEW CONVERSATION ===
           conv_create_new(conv_manager, session)
           if (!is.null(context_text)) {
             conv_set_context(conv_manager, context_text)
+            conv_set_context_sent(conv_manager, FALSE)
+
+            # === AUTO-SEND THE CONTEXT ===
+            cli::cli_alert_info("Auto-sending context to Cassidy...")
+
+            # Create thread with context
+            tryCatch(
+              {
+                thread_id <- cassidy_create_thread(
+                  assistant_id = assistant_id,
+                  api_key = api_key
+                )
+                conv_update_current(conv_manager, list(thread_id = thread_id))
+
+                # Send context as first message
+                context_message <- paste0(
+                  "# Project Context\n\n",
+                  context_text,
+                  "\n\n---\n\n",
+                  "I've shared my project context with you. Please acknowledge that you've received it ",
+                  "and let me know you're ready to help with this project."
+                )
+
+                response <- cassidy_send_message(
+                  thread_id = thread_id,
+                  message = context_message,
+                  api_key = api_key,
+                  timeout = timeout
+                )
+
+                # Add system message
+                conv_add_message(
+                  conv_manager,
+                  "system",
+                  sprintf(
+                    "**System:** Applied context (%s characters)",
+                    format(nchar(context_text), big.mark = ",")
+                  )
+                )
+
+                # Add Cassidy's response
+                conv_add_message(conv_manager, "assistant", response$content)
+
+                # Mark as sent
+                conv_set_context_sent(conv_manager, TRUE)
+                conv_update_current(conv_manager, list(context_sent = TRUE))
+
+                cli::cli_alert_success("Context sent successfully!")
+              },
+              error = function(e) {
+                cli::cli_alert_warning("Failed to send context: {e$message}")
+                # Context is still stored, can be sent manually via Apply Context button
+              }
+            )
           }
         }
 
@@ -203,6 +391,7 @@ cassidy_app <- function(
       api_key,
       timeout
     )
+    # setup_refresh_handlers(input, session, conv_manager)
 
     # Setup file tree renderer and handlers
     setup_file_tree_renderer(output, input, conv_manager)
@@ -265,60 +454,5 @@ cassidy_app <- function(
   } else {
     cli::cli_alert_success("Launching Cassidy Chat (resuming)...")
   }
-  shiny::shinyApp(ui = ui, server = server)
-}
-
-
-#' Build the Cassidy Shiny app object
-#' @keywords internal
-.build_cassidy_shiny_app <- function(
-  theme,
-  context_level,
-  context_text,
-  assistant_id,
-  api_key,
-  timeout
-) {
-  # ---- UI ----
-  ui <- chat_build_ui(theme, context_level)
-
-  # ---- Server ----
-  server <- function(input, output, session) {
-    # Initialize conversation manager
-    conv_manager <- ConversationManager()
-
-    # Setup renderers
-    setup_message_renderer(output, conv_manager)
-    setup_conversation_list_renderer(output, conv_manager)
-    setup_file_context_renderer(output, conv_manager)
-
-    # Setup handlers
-    setup_conversation_switch_handler(input, session, conv_manager)
-    setup_conversation_delete_handlers(input, session, conv_manager)
-    setup_new_chat_handler(input, session, conv_manager)
-    setup_send_message_handler(
-      input,
-      session,
-      conv_manager,
-      assistant_id,
-      api_key,
-      timeout
-    )
-    setup_file_context_handlers(
-      input,
-      session,
-      conv_manager,
-      assistant_id,
-      api_key,
-      timeout
-    )
-
-    # Cleanup
-    shiny::onSessionEnded(function() {
-      cli::cli_alert_info("Chat session ended")
-    })
-  }
-
-  # Return app object
   shiny::shinyApp(ui = ui, server = server)
 }

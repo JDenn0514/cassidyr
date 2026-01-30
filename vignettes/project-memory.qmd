@@ -1,9 +1,11 @@
 ---
 title: "Managing Project Memory in cassidyr"
-output: rmarkdown::html_vignette
+format:
+  html:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Managing Project Memory in cassidyr}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 
@@ -68,7 +70,7 @@ cassidy_app(recursive = TRUE)
 
 The easiest way to create a project memory file is with the `use_cassidy_md()` function:
 
-```r
+```{r, eval=FALSE}
 library(cassidyr)
 
 # Create CASSIDY.md in project root
@@ -85,7 +87,7 @@ use_cassidy_md(location = "local")
 
 *cassidyr* provides several templates to get you started:
 
-```r
+```{r, eval=FALSE}
 # Default template - general purpose
 use_cassidy_md(template = "default")
 
@@ -141,7 +143,7 @@ and scale reliability.
 
 For a simple analysis project:
 
-```text
+```
 my-analysis/
 ├── CASSIDY.md              # Project memory
 ├── data/
@@ -154,7 +156,7 @@ my-analysis/
 
 For keeping the root directory clean:
 
-```text
+```
 my-project/
 ├── .cassidy/
 │   ├── CASSIDY.md          # Main project instructions
@@ -168,7 +170,7 @@ my-project/
 
 For complex projects with multiple areas:
 
-```text
+```
 large-project/
 ├── .cassidy/
 │   ├── CASSIDY.md          # Main project instructions
@@ -193,7 +195,7 @@ For larger projects, organize instructions into multiple files using the `.cassi
 
 Place markdown files in your project's `.cassidy/rules/` directory:
 
-```text
+```
 your-project/
 ├── .cassidy/
 │   ├── CASSIDY.md          # Main project instructions
@@ -209,7 +211,7 @@ All `.md` files in `.cassidy/rules/` are automatically loaded as project memory.
 
 Rules can be organized into subdirectories for better structure:
 
-```text
+```
 .cassidy/rules/
 ├── r-code/
 │   ├── style.md
@@ -231,7 +233,7 @@ All `.md` files are discovered recursively.
 
 You can use symbolic links to share common rules across multiple projects:
 
-```bash
+```{bash, eval=FALSE}
 # Symlink a shared rules directory (Unix/Mac)
 ln -s ~/my-r-standards .cassidy/rules/shared
 
@@ -283,11 +285,11 @@ On Windows, you can use junction points or directory symbolic links.
 
 # User-Level Memory
 
-Create personal preferences that apply to all your projects in `~/.cassidy/CASSIDY.md`:
+You can also create a user-level memory file that applies to all your R projects:
 
-```r
+```{r, eval=FALSE}
 # Create user-level memory directory
-dir.create("~/.cassidy", showWarnings = FALSE)
+dir.create("~/.cassidy", showWarnings = FALSE, recursive = TRUE)
 
 # Create your personal CASSIDY.md
 cat("# My Personal R Preferences
@@ -316,7 +318,7 @@ cat("# My Personal R Preferences
 
 When you start `cassidy_app()`, all memory files are automatically loaded:
 
-```r
+```{r, eval=FALSE}
 library(cassidyr)
 
 # Start app - automatically loads all CASSIDY.md files
@@ -340,7 +342,7 @@ The app will:
 
 You can also read memory files directly:
 
-```r
+```{r, eval=FALSE}
 # Read all memory files recursively
 config <- cassidy_read_context_file()
 
@@ -419,12 +421,12 @@ Keep personal preferences in `CASSIDY.local.md` to avoid merge conflicts:
 
 ## R Package Development
 
-```r
+```{r, eval=FALSE}
 # Set up package memory
 use_cassidy_md(template = "package")
 
 # Add specific rules
-dir.create(".cassidy/rules", recursive = TRUE)
+dir.create(".cassidy/rules", recursive = TRUE, showWarnings = FALSE)
 
 # Create testing guidelines
 cat("# Testing Standards
@@ -445,7 +447,7 @@ cat("# Testing Standards
 
 ## Data Analysis Project
 
-```r
+```{r, eval=FALSE}
 # Set up analysis memory
 use_cassidy_md(template = "analysis")
 
@@ -475,7 +477,7 @@ cat("
 
 ## Survey Research
 
-```r
+```{r, eval=FALSE}
 # Set up survey memory
 use_cassidy_md(template = "survey")
 
@@ -515,7 +517,7 @@ Check that:
 
 You can verify what is being loaded:
 
-```r
+```{r, eval=FALSE}
 # Check what memory files are found
 config <- cassidy_read_context_file()
 if (!is.null(config)) {

@@ -236,3 +236,216 @@ cassidy_write_file <- function(x, path, open = interactive(), append = FALSE) {
     explanation = explanation_blocks
   )
 }
+
+#' Detect downloadable files in message content
+#'
+#' Scans a message for code blocks that represent downloadable files
+#' (markdown, Quarto, R Markdown). Extracts content and metadata.
+#'
+#' @param content Character. Raw message content from assistant.
+#' @return List of detected files, each with: content, extension, filename.
+#'   Returns empty list if no downloadable files found.
+#'
+#' @keywords internal
+.detect_downloadable_files <- function(content) {
+  if (is.null(content) || !nzchar(content)) {
+    return(list())
+  }
+
+  files <- list()
+  lines <- strsplit(content, "\n", fixed = TRUE)[[1]]
+
+  i <- 1
+  while (i <= length(lines)) {
+    line <- lines[i]
+
+    # Check for opening fence with target language
+    if (grepl("^```(md|markdown|qmd|rmd)\\s*$", line, ignore.case = TRUE)) {
+      lang <- tolower(sub("^```", "", trimws(line)))
+
+      extension <- switch(
+        lang,
+        "md" = ".md",
+        "markdown" = ".md",
+        "qmd" = ".qmd",
+        "rmd" = ".Rmd",
+        ".md"
+      )
+
+      # Find closing fence, accounting for nested code blocks
+      start_line <- i + 1
+      end_line <- NULL
+      j <- start_line
+      nesting <- 0
+
+      while (j <= length(lines)) {
+        current_line <- lines[j]
+
+        # Check for nested code block opening (has language identifier)
+        if (grepl("^```[a-zA-Z]", current_line)) {
+          nesting <- nesting + 1
+        } else if (grepl("^```\\s*$", current_line)) {
+          # Bare ``` - either closes nested block or closes our main block
+          if (nesting > 0) {
+            nesting <- nesting - 1
+          } else {
+            end_line <- j - 1
+            break
+          }
+        }
+        j <- j + 1
+      }
+
+      if (!is.null(end_line) && end_line >= start_line) {
+        file_content <- paste(lines[start_line:end_line], collapse = "\n")
+        filename <- .extract_filename_from_content(file_content, extension)
+
+        files <- c(
+          files,
+          list(list(
+            content = file_content,
+            extension = extension,
+            filename = filename
+          ))
+        )
+
+        i <- j + 1
+        next
+      }
+    }
+    i <- i + 1
+  }
+
+  files
+}
+
+
+#' Extract filename from file content
+#'
+#' Attempts to detect a filename from YAML front matter title field.
+#' Falls back to "untitled" with appropriate extension.
+#'
+#' @param content Character. File content.
+#' @param extension Character. File extension (e.g., ".md").
+#' @return Character. Detected or default filename.
+#'
+#' @keywords internal
+
+.extract_filename_from_content <- function(content, extension) {
+  # Check for YAML front matter
+  if (!grepl("^---\\s*$", strsplit(content, "\n", fixed = TRUE)[[1]][1])) {
+    return(paste0("untitled", extension))
+  }
+
+  # Extract lines
+  lines <- strsplit(content, "\n", fixed = TRUE)[[1]]
+
+  # Find closing ---
+  yaml_end <- NULL
+  for (i in 2:length(lines)) {
+    if (grepl("^---\\s*$", lines[i])) {
+      yaml_end <- i
+      break
+    }
+  }
+
+  if (is.null(yaml_end)) {
+    return(paste0("untitled", extension))
+  }
+
+  # Look for title line in YAML
+  yaml_lines <- lines[2:(yaml_end - 1)]
+  title_line <- grep("^title:", yaml_lines, value = TRUE)
+
+  if (length(title_line) == 0) {
+    return(paste0("untitled", extension))
+  }
+
+  # Extract title value
+  title <- sub("^title:\\s*", "", title_line[1])
+  # Remove surrounding quotes if present
+  title <- gsub("^[\"']|[\"']$", "", title)
+  title <- trimws(title)
+
+  if (!nzchar(title)) {
+    return(paste0("untitled", extension))
+  }
+
+  safe_title <- .sanitize_filename(title)
+  paste0(safe_title, extension)
+}
+
+
+#' Sanitize a string for use as a filename
+#'
+#' Removes or replaces characters that are invalid in filenames.
+#'
+#' @param x Character. String to sanitize.
+#' @return Character. Safe filename string.
+#'
+#' @keywords internal
+.sanitize_filename <- function(x) {
+  # Replace spaces with underscores
+  x <- gsub("\\s+", "_", x)
+  # Remove invalid characters
+  x <- gsub("[<>:\"/\\\\|?*]", "", x)
+  # Remove leading/trailing underscores
+  x <- gsub("^_+|_+$", "", x)
+  # Limit length
+  if (nchar(x) > 50) {
+    x <- substr(x, 1, 50)
+  }
+  # Ensure not empty
+  if (!nzchar(x)) {
+    x <- "untitled"
+  }
+  x
+}
+
+#' Create HTML for file download link
+#'
+#' Generates an HTML download button/link for a file. Uses data URI
+#' encoding to embed content directly in the href.
+#'
+#' @param content Character. File content to download.
+#' @param filename Character. Suggested filename for download.
+#' @param index Integer. Unique index for multiple downloads in same message.
+#' @return Character. HTML string for download link.
+#'
+#' @keywords internal
+.create_download_link_html <- function(content, filename, index = 1) {
+  # Base64 encode the content for data URI
+  encoded <- base64enc::base64encode(charToRaw(content))
+
+  # Determine MIME type from extension
+  ext <- tolower(tools::file_ext(filename))
+  mime_type <- switch(
+    ext,
+    "md" = "text/markdown",
+    "qmd" = "text/plain",
+    "rmd" = "text/plain",
+    "text/plain"
+  )
+
+  # Create data URI
+  data_uri <- paste0("data:", mime_type, ";base64,", encoded)
+
+  # Use shiny::icon() for proper rendering
+  icon_html <- as.character(shiny::icon("download"))
+
+  paste0(
+    '<div class="file-download-container">',
+    '<a href="',
+    data_uri,
+    '" ',
+    'download="',
+    htmltools::htmlEscape(filename),
+    '" ',
+    'class="btn btn-sm btn-outline-primary file-download-btn">',
+    icon_html,
+    ' Download ',
+    htmltools::htmlEscape(filename),
+    '</a>',
+    '</div>'
+  )
+}
