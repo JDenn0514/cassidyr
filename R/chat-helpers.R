@@ -472,57 +472,62 @@ cassidy_write_file <- function(x, path, open = interactive(), append = FALSE) {
   while (i <= length(lines)) {
     line <- lines[i]
 
-    # Check for opening code fence (``` or ~~~)
-    if (grepl("^(`{3,}|~{3,})\\s*[a-zA-Z]*\\s*$", line)) {
-      # Extract fence character and length
+    # Check for opening code fence with language (``` or ~~~)
+    if (grepl("^(`{3,}|~{3,})[a-zA-Z]", line)) {
       fence_char <- substr(line, 1, 1)
       fence_match <- regexpr(paste0("^", fence_char, "+"), line)
       fence_len <- attr(fence_match, "match.length")
-      fence <- substr(line, 1, fence_len)
       lang <- trimws(substr(line, fence_len + 1, nchar(line)))
 
-      # Collect block content and find closing fence
+      # Collect entire block using fence counting (pairs)
       block_lines <- character()
       j <- i + 1
-      has_nested <- FALSE
-      closing_pattern <- paste0("^", fence_char, "{", fence_len, "}\\s*$")
+      open_count <- 1 # We've seen one opening fence
+      max_inner_fence <- 0
 
-      while (j <= length(lines)) {
-        if (grepl(closing_pattern, lines[j])) {
-          break
+      while (j <= length(lines) && open_count > 0) {
+        current_line <- lines[j]
+
+        # Check for any fence of same character type
+        if (grepl(paste0("^", fence_char, "{3,}"), current_line)) {
+          inner_match <- regexpr(paste0("^", fence_char, "+"), current_line)
+          inner_len <- attr(inner_match, "match.length")
+          has_lang <- grepl(paste0("^", fence_char, "+[a-zA-Z]"), current_line)
+
+          if (has_lang) {
+            # Opening fence
+            open_count <- open_count + 1
+            max_inner_fence <- max(max_inner_fence, inner_len)
+            block_lines <- c(block_lines, current_line)
+          } else {
+            # Closing fence
+            open_count <- open_count - 1
+            if (open_count > 0) {
+              # Inner closing fence - keep as-is
+              block_lines <- c(block_lines, current_line)
+            }
+            # If open_count == 0, this is our outer closing fence (don't add)
+          }
+        } else {
+          block_lines <- c(block_lines, current_line)
         }
-        # Check for nested fence of same type
-        if (grepl(paste0("^", fence_char, "{3,}"), lines[j])) {
-          has_nested <- TRUE
-        }
-        block_lines <- c(block_lines, lines[j])
         j <- j + 1
       }
 
-      if (has_nested) {
-        # Find max nested fence length
-        max_nested <- fence_len
-        for (bl in block_lines) {
-          if (grepl(paste0("^", fence_char, "{3,}"), bl)) {
-            nested_match <- regexpr(paste0("^", fence_char, "+"), bl)
-            nested_len <- attr(nested_match, "match.length")
-            max_nested <- max(max_nested, nested_len)
-          }
-        }
-        # Use longer fence (at least one more than max nested)
-        new_fence <- paste(rep(fence_char, max_nested + 1), collapse = "")
+      # Determine if we need longer outer fences
+      if (max_inner_fence > 0) {
+        new_fence_len <- max(fence_len, max_inner_fence + 1)
+        new_fence <- paste(rep(fence_char, new_fence_len), collapse = "")
         result <- c(result, paste0(new_fence, lang))
         result <- c(result, block_lines)
         result <- c(result, new_fence)
       } else {
-        # No nesting - keep original
+        # No inner fences - keep original
         result <- c(result, line)
         result <- c(result, block_lines)
-        if (j <= length(lines)) {
-          result <- c(result, lines[j])
-        }
+        result <- c(result, paste(rep(fence_char, fence_len), collapse = ""))
       }
-      i <- j + 1
+      i <- j
     } else {
       result <- c(result, line)
       i <- i + 1
