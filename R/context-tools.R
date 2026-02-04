@@ -38,10 +38,6 @@
   has_rproj || has_code_workspace || has_renv || has_r_structure
 }
 
-# Check for Git repository
-.has_git <- function() {
-  dir.exists(".git")
-}
 
 # Trim context to max size
 .trim_context <- function(context, max_size) {
@@ -88,4 +84,44 @@
 # Format number with specific digits
 .format_num <- function(x, digits = 2) {
   format(x, digits = digits, nsmall = digits)
+}
+
+
+# Helper: Make a path relative to a base directory
+.make_relative_path <- function(path, base) {
+  # Normalize both paths
+  path <- normalizePath(path, mustWork = FALSE)
+  base <- normalizePath(base, mustWork = FALSE)
+
+  # Try to make relative
+  if (startsWith(path, base)) {
+    rel <- substring(path, nchar(base) + 2) # +2 to skip trailing /
+    if (nchar(rel) > 0) return(rel)
+  }
+
+  # Fall back to basename if can't make relative
+  basename(path)
+}
+
+
+# Helper: Add entry to .gitignore
+.add_to_gitignore <- function(path, entry) {
+  gitignore_path <- file.path(path, ".gitignore")
+
+  # Read existing .gitignore
+  if (file.exists(gitignore_path)) {
+    lines <- readLines(gitignore_path, warn = FALSE)
+    # Check if entry already exists
+    if (any(grepl(paste0("^", entry, "$"), lines))) {
+      return(invisible(NULL)) # Already in .gitignore
+    }
+    # Append to existing
+    lines <- c(lines, "", entry)
+  } else {
+    # Create new .gitignore
+    lines <- entry
+  }
+
+  writeLines(lines, gitignore_path)
+  cli::cli_alert_success("Added {.file {entry}} to {.path .gitignore}")
 }

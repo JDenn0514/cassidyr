@@ -449,3 +449,85 @@ cassidy_write_file <- function(x, path, open = interactive(), append = FALSE) {
     '</div>'
   )
 }
+
+
+#' Pre-process markdown to handle nested code blocks
+#'
+#' Increases fence length for outer blocks containing inner fences,
+#' so commonmark renders them correctly.
+#'
+#' @param content Character. Raw markdown content.
+#' @return Character. Pre-processed content safe for commonmark.
+#' @keywords internal
+#' @noRd
+.preprocess_nested_code_blocks <- function(content) {
+  if (is.null(content) || !nzchar(content)) {
+    return(content)
+  }
+
+  lines <- strsplit(content, "\n", fixed = TRUE)[[1]]
+  result <- character()
+  i <- 1
+
+  while (i <= length(lines)) {
+    line <- lines[i]
+
+    # Check for opening code fence (``` or ~~~)
+    if (grepl("^(`{3,}|~{3,})\\s*[a-zA-Z]*\\s*$", line)) {
+      # Extract fence character and length
+      fence_char <- substr(line, 1, 1)
+      fence_match <- regexpr(paste0("^", fence_char, "+"), line)
+      fence_len <- attr(fence_match, "match.length")
+      fence <- substr(line, 1, fence_len)
+      lang <- trimws(substr(line, fence_len + 1, nchar(line)))
+
+      # Collect block content and find closing fence
+      block_lines <- character()
+      j <- i + 1
+      has_nested <- FALSE
+      closing_pattern <- paste0("^", fence_char, "{", fence_len, "}\\s*$")
+
+      while (j <= length(lines)) {
+        if (grepl(closing_pattern, lines[j])) {
+          break
+        }
+        # Check for nested fence of same type
+        if (grepl(paste0("^", fence_char, "{3,}"), lines[j])) {
+          has_nested <- TRUE
+        }
+        block_lines <- c(block_lines, lines[j])
+        j <- j + 1
+      }
+
+      if (has_nested) {
+        # Find max nested fence length
+        max_nested <- fence_len
+        for (bl in block_lines) {
+          if (grepl(paste0("^", fence_char, "{3,}"), bl)) {
+            nested_match <- regexpr(paste0("^", fence_char, "+"), bl)
+            nested_len <- attr(nested_match, "match.length")
+            max_nested <- max(max_nested, nested_len)
+          }
+        }
+        # Use longer fence (at least one more than max nested)
+        new_fence <- paste(rep(fence_char, max_nested + 1), collapse = "")
+        result <- c(result, paste0(new_fence, lang))
+        result <- c(result, block_lines)
+        result <- c(result, new_fence)
+      } else {
+        # No nesting - keep original
+        result <- c(result, line)
+        result <- c(result, block_lines)
+        if (j <= length(lines)) {
+          result <- c(result, lines[j])
+        }
+      }
+      i <- j + 1
+    } else {
+      result <- c(result, line)
+      i <- i + 1
+    }
+  }
+
+  paste(result, collapse = "\n")
+}

@@ -140,16 +140,16 @@ cassidyr/
   - httr2 (>= 1.0.0) - HTTP requests
   - cli (>= 3.6.0) - User interface
   - rlang (>= 1.1.0) - Programming tools
-- Suggested packages:
-  - testthat (>= 3.0.0)
-  - withr
   - shiny - Chat UI
   - bslib - Modern theming
   - S7 - OOP for ConversationManager
-  - markdown - Render chat messages
-  - adlgraphs (for codebook)
+  - commonmark - Render chat messages
   - skimr (for data summaries)
+  - fs - For file system operations
   - gert (for Git operations)
+- Suggested packages:
+  - testthat (>= 3.0.0)
+  - withr
   - rstudioapi
 - Prefer base R for simple operations
 

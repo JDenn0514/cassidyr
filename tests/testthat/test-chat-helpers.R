@@ -155,3 +155,133 @@ test_that(".create_download_link_html handles different extensions", {
   result_md <- .create_download_link_html(content, "doc.md", 1)
   expect_match(result_md, "text/markdown")
 })
+
+
+# =========================================================================
+# .preprocess_nested_code_blocks
+# =========================================================================
+
+# tests/testthat/test-chat-helpers.R
+
+test_that(".preprocess_nested_code_blocks handles NULL and empty input", {
+  expect_null(.preprocess_nested_code_blocks(NULL))
+  expect_equal(.preprocess_nested_code_blocks(""), "")
+})
+
+test_that(".preprocess_nested_code_blocks passes through simple content", {
+  simple <- "Just some text\nwith multiple lines"
+  expect_equal(.preprocess_nested_code_blocks(simple), simple)
+})
+
+test_that(".preprocess_nested_code_blocks handles simple code blocks", {
+  content <- "Some text\n```r\nx <- 1\n```\nMore text"
+  result <- .preprocess_nested_code_blocks(content)
+  expect_equal(result, content)
+})
+
+test_that(".preprocess_nested_code_blocks increases fence for nested blocks", {
+  # Markdown block containing R code block
+  content <- paste(
+    "Here's a file:",
+    "```markdown",
+    "# Title",
+    "```r",
+    "x <- 1",
+    "```",
+    "More content",
+    "```",
+    "Done",
+    sep = "\n"
+  )
+
+  result <- .preprocess_nested_code_blocks(content)
+
+  # Outer fence should now be ```` (4 backticks)
+  expect_true(grepl("````markdown", result))
+  expect_true(grepl("````\\s*$", result))
+
+  # Inner fence should remain unchanged
+  expect_true(grepl("```r", result))
+})
+
+test_that(".preprocess_nested_code_blocks handles multiple nested levels", {
+  content <- paste(
+    "```markdown",
+    "# Doc",
+    "````r",
+    "code",
+    "````",
+    "```",
+    sep = "\n"
+  )
+
+  result <- .preprocess_nested_code_blocks(content)
+
+  # Outer should be ````` (5 backticks) to exceed inner ````
+  expect_true(grepl("^`{5}markdown", result))
+})
+
+test_that(".preprocess_nested_code_blocks handles tilde fences", {
+  content <- paste(
+    "~~~markdown",
+    "# Title",
+    "~~~r",
+    "x <- 1",
+    "~~~",
+    "~~~",
+    sep = "\n"
+  )
+
+  result <- .preprocess_nested_code_blocks(content)
+
+  # Outer fence should be ~~~~ (4 tildes)
+  expect_true(grepl("~~~~markdown", result))
+})
+
+test_that(".preprocess_nested_code_blocks renders correctly with commonmark", {
+  content <- paste(
+    "Here's a markdown file:",
+    "```markdown",
+    "# My Doc",
+    "```r",
+    "x <- 1",
+    "```",
+    "End of doc",
+    "```",
+    "That's it!",
+    sep = "\n"
+  )
+
+  processed <- .preprocess_nested_code_blocks(content)
+
+  # Should not error
+  expect_no_error({
+    html <- commonmark::markdown_html(processed)
+  })
+
+  # The nested content should appear in a single code block
+  html <- commonmark::markdown_html(processed)
+
+  # Should have exactly one <pre> block for the markdown content
+  # (not multiple broken blocks)
+  pre_count <- length(gregexpr("<pre>", html)[[1]])
+  expect_equal(pre_count, 1)
+})
+
+test_that(".preprocess_nested_code_blocks preserves non-nested blocks", {
+  content <- paste(
+    "```r",
+    "x <- 1",
+    "```",
+    "",
+    "```python",
+    "y = 2",
+    "```",
+    sep = "\n"
+  )
+
+  result <- .preprocess_nested_code_blocks(content)
+
+  # Should be unchanged - no nesting
+  expect_equal(result, content)
+})

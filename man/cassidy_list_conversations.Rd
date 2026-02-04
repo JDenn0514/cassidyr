@@ -11,17 +11,48 @@ cassidy_list_conversations(n = 8)
 Default is 8.}
 }
 \value{
-Data frame with columns: id, title, created_at, updated_at,
-message_count
+Data frame with columns:
+\describe{
+\item{id}{Local conversation ID (e.g., "conv_20260131_1234")}
+\item{thread_id}{Cassidy API thread ID for this conversation}
+\item{title}{Conversation title (first message preview)}
+\item{created_at}{When the conversation was created}
+\item{updated_at}{When the conversation was last updated}
+\item{message_count}{Number of messages in the conversation}
+}
 }
 \description{
 Returns metadata for all saved conversations, sorted by last update time.
+This function lists your \strong{locally saved} conversations from the cassidyr
+app, not threads from the Cassidy API.
+}
+\details{
+\subsection{Understanding IDs}{
+
+This package uses two types of identifiers:
+\itemize{
+\item \strong{Conversation ID} (\code{id}): Your local app's identifier (e.g.,
+"conv_20260131_1234"). Use this with \code{\link[=cassidy_export_conversation]{cassidy_export_conversation()}},
+\code{\link[=cassidy_delete_conversation]{cassidy_delete_conversation()}}, and \code{\link[=cassidy_get_thread_id]{cassidy_get_thread_id()}}.
+\item \strong{Thread ID} (\code{thread_id}): The Cassidy API's identifier for the
+conversation on their servers. Use this with API functions like
+\code{\link[=cassidy_get_thread]{cassidy_get_thread()}}, \code{\link[=cassidy_send_message]{cassidy_send_message()}}, etc.
+}
+
+To get the thread_id from a conversation_id, use \code{\link[=cassidy_get_thread_id]{cassidy_get_thread_id()}}.
+}
 }
 \examples{
 \dontrun{
   # List recent conversations
   convs <- cassidy_list_conversations()
   print(convs)
+
+  # Export the most recent conversation (use conversation ID)
+  cassidy_export_conversation(convs$id[1])
+
+  # Get API thread details (use thread ID)
+  thread <- cassidy_get_thread(convs$thread_id[1])
 }
 
 }
@@ -29,6 +60,7 @@ Returns metadata for all saved conversations, sorted by last update time.
 Other chat-app: 
 \code{\link{cassidy_app}()},
 \code{\link{cassidy_delete_conversation}()},
-\code{\link{cassidy_export_conversation}()}
+\code{\link{cassidy_export_conversation}()},
+\code{\link{cassidy_get_thread_id}()}
 }
 \concept{chat-app}

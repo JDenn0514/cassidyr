@@ -131,7 +131,7 @@ cassidy_send_message <- function(
   thread_id,
   message,
   api_key = Sys.getenv("CASSIDY_API_KEY"),
-  timeout = 120
+  timeout = 300
 ) {
   if (!nzchar(api_key)) {
     cli::cli_abort(c(
@@ -246,10 +246,13 @@ cassidy_send_message <- function(
 #' Retrieve conversation history from a thread
 #'
 #' Gets the full message history from an existing CassidyAI thread, including
-#' both user messages and assistant responses. Useful for reviewing past
-#' conversations or resuming work.
+#' both user messages and assistant responses. This is an **API function** that
+#' queries Cassidy's servers, not your local conversation storage.
 #'
-#' @param thread_id Character. The thread ID to retrieve.
+#' @param thread_id Character. The **Cassidy API thread ID** (not a local
+#'   conversation ID). This looks like a UUID from Cassidy's system. If you have
+#'   a conversation ID from [cassidy_list_conversations()], use
+#'   [cassidy_get_thread_id()] to get the corresponding thread_id first.
 #' @param api_key Character. Your CassidyAI API key. Defaults to
 #'   the `CASSIDY_API_KEY` environment variable.
 #'
@@ -262,25 +265,59 @@ cassidy_send_message <- function(
 #'     \item{message_count}{Number of messages in the thread}
 #'   }
 #'
+#' @details
+#' ## Understanding Thread IDs vs Conversation IDs
+#'
+#' - **Thread ID**: Cassidy API identifier - use with this function
+#' - **Conversation ID**: Local app identifier - use with
+#'   [cassidy_export_conversation()], [cassidy_delete_conversation()]
+#'
+#' To convert between them, use [cassidy_get_thread_id()].
+#'
 #' @family api-functions
-#' @export
+#'
+#' @seealso
+#' - [cassidy_list_conversations()] to see your saved conversations
+#' - [cassidy_get_thread_id()] to get a thread_id from a conversation_id
+#' - [cassidy_list_threads()] to list all threads from the Cassidy API
 #'
 #' @examples
 #' \dontrun{
-#' # Retrieve a thread's history
-#' thread <- cassidy_get_thread("thread_abc123")
-#' print(thread)
+#'   # From a locally saved conversation
+#'   convs <- cassidy_list_conversations()
+#'   thread_id <- convs$thread_id[1]  # Get the thread_id column
+#'   thread <- cassidy_get_thread(thread_id)
+#'   print(thread)
 #'
-#' # Access messages
-#' thread$messages
+#'   # Or use the helper function
+#'   thread_id <- cassidy_get_thread_id("conv_20260131_1234")
+#'   thread <- cassidy_get_thread(thread_id)
+#'
+#'   # Access messages
+#'   thread$messages
 #' }
+#'
+#' @export
 cassidy_get_thread <- function(
   thread_id,
   api_key = Sys.getenv("CASSIDY_API_KEY")
 ) {
   # Validate input
   if (missing(thread_id) || is.null(thread_id) || thread_id == "") {
-    cli::cli_abort("thread_id is required")
+    cli::cli_abort(c(
+      "thread_id is required",
+      "i" = "This must be a Cassidy API thread ID, not a local conversation ID",
+      "i" = "Use {.fn cassidy_get_thread_id} to convert conversation IDs"
+    ))
+  }
+
+  # Add a helpful check for common mistake
+  if (grepl("^conv_", thread_id)) {
+    cli::cli_abort(c(
+      "x" = "You passed a conversation ID, not a thread ID",
+      "i" = "Use {.code cassidy_get_thread_id('{thread_id}')} to get the thread ID",
+      "i" = "Or use {.code cassidy_list_conversations()$thread_id[1]} directly"
+    ))
   }
 
   # Make API request

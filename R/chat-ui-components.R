@@ -41,7 +41,8 @@ chat_messages_ui <- function() {
   shiny::div(
     class = "chat-messages",
     id = "chat_messages",
-    shiny::uiOutput("messages")
+    shiny::uiOutput("messages"),
+    shiny::uiOutput("loading_indicator")
   )
 }
 
@@ -322,6 +323,7 @@ chat_build_ui <- function(theme, context_level) {
     title = "Cassidy Chat",
     shiny::tags$style(shiny::HTML(chat_app_css())),
     shiny::tags$script(shiny::HTML(chat_app_js())),
+    # shiny::uiOutput("loading_overlay"),
     shiny::div(
       class = "main-layout",
       chat_context_sidebar_ui(),
@@ -338,186 +340,3 @@ chat_build_ui <- function(theme, context_level) {
     )
   )
 }
-
-# #' Build context sidebar
-# #' @keywords internal
-# build_context_sidebar <- function(conv_manager = NULL) {
-#   # Get sent tracking from conv_manager if available
-#   sent_files <- if (!is.null(conv_manager)) {
-#     conv_sent_context_files(conv_manager)
-#   } else {
-#     character()
-#   }
-
-#   sent_data <- if (!is.null(conv_manager)) {
-#     conv_sent_data_frames(conv_manager)
-#   } else {
-#     character()
-#   }
-
-#   shiny::div(
-#     class = "context-sidebar",
-
-#     # Project Context Section
-#     shiny::div(
-#       class = "context-section",
-#       shiny::h5(
-#         shiny::icon("folder-open"),
-#         "Project Context"
-#       ),
-#       shiny::checkboxInput(
-#         "ctx_config",
-#         shiny::span("CASSIDY.md config"),
-#         value = TRUE
-#       ),
-#       shiny::checkboxInput(
-#         "ctx_session",
-#         shiny::span("R session info"),
-#         value = TRUE
-#       ),
-#       shiny::checkboxInput(
-#         "ctx_git",
-#         shiny::span("Git status"),
-#         value = FALSE
-#       )
-#     ),
-
-#     # Data Frames Section
-#     shiny::div(
-#       class = "context-section",
-#       shiny::h5(
-#         shiny::icon("table"),
-#         "Data Frames"
-#       ),
-#       shiny::div(
-#         id = "data_frames_container",
-#         build_data_frame_checkboxes(sent_data)
-#       ),
-#       shiny::selectInput(
-#         "data_description_method",
-#         "Description method:",
-#         choices = c("basic", "skim", "codebook"),
-#         selected = "basic"
-#       )
-#     ),
-
-#     # Files Section
-#     shiny::div(
-#       class = "context-section",
-#       shiny::h5(
-#         shiny::icon("file-code"),
-#         "Project Files"
-#       ),
-#       shiny::div(
-#         id = "files_container",
-#         build_file_checkboxes(sent_files)
-#       )
-#     ),
-
-#     # Apply Context Button
-#     shiny::div(
-#       class = "context-actions",
-#       shiny::actionButton(
-#         "apply_context",
-#         shiny::tagList(shiny::icon("paper-plane"), "Send Context"),
-#         class = "btn-primary btn-block"
-#       ),
-#       shiny::div(
-#         class = "context-hint",
-#         "Select items and click to send context to Cassidy"
-#       )
-#     )
-#   )
-# }
-
-# #' Build file checkboxes with sent indicators
-# #' @keywords internal
-# build_file_checkboxes <- function(sent_files = character()) {
-#   files <- .get_project_files()
-
-#   if (length(files) == 0) {
-#     return(shiny::p(class = "text-muted", "No project files found"))
-#   }
-
-#   file_inputs <- lapply(files, function(file_path) {
-#     file_id <- gsub("[^a-zA-Z0-9]", "_", file_path)
-#     input_id <- paste0("ctx_file_", file_id)
-#     is_sent <- file_path %in% sent_files
-
-#     shiny::div(
-#       class = paste("context-item", if (is_sent) "context-item-sent"),
-#       shiny::div(
-#         class = "context-item-checkbox",
-#         shiny::checkboxInput(
-#           input_id,
-#           shiny::span(
-#             basename(file_path),
-#             if (is_sent) shiny::icon("check", class = "sent-indicator")
-#           ),
-#           value = FALSE
-#         )
-#       ),
-#       if (is_sent) {
-#         shiny::actionButton(
-#           paste0("refresh_file_", file_id),
-#           shiny::icon("sync"),
-#           class = "btn-xs btn-refresh",
-#           title = "Refresh this file"
-#         )
-#       }
-#     )
-#   })
-
-#   shiny::tagList(file_inputs)
-# }
-
-# #' Build data frame checkboxes with sent indicators
-# #' @keywords internal
-# build_data_frame_checkboxes <- function(sent_data = character()) {
-#   dfs <- .get_env_dataframes()
-
-#   if (length(dfs) == 0) {
-#     return(shiny::p(class = "text-muted", "No data frames in environment"))
-#   }
-
-#   df_inputs <- lapply(names(dfs), function(df_name) {
-#     df_id <- gsub("[^a-zA-Z0-9]", "_", df_name)
-#     input_id <- paste0("ctx_data_", df_id)
-#     is_sent <- df_name %in% sent_data
-#     df_info <- dfs[[df_name]]
-
-#     label_text <- paste0(
-#       df_name,
-#       " (",
-#       format(df_info$rows, big.mark = ","),
-#       " × ",
-#       df_info$cols,
-#       ")"
-#     )
-
-#     shiny::div(
-#       class = paste("context-item", if (is_sent) "context-item-sent"),
-#       shiny::div(
-#         class = "context-item-checkbox",
-#         shiny::checkboxInput(
-#           input_id,
-#           shiny::span(
-#             label_text,
-#             if (is_sent) shiny::icon("check", class = "sent-indicator")
-#           ),
-#           value = FALSE
-#         )
-#       ),
-#       if (is_sent) {
-#         shiny::actionButton(
-#           paste0("refresh_data_", df_id),
-#           shiny::icon("sync"),
-#           class = "btn-xs btn-refresh",
-#           title = "Refresh this data frame"
-#         )
-#       }
-#     )
-#   })
-
-#   shiny::tagList(df_inputs)
-# }

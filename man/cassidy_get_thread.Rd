@@ -7,7 +7,10 @@
 cassidy_get_thread(thread_id, api_key = Sys.getenv("CASSIDY_API_KEY"))
 }
 \arguments{
-\item{thread_id}{Character. The thread ID to retrieve.}
+\item{thread_id}{Character. The \strong{Cassidy API thread ID} (not a local
+conversation ID). This looks like a UUID from Cassidy's system. If you have
+a conversation ID from \code{\link[=cassidy_list_conversations]{cassidy_list_conversations()}}, use
+\code{\link[=cassidy_get_thread_id]{cassidy_get_thread_id()}} to get the corresponding thread_id first.}
 
 \item{api_key}{Character. Your CassidyAI API key. Defaults to
 the \code{CASSIDY_API_KEY} environment variable.}
@@ -24,20 +27,44 @@ A \code{cassidy_thread} S3 object with:
 }
 \description{
 Gets the full message history from an existing CassidyAI thread, including
-both user messages and assistant responses. Useful for reviewing past
-conversations or resuming work.
+both user messages and assistant responses. This is an \strong{API function} that
+queries Cassidy's servers, not your local conversation storage.
+}
+\details{
+\subsection{Understanding Thread IDs vs Conversation IDs}{
+\itemize{
+\item \strong{Thread ID}: Cassidy API identifier - use with this function
+\item \strong{Conversation ID}: Local app identifier - use with
+\code{\link[=cassidy_export_conversation]{cassidy_export_conversation()}}, \code{\link[=cassidy_delete_conversation]{cassidy_delete_conversation()}}
+}
+
+To convert between them, use \code{\link[=cassidy_get_thread_id]{cassidy_get_thread_id()}}.
+}
 }
 \examples{
 \dontrun{
-# Retrieve a thread's history
-thread <- cassidy_get_thread("thread_abc123")
-print(thread)
+  # From a locally saved conversation
+  convs <- cassidy_list_conversations()
+  thread_id <- convs$thread_id[1]  # Get the thread_id column
+  thread <- cassidy_get_thread(thread_id)
+  print(thread)
 
-# Access messages
-thread$messages
+  # Or use the helper function
+  thread_id <- cassidy_get_thread_id("conv_20260131_1234")
+  thread <- cassidy_get_thread(thread_id)
+
+  # Access messages
+  thread$messages
 }
+
 }
 \seealso{
+\itemize{
+\item \code{\link[=cassidy_list_conversations]{cassidy_list_conversations()}} to see your saved conversations
+\item \code{\link[=cassidy_get_thread_id]{cassidy_get_thread_id()}} to get a thread_id from a conversation_id
+\item \code{\link[=cassidy_list_threads]{cassidy_list_threads()}} to list all threads from the Cassidy API
+}
+
 Other api-functions: 
 \code{\link{cassidy_create_thread}()},
 \code{\link{cassidy_list_threads}()},

@@ -10,7 +10,8 @@ chat_app_css <- function() {
     css_conversations(),
     css_responsive(),
     css_downloads(),
-    css_context_states()
+    css_context_states(),
+    css_loading()
   )
 }
 
@@ -230,179 +231,184 @@ css_context_sections <- function() {
 }
 
 css_file_tree <- function() {
-  "
-/* ===== FILE TREE ===== */
-.context-files-tree {
-  flex: 1;
-  overflow-y: auto;
-  font-size: 0.8rem;
-  min-height: 150px;
-}
+  checkmark <- stringi::stri_unescape_unicode("\\u2713")
+  paste0(
+    "
+    /* ===== FILE TREE ===== */
+    .context-files-tree {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      min-height: 150px;
+    }
 
-.file-tree-controls {
-  padding: 10px;
-  border-bottom: 1px solid #dee2e6;
-  display: flex;
-  gap: 8px;
-}
+    .file-tree-controls {
+      padding: 10px;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      gap: 8px;
+    }
 
-.file-tree-folder {
-  margin: 2px 0;
-}
+    .file-tree-folder {
+      margin: 2px 0;
+    }
 
-.file-tree-folder-header {
-  padding: 6px 8px;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s;
-  user-select: none;
-}
+    .file-tree-folder-header {
+      padding: 6px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.2s;
+      user-select: none;
+    }
 
-.file-tree-folder-header:hover {
-  background-color: #f0f0f0;
-}
+    .file-tree-folder-header:hover {
+      background-color: #f0f0f0;
+    }
 
-.folder-toggle-icon {
-  font-size: 10px;
-  width: 12px;
-  display: inline-block;
-  transition: transform 0.2s;
-}
+    .folder-toggle-icon {
+      font-size: 10px;
+      width: 12px;
+      display: inline-block;
+      transition: transform 0.2s;
+    }
 
-.folder-icon {
-  color: #ffc107;
-  font-size: 14px;
-}
+    .folder-icon {
+      color: #ffc107;
+      font-size: 14px;
+    }
 
-.folder-name {
-  font-size: 13px;
-  color: #333;
-}
+    .folder-name {
+      font-size: 13px;
+      color: #333;
+    }
 
-.folder-count {
-  font-size: 11px;
-  color: #6c757d;
-  margin-left: auto;
-}
+    .folder-count {
+      font-size: 11px;
+      color: #6c757d;
+      margin-left: auto;
+    }
 
-.file-tree-item {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  gap: 8px;
-}
+    .file-tree-item {
+      display: flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+      gap: 8px;
+    }
 
-.file-tree-item:hover {
-  background-color: #f8f9fa;
-}
+    .file-tree-item:hover {
+      background-color: #f8f9fa;
+    }
 
-/* Sent files (blue) - files that have been sent to AI */
-.file-tree-item.sent {
-  background-color: #e7f3ff !important;
-  border: 1px solid #0d6efd !important;
-}
+    /* Sent files (blue) - files that have been sent to AI */
+    .file-tree-item.sent {
+      background-color: #e7f3ff !important;
+      border: 1px solid #0d6efd !important;
+    }
 
-.file-tree-item.sent .file-checkbox {
-  accent-color: #0d6efd !important;
-}
+    .file-tree-item.sent .file-checkbox {
+      accent-color: #0d6efd !important;
+    }
 
-.file-tree-item.sent .file-name::after {
-  content: ' ✓';
-  color: #0d6efd;
-  font-size: 0.7rem;
-  font-weight: bold;
-}
+    .file-tree-item.sent .file-name::after {
+      content: '",
+    checkmark,
+    "';
+      color: #0d6efd;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
 
-/* Pending files (green) - selected but not yet sent */
-.file-tree-item.pending {
-  background-color: #d4edda !important;
-  border: 1px solid #28a745 !important;
-}
+    /* Pending files (green) - selected but not yet sent */
+    .file-tree-item.pending {
+      background-color: #d4edda !important;
+      border: 1px solid #28a745 !important;
+    }
 
-.file-tree-item.pending .file-checkbox {
-  accent-color: #28a745 !important;
-}
+    .file-tree-item.pending .file-checkbox {
+      accent-color: #28a745 !important;
+    }
 
-.file-tree-item.pending .file-name::after {
-  content: ' (pending)';
-  color: #28a745;
-  font-size: 0.65rem;
-  font-style: italic;
-}
+    .file-tree-item.pending .file-name::after {
+      content: ' (pending)';
+      color: #28a745;
+      font-size: 0.65rem;
+      font-style: italic;
+    }
 
-.file-tree-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  flex: 1;
-  margin: 0;
-  font-size: 13px;
-  min-width: 0;
-}
+    .file-tree-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      flex: 1;
+      margin: 0;
+      font-size: 13px;
+      min-width: 0;
+    }
 
-.file-checkbox {
-  cursor: pointer;
-  margin: 0;
-  flex-shrink: 0;
-}
+    .file-checkbox {
+      cursor: pointer;
+      margin: 0;
+      flex-shrink: 0;
+    }
 
-.file-icon {
-  font-size: 14px;
-  width: 16px;
-  flex-shrink: 0;
-}
+    .file-icon {
+      font-size: 14px;
+      width: 16px;
+      flex-shrink: 0;
+    }
 
-.file-icon.r-file { color: #276DC3; }
-.file-icon.rmd-file { color: #75AADB; }
-.file-icon.qmd-file { color: #75AADB; }
-.file-icon.md-file { color: #6c757d; }
+    .file-icon.r-file { color: #276DC3; }
+    .file-icon.rmd-file { color: #75AADB; }
+    .file-icon.qmd-file { color: #75AADB; }
+    .file-icon.md-file { color: #6c757d; }
 
-.file-name {
-  color: #333;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+    .file-name {
+      color: #333;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-.file-refresh-btn {
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
+    .file-refresh-btn {
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
 
-.file-tree-item:hover .file-refresh-btn {
-  opacity: 1;
-}
+    .file-tree-item:hover .file-refresh-btn {
+      opacity: 1;
+    }
 
-/* File checkbox wrapper - remove default shiny styling */
-.file-checkbox-wrapper .form-group {
-  margin-bottom: 0;
-  display: inline-block;
-}
+    /* File checkbox wrapper - remove default shiny styling */
+    .file-checkbox-wrapper .form-group {
+      margin-bottom: 0;
+      display: inline-block;
+    }
 
-.file-checkbox-wrapper .checkbox {
-  margin: 0;
-  padding: 0;
-}
+    .file-checkbox-wrapper .checkbox {
+      margin: 0;
+      padding: 0;
+    }
 
-.file-checkbox-wrapper .checkbox label {
-  padding: 0;
-  margin: 0;
-  font-weight: normal;
-}
+    .file-checkbox-wrapper .checkbox label {
+      padding: 0;
+      margin: 0;
+      font-weight: normal;
+    }
 
-.file-checkbox-wrapper input[type='checkbox'] {
-  margin: 0;
-  cursor: pointer;
-}
-  "
+    .file-checkbox-wrapper input[type='checkbox'] {
+      margin: 0;
+      cursor: pointer;
+    }
+    "
+  )
 }
 
 
@@ -644,39 +650,91 @@ css_downloads <- function() {
 #' Context item state styles
 #' @keywords internal
 css_context_states <- function() {
+  checkmark <- stringi::stri_unescape_unicode("\\u2713")
+  refresh <- stringi::stri_unescape_unicode("\\u21bb")
+
+  paste0(
+    "
+  /* ===== CONTEXT ITEM STATES ===== */
+  /* General context items (not file tree) */
+  .context-item-sent .context-item-main::after {
+    content: '",
+    checkmark,
+    "';
+    color: #198754;
+    font-size: 0.7rem;
+    margin-left: 0.5rem;
+  }
+
+  .context-item-pending {
+    background-color: #fff3cd;
+    border-left: 3px solid #ffc107;
+  }
+
+  .context-item-pending .context-item-main::after {
+    content: '",
+    refresh,
+    " pending';
+    color: #856404;
+    font-size: 0.65rem;
+    margin-left: 0.5rem;
+    font-style: italic;
+  }
+
+  /* Data frame items */
+  .data-item.sent::after {
+    content: '",
+    checkmark,
+    "';
+    color: #198754;
+    font-size: 0.7rem;
+  }
+
+  .data-item.pending {
+    background-color: #fff3cd;
+    border-left: 3px solid #ffc107;
+  }
   "
-/* ===== CONTEXT ITEM STATES ===== */
-/* General context items (not file tree) */
-.context-item-sent .context-item-main::after {
-  content: '✓';
-  color: #198754;
-  font-size: 0.7rem;
-  margin-left: 0.5rem;
+  )
 }
 
-.context-item-pending {
-  background-color: #fff3cd;
-  border-left: 3px solid #ffc107;
-}
+#' Loading indicator styles
+#' @keywords internal
+css_loading <- function() {
+  "
+  /* ===== LOADING OVERLAY ===== */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
 
-.context-item-pending .context-item-main::after {
-  content: '↻ pending';
-  color: #856404;
-  font-size: 0.65rem;
-  margin-left: 0.5rem;
-  font-style: italic;
-}
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e9ecef;
+    border-top-color: #0d6efd;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
 
-/* Data frame items */
-.data-item.sent::after {
-  content: ' ✓';
-  color: #198754;
-  font-size: 0.7rem;
-}
+  .loading-text {
+    margin-top: 16px;
+    color: #6c757d;
+    font-size: 1rem;
+    font-weight: 500;
+  }
 
-.data-item.pending {
-  background-color: #fff3cd;
-  border-left: 3px solid #ffc107;
-}
-"
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  "
 }

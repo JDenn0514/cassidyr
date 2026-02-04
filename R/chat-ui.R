@@ -161,6 +161,31 @@ cassidy_app <- function(
 
           # Get the loaded conversation to see what was selected
           conv <- conv_get_current(conv_manager)
+
+          # ADD THIS CHECK:
+          if (is.null(conv$thread_id)) {
+            cli::cli_alert_warning(
+              "Conversation has no thread_id - creating new thread"
+            )
+
+            # Create a new thread for this conversation
+            tryCatch(
+              {
+                thread_id <- cassidy_create_thread(
+                  assistant_id = assistant_id,
+                  api_key = api_key
+                )
+                conv_update_current(conv_manager, list(thread_id = thread_id))
+                cli::cli_alert_success("Created new thread: {thread_id}")
+              },
+              error = function(e) {
+                cli::cli_abort(
+                  "Failed to create thread for resumed conversation: {e$message}"
+                )
+              }
+            )
+          }
+
           previous_files <- conv$context_files %||% character(0)
           previous_data <- conv$context_data %||% character(0)
 
@@ -391,7 +416,6 @@ cassidy_app <- function(
       api_key,
       timeout
     )
-    # setup_refresh_handlers(input, session, conv_manager)
 
     # Setup file tree renderer and handlers
     setup_file_tree_renderer(output, input, conv_manager)

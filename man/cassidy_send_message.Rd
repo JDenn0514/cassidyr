@@ -8,7 +8,7 @@ cassidy_send_message(
   thread_id,
   message,
   api_key = Sys.getenv("CASSIDY_API_KEY"),
-  timeout = 120
+  timeout = 300
 )
 }
 \arguments{

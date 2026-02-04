@@ -101,6 +101,7 @@ context. This is recommended when:
 Other chat-app: 
 \code{\link{cassidy_delete_conversation}()},
 \code{\link{cassidy_export_conversation}()},
+\code{\link{cassidy_get_thread_id}()},
 \code{\link{cassidy_list_conversations}()}
 }
 \concept{chat-app}

@@ -59,6 +59,11 @@ cassidy_load_conversation <- function(conv_id) {
       conv$sent_data_frames <- conv$sent_data_frames %||% character()
       conv$context_files <- conv$context_files %||% character()
 
+      # ADD THIS: Ensure thread_id exists (even if NULL, make it explicit)
+      if (is.null(conv$thread_id)) {
+        cli::cli_warn("Loaded conversation {conv_id} has no thread_id")
+      }
+
       conv
     },
     error = function(e) {
@@ -72,11 +77,36 @@ cassidy_load_conversation <- function(conv_id) {
 #' List all saved conversations
 #'
 #' Returns metadata for all saved conversations, sorted by last update time.
+#' This function lists your **locally saved** conversations from the cassidyr
+#' app, not threads from the Cassidy API.
 #'
 #' @param n Integer. Maximum number of conversations to return.
 #'   Default is 8.
-#' @return Data frame with columns: id, title, created_at, updated_at,
-#'   message_count
+#'
+#' @return Data frame with columns:
+#'   \describe{
+#'     \item{id}{Local conversation ID (e.g., "conv_20260131_1234")}
+#'     \item{thread_id}{Cassidy API thread ID for this conversation}
+#'     \item{title}{Conversation title (first message preview)}
+#'     \item{created_at}{When the conversation was created}
+#'     \item{updated_at}{When the conversation was last updated}
+#'     \item{message_count}{Number of messages in the conversation}
+#'   }
+#'
+#' @details
+#' ## Understanding IDs
+#'
+#' This package uses two types of identifiers:
+#'
+#' - **Conversation ID** (`id`): Your local app's identifier (e.g.,
+#'   "conv_20260131_1234"). Use this with [cassidy_export_conversation()],
+#'   [cassidy_delete_conversation()], and [cassidy_get_thread_id()].
+#'
+#' - **Thread ID** (`thread_id`): The Cassidy API's identifier for the
+#'   conversation on their servers. Use this with API functions like
+#'   [cassidy_get_thread()], [cassidy_send_message()], etc.
+#'
+#' To get the thread_id from a conversation_id, use [cassidy_get_thread_id()].
 #'
 #' @family chat-app
 #'
@@ -85,6 +115,12 @@ cassidy_load_conversation <- function(conv_id) {
 #'   # List recent conversations
 #'   convs <- cassidy_list_conversations()
 #'   print(convs)
+#'
+#'   # Export the most recent conversation (use conversation ID)
+#'   cassidy_export_conversation(convs$id[1])
+#'
+#'   # Get API thread details (use thread ID)
+#'   thread <- cassidy_get_thread(convs$thread_id[1])
 #' }
 #'
 #' @export
@@ -94,6 +130,7 @@ cassidy_list_conversations <- function(n = 8) {
   if (!dir.exists(dir)) {
     return(data.frame(
       id = character(0),
+      thread_id = character(0),
       title = character(0),
       created_at = as.POSIXct(character(0)),
       updated_at = as.POSIXct(character(0)),
@@ -107,6 +144,7 @@ cassidy_list_conversations <- function(n = 8) {
   if (length(files) == 0) {
     return(data.frame(
       id = character(0),
+      thread_id = character(0), # ADD THIS
       title = character(0),
       created_at = as.POSIXct(character(0)),
       updated_at = as.POSIXct(character(0)),
@@ -122,6 +160,7 @@ cassidy_list_conversations <- function(n = 8) {
         conv <- readRDS(f)
         list(
           id = conv$id,
+          thread_id = conv$thread_id %||% NA_character_,
           title = conv$title,
           created_at = conv$created_at,
           updated_at = conv$updated_at %||% conv$created_at,
@@ -138,6 +177,7 @@ cassidy_list_conversations <- function(n = 8) {
   if (length(metadata) == 0) {
     return(data.frame(
       id = character(0),
+      thread_id = character(0),
       title = character(0),
       created_at = as.POSIXct(character(0)),
       updated_at = as.POSIXct(character(0)),
@@ -149,6 +189,7 @@ cassidy_list_conversations <- function(n = 8) {
   # Convert to data frame
   df <- data.frame(
     id = vapply(metadata, function(x) x$id, character(1)),
+    thread_id = vapply(metadata, function(x) x$thread_id, character(1)),
     title = vapply(metadata, function(x) x$title, character(1)),
     created_at = do.call(c, lapply(metadata, function(x) x$created_at)),
     updated_at = do.call(c, lapply(metadata, function(x) x$updated_at)),
@@ -291,4 +332,85 @@ cassidy_export_conversation <- function(conv_id, path = NULL) {
 
   cli::cli_alert_success("Exported conversation to {.file {path}}")
   invisible(path)
+}
+
+#' Get thread ID from conversation ID
+#'
+#' Retrieves the Cassidy API thread_id associated with a saved conversation.
+#' This is the bridge between your locally saved conversations and the Cassidy
+#' API functions.
+#'
+#' @param conv_id Character. The **local conversation ID** from
+#'   [cassidy_list_conversations()] (e.g., "conv_20260131_1234").
+#'
+#' @return Character. The Cassidy API thread_id, or NULL if the conversation
+#'   has no thread_id. Returns NULL with a warning if the conversation doesn't
+#'   exist.
+#'
+#' @details
+#' ## Why You Need This Function
+#'
+#' The cassidyr package uses two different ID systems:
+#'
+#' 1. **Conversation IDs** (local): Generated by the cassidyr app when you save
+#'    conversations. Format: `"conv_YYYYMMDD_HHMMSS_RAND"`. Used with:
+#'    - [cassidy_export_conversation()]
+#'    - [cassidy_delete_conversation()]
+#'    - [cassidy_app()] (for resuming)
+#'
+#' 2. **Thread IDs** (API): Generated by Cassidy's servers when you create a
+#'    thread. Format: UUID-like string from Cassidy. Used with:
+#'    - [cassidy_get_thread()]
+#'    - [cassidy_send_message()]
+#'    - All other API functions
+#'
+#' This function converts from local conversation IDs to API thread IDs.
+#'
+#' @family chat-app
+#'
+#' @seealso
+#' - [cassidy_list_conversations()] to see both IDs side-by-side
+#' - [cassidy_get_thread()] to retrieve thread history from the API
+#'
+#' @examples
+#' \dontrun{
+#'   # List your saved conversations
+#'   convs <- cassidy_list_conversations()
+#'   print(convs)  # Shows both id and thread_id columns
+#'
+#'   # Get thread_id from conversation_id
+#'   conv_id <- convs$id[1]  # e.g., "conv_20260131_1234"
+#'   thread_id <- cassidy_get_thread_id(conv_id)
+#'
+#'   # Now use it with API functions
+#'   if (!is.null(thread_id)) {
+#'     thread <- cassidy_get_thread(thread_id)
+#'     print(thread)
+#'   }
+#'
+#'   # Or skip the conversion - thread_id is in the table!
+#'   thread_id <- convs$thread_id[1]
+#'   thread <- cassidy_get_thread(thread_id)
+#' }
+#'
+#' @export
+cassidy_get_thread_id <- function(conv_id) {
+  conv <- cassidy_load_conversation(conv_id)
+
+  if (is.null(conv)) {
+    cli::cli_abort(c(
+      "x" = "Conversation {.val {conv_id}} not found.",
+      "i" = "Use {.fn cassidy_list_conversations} to see available conversations"
+    ))
+  }
+
+  if (is.null(conv$thread_id)) {
+    cli::cli_warn(c(
+      "!" = "Conversation {.val {conv_id}} has no thread_id.",
+      "i" = "This might be an incomplete or corrupted conversation"
+    ))
+    return(NULL)
+  }
+
+  conv$thread_id
 }

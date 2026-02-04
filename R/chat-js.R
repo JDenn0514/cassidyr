@@ -133,44 +133,22 @@ chat_app_js <- function() {
       Shiny.setInputValue('force_file_tree_refresh', Math.random(), {priority: 'event'});
     });
 
-    // Sync file checkboxes with conversation state
     Shiny.addCustomMessageHandler('syncFileCheckboxes', function(data) {
-      // Handle both old format (array) and new format (object with sent/selected)
-      var sent, selected;
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        sent = Array.isArray(data.sent) ? data.sent : [];
-        selected = Array.isArray(data.selected) ? data.selected : sent;
-      } else {
-        // Old format: just an array of sent files
-        sent = Array.isArray(data) ? data : [];
-        selected = sent;
-      }
+      var sent = (data && data.sent) ? data.sent : [];
+      var selected = (data && data.selected) ? data.selected : [];
 
-      // First pass: uncheck all and remove classes
-      $('.file-checkbox').each(function() {
-        var checkbox = $(this);
-        var item = checkbox.closest('.file-tree-item');
-        checkbox.prop('checked', false);
+      // Only update classes, don't touch checkbox state
+      $('.file-tree-item').each(function() {
+        var item = $(this);
+        var checkbox = item.find('.file-checkbox');
+        var filePath = checkbox.attr('data-filepath') || '';
+
         item.removeClass('sent pending');
-      });
 
-      // Second pass: check and style selected files
-      selected.forEach(function(filePath) {
-        // Convert file path to valid ID - replace all non-alphanumeric with underscore
-        var fileId = filePath.replace(//g, '_');
-        var checkbox = $('#ctx_file_' + fileId);
-        var item = checkbox.closest('.file-tree-item');
-
-        if (checkbox.length) {
-          checkbox.prop('checked', true);
-        }
-
-        if (item.length) {
-          if (sent.indexOf(filePath) !== -1) {
-            item.addClass('sent');
-          } else {
-            item.addClass('pending');
-          }
+        if (sent.indexOf(filePath) !== -1) {
+          item.addClass('sent');
+        } else if (checkbox.is(':checked')) {
+          item.addClass('pending');
         }
       });
     });
@@ -189,8 +167,8 @@ chat_app_js <- function() {
       $('[id^=\"ctx_data_\"]').prop('checked', false);
       selected.forEach(function(dfName) {
         // Convert data frame name to valid ID
-        var dfId = dfName.replace(//g, '_');
-        var checkbox = $('#ctx_data_' + dfId);
+        var dfId = dfName.replace(/[^a-zA-Z0-9]/g, '_');
+        var checkbox = $('#ctx_data_' + dfId);Fre
         if (checkbox.length) {
           checkbox.prop('checked', true);
         }
@@ -227,15 +205,33 @@ chat_app_js <- function() {
 
     // Set loading state
     Shiny.addCustomMessageHandler('setLoading', function(isLoading) {
+      var overlay = document.getElementById('loading_overlay_div');
+
       if (isLoading) {
         $('#send').prop('disabled', true);
         $('#user_input').prop('disabled', true);
+
+        // Create and show overlay
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = 'loading_overlay_div';
+          overlay.className = 'loading-overlay';
+          overlay.innerHTML = '<div class=\"loading-spinner\"></div><div class=\"loading-text\">Waiting for response...</div>';
+          document.body.appendChild(overlay);
+        }
+        overlay.style.display = 'flex';
       } else {
         $('#send').prop('disabled', false);
         $('#user_input').prop('disabled', false);
         $('#user_input').focus();
+
+        // Hide overlay
+        if (overlay) {
+          overlay.style.display = 'none';
+        }
       }
     });
+
   "
 }
 
@@ -328,19 +324,32 @@ chat_app_js <- function() {
       var checked = checkbox.is(':checked');
       var item = checkbox.closest('.file-tree-item');
 
-      // Send to Shiny
+      // *** NEW: Get the original file path from data attribute ***
+      var filePath = checkbox.attr('data-filepath') || checkbox.data('filepath');
+
+      // Send to Shiny (keep existing for backwards compatibility)
       Shiny.setInputValue(id, checked, {priority: 'event'});
 
-      // Update visual state immediately
+      // *** NEW: Also send consolidated update with the file path ***
+      if (filePath) {
+        Shiny.setInputValue('file_checkbox_changed', {
+          filePath: filePath,
+          checked: checked,
+          timestamp: Date.now()
+        }, {priority: 'event'});
+      }
+
+      // Update visual state immediately (UNCHANGED)
       // If checked, mark as pending (green) unless already sent
       if (checked) {
+        // Don't change class if already sent - let Apply Context handle the state
         if (!item.hasClass('sent')) {
-          item.removeClass('pending sent').addClass('pending');
+          item.addClass('pending');
         }
       } else {
-        // If unchecked, remove both classes
         item.removeClass('pending sent');
       }
+
     });
 
     // Make context sidebar resizable

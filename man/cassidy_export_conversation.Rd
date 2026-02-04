@@ -35,6 +35,7 @@ Exports a saved conversation to a Markdown file for sharing or archiving.
 Other chat-app: 
 \code{\link{cassidy_app}()},
 \code{\link{cassidy_delete_conversation}()},
+\code{\link{cassidy_get_thread_id}()},
 \code{\link{cassidy_list_conversations}()}
 }
 \concept{chat-app}
