@@ -281,8 +281,9 @@ cassidy_write_file <- function(x, path, open = interactive(), append = FALSE) {
       while (j <= length(lines)) {
         current_line <- lines[j]
 
-        # Check for nested code block opening (has language identifier)
-        if (grepl("^```[a-zA-Z]", current_line)) {
+        # FIXED: Check for nested code block opening
+        # Matches: ```r, ```{r}, ```python, etc.
+        if (grepl("^```\\{?[a-zA-Z]", current_line)) {
           nesting <- nesting + 1
         } else if (grepl("^```\\s*$", current_line)) {
           # Bare ``` - either closes nested block or closes our main block
@@ -472,8 +473,9 @@ cassidy_write_file <- function(x, path, open = interactive(), append = FALSE) {
   while (i <= length(lines)) {
     line <- lines[i]
 
-    # Check for opening code fence with language (``` or ~~~)
-    if (grepl("^(`{3,}|~{3,})[a-zA-Z]", line)) {
+    # FIXED: Check for opening code fence with language (``` or ~~~)
+    # Now matches: ```r, ```{r}, ```python, etc.
+    if (grepl("^(`{3,}|~{3,})\\{?[a-zA-Z]", line)) {
       fence_char <- substr(line, 1, 1)
       fence_match <- regexpr(paste0("^", fence_char, "+"), line)
       fence_len <- attr(fence_match, "match.length")
@@ -492,7 +494,11 @@ cassidy_write_file <- function(x, path, open = interactive(), append = FALSE) {
         if (grepl(paste0("^", fence_char, "{3,}"), current_line)) {
           inner_match <- regexpr(paste0("^", fence_char, "+"), current_line)
           inner_len <- attr(inner_match, "match.length")
-          has_lang <- grepl(paste0("^", fence_char, "+[a-zA-Z]"), current_line)
+          # FIXED: Now matches ```{r} style chunks
+          has_lang <- grepl(
+            paste0("^", fence_char, "+\\{?[a-zA-Z]"),
+            current_line
+          )
 
           if (has_lang) {
             # Opening fence
