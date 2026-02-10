@@ -12,6 +12,10 @@
 .Renviron
 .env
 
+# Local-only Claude Code and Cassidy configs (personal preferences)
+CLAUDE.local.md
+CASSIDY.local.md
+
 # Optional: Ignore local test mocks (if you want to keep real ones locally)
 # tests/testthat/app.cassidyai.com/
 # But DO commit the redacted ones for CI/CD
