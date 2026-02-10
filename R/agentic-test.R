@@ -88,6 +88,40 @@ cassidy_test_workflow <- function(
     return(invisible(NULL))
   }
 
+  # Check if response is wrapped in CassidyAI workflow execution metadata
+  if ("workflowRun" %in% names(result) && "actionResults" %in% names(result$workflowRun)) {
+    if (verbose) {
+      cli::cli_alert_info("Detected CassidyAI workflow wrapper, extracting output...")
+    }
+
+    # Extract the actual output from the first action
+    action_results <- result$workflowRun$actionResults
+
+    if (length(action_results) == 0) {
+      cli::cli_abort(c(
+        "Workflow returned no action results",
+        "i" = "Check that workflow has a Generate Text action"
+      ))
+    }
+
+    # Get output from first action
+    output <- action_results[[1]]$output
+
+    if (is.null(output)) {
+      cli::cli_abort(c(
+        "Action output is null",
+        "i" = "Check that Generate Text action has structured output fields"
+      ))
+    }
+
+    # Parse the JSON string output
+    if (is.character(output)) {
+      result <- jsonlite::fromJSON(output, simplifyVector = FALSE)
+    } else {
+      result <- output
+    }
+  }
+
   # Validate response structure
   if (verbose) {
     cli::cli_alert_success("Response received")

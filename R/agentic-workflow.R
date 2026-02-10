@@ -71,6 +71,38 @@
   # Parse structured output
   result <- httr2::resp_body_json(resp)
 
+  # Check if response is wrapped in CassidyAI workflow execution metadata
+  if ("workflowRun" %in% names(result) && "actionResults" %in% names(result$workflowRun)) {
+    # Extract the actual output from the first action
+    action_results <- result$workflowRun$actionResults
+
+    if (length(action_results) == 0) {
+      cli::cli_abort(c(
+        "Workflow returned no action results",
+        "i" = "Check that workflow has a Generate Text action",
+        "i" = "Verify workflow completed successfully"
+      ))
+    }
+
+    # Get output from first action (should be the Generate Text action)
+    output <- action_results[[1]]$output
+
+    if (is.null(output)) {
+      cli::cli_abort(c(
+        "Action output is null",
+        "i" = "Check that Generate Text action has structured output fields",
+        "i" = "Verify action completed successfully"
+      ))
+    }
+
+    # Parse the JSON string output
+    if (is.character(output)) {
+      result <- jsonlite::fromJSON(output, simplifyVector = FALSE)
+    } else {
+      result <- output
+    }
+  }
+
   # Validate required fields
   required <- c("action", "input", "reasoning", "status")
   missing <- setdiff(required, names(result))
