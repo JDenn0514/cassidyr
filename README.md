@@ -1,4 +1,5 @@
 
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # cassidyr
@@ -121,18 +122,29 @@ threads <- cassidy_list_threads()
 
 ### Context Gathering
 
-Provide rich context to improve AI responses:
+Provide rich context to improve AI responses. cassidyr’s memory system
+(inspired by [Claude Code](https://code.claude.com/docs/en/memory))
+searches recursively up your directory tree, combining user-level
+preferences with project-specific settings:
 
 ``` r
-# Gather project context
+# Create a CASSIDY.md file for your project
+use_cassidy_md()  # Creates CASSIDY.md with project instructions
+
+# Gather comprehensive project context (includes CASSIDY.md files)
 ctx <- cassidy_context_project(level = "standard")
 
-# Describe a data frame
+# Describe a data frame for the AI
 cassidy_describe_df(mtcars)
 
-# Create a cassidy.md configuration file
-use_cassidy_md()
+# Files are automatically loaded when you start cassidy_app()
 ```
+
+Memory files can be placed at multiple levels: - **User-level**:
+`~/.cassidy/CASSIDY.md` (applies to all projects) - **Project-level**:
+`CASSIDY.md` or `.cassidy/CASSIDY.md` (shared with team) - **Local**:
+`CASSIDY.local.md` (personal, auto-gitignored) - **Modular**:
+`.cassidy/rules/*.md` (organized by topic)
 
 ## Roadmap
 
@@ -164,7 +176,7 @@ features:
 
 ## Design Philosophy
 
-cassidyr is built with three core principles:
+cassidyr is built with four core principles:
 
 1.  **Security First**: No credentials in code, secure environment
     variables
@@ -172,6 +184,9 @@ cassidyr is built with three core principles:
     functions
 3.  **Modular Design**: Core API separate from specialized tools, easy
     to extend
+4.  **Hierarchical Memory**: Inspired by Claude Code’s memory system,
+    enabling organization-wide standards to combine with
+    project-specific configurations
 
 ## Related Packages
 
