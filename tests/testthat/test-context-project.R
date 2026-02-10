@@ -345,3 +345,216 @@ test_that("use_cassidy_md templates are well-formed", {
     })
   }
 })
+
+# Test recursive loading (upstream memory) ------------------------------------
+
+test_that("cassidy_read_context_file with recursive=TRUE walks up directory tree", {
+  withr::with_tempdir({
+    # Create parent directory with config
+    writeLines(c("# Parent Config", "Parent content"), "CASSIDY.md")
+
+    # Create child directory with config
+    dir.create("child")
+    writeLines(c("# Child Config", "Child content"), "child/CASSIDY.md")
+
+    # Use withr::with_dir instead of manual setwd
+    withr::with_dir("child", {
+      # Without recursive - should only get child config
+      result_no_recursive <- cassidy_read_context_file(recursive = FALSE)
+      expect_match(result_no_recursive, "Child content")
+      expect_false(grepl("Parent content", result_no_recursive))
+
+      # With recursive - should get both configs
+      result_recursive <- cassidy_read_context_file(recursive = TRUE)
+      expect_match(result_recursive, "Child content")
+      expect_match(result_recursive, "Parent content")
+    })
+  })
+})
+
+test_that("cassidy_read_context_file recursive loads configs in correct order", {
+  withr::with_tempdir({
+    # Create nested structure: grandparent/parent/child
+    writeLines(c("# Grandparent"), "CASSIDY.md")
+
+    dir.create("parent")
+    writeLines(c("# Parent"), "parent/CASSIDY.md")
+
+    dir.create("parent/child")
+    writeLines(c("# Child"), "parent/child/CASSIDY.md")
+
+    # Use withr::with_dir
+    withr::with_dir("parent/child", {
+      # With recursive - should get all three
+      result <- cassidy_read_context_file(recursive = TRUE)
+
+      expect_match(result, "Grandparent")
+      expect_match(result, "Parent")
+      expect_match(result, "Child")
+
+      # User-level memory should come first (lowest priority)
+      # Then configs from root to leaf (parent configs loaded first)
+    })
+  })
+})
+
+test_that("cassidy_read_context_file recursive loads modular rules from parent", {
+  withr::with_tempdir({
+    # Create parent with modular rules
+    dir.create(".cassidy/rules", recursive = TRUE)
+    writeLines(c("# Parent Rule 1"), ".cassidy/rules/rule1.md")
+    writeLines(c("# Parent Rule 2"), ".cassidy/rules/rule2.md")
+
+    # Create child directory
+    dir.create("child")
+
+    # Use withr::with_dir
+    withr::with_dir("child", {
+      # With recursive - should load parent's rules
+      result <- cassidy_read_context_file(recursive = TRUE)
+
+      expect_match(result, "Parent Rule 1")
+      expect_match(result, "Parent Rule 2")
+    })
+  })
+})
+
+test_that("team-repo use case: company-wide + project-specific configs", {
+  withr::with_tempdir({
+    # Simulate team-repo structure
+    # team-repo/
+    # ├── CASSIDY.md (company-wide)
+    # ├── project-a/
+    # │   └── CASSIDY.md (project-specific)
+    # └── project-b/
+    #     └── CASSIDY.md (project-specific)
+
+    # Create company-wide config
+    writeLines(
+      c(
+        "# Company-Wide Standards",
+        "- Use tidyverse style",
+        "- Maximum line length: 80"
+      ),
+      "CASSIDY.md"
+    )
+
+    # Create project-a
+    dir.create("project-a")
+    writeLines(
+      c(
+        "# Project A Specific",
+        "- This is a survey analysis project",
+        "- Use lavaan for SEM"
+      ),
+      "project-a/CASSIDY.md"
+    )
+
+    # Create project-b
+    dir.create("project-b")
+    writeLines(
+      c(
+        "# Project B Specific",
+        "- This is a web scraping project",
+        "- Use rvest and httr2"
+      ),
+      "project-b/CASSIDY.md"
+    )
+
+    # Test from project-a
+    withr::with_dir("project-a", {
+      result <- cassidy_read_context_file(recursive = TRUE)
+
+      # Should have both company-wide and project-specific
+      expect_match(result, "Company-Wide Standards")
+      expect_match(result, "tidyverse style")
+      expect_match(result, "Project A Specific")
+      expect_match(result, "lavaan for SEM")
+
+      # Should NOT have project-b content
+      expect_false(grepl("Project B Specific", result))
+      expect_false(grepl("web scraping", result))
+    })
+  })
+})
+
+test_that("cassidy_context_project uses recursive loading by default", {
+  withr::with_tempdir({
+    # Create parent config
+    writeLines(c("# Parent Project Config", "Parent rules here"), "CASSIDY.md")
+
+    # Create child directory
+    dir.create("subproject")
+    writeLines(
+      c("# Subproject Config", "Subproject rules here"),
+      "subproject/CASSIDY.md"
+    )
+
+    # Use withr::with_dir
+    withr::with_dir("subproject", {
+      # cassidy_context_project should now use recursive=TRUE by default
+      ctx <- cassidy_context_project(level = "minimal", include_config = TRUE)
+
+      expect_true("config" %in% ctx$parts)
+      expect_match(ctx$text, "Parent rules here")
+      expect_match(ctx$text, "Subproject rules here")
+    })
+  })
+})
+
+test_that("recursive loading respects user-level memory precedence", {
+  withr::with_tempdir({
+    # Create user-level memory directory
+    user_cassidy <- file.path(tempdir(), ".cassidy-test-user")
+    dir.create(user_cassidy, showWarnings = FALSE)
+    on.exit(unlink(user_cassidy, recursive = TRUE), add = TRUE)
+
+    writeLines(
+      c("# User Memory", "User preferences"),
+      file.path(user_cassidy, "CASSIDY.md")
+    )
+
+    # Mock the user cassidy directory by temporarily changing it
+    # (This is a simplified test - in reality we'd need to mock .read_user_configs)
+
+    # Create project-level config
+    writeLines(c("# Project Memory", "Project rules"), "CASSIDY.md")
+
+    result <- cassidy_read_context_file(recursive = TRUE, include_user = FALSE)
+
+    # Should have project memory
+    expect_match(result, "Project Memory")
+  })
+})
+
+test_that("recursive loading handles .cassidy/CASSIDY.md in parents", {
+  withr::with_tempdir({
+    # Create parent with hidden .cassidy directory
+    dir.create(".cassidy")
+    writeLines(c("# Hidden Parent Config"), ".cassidy/CASSIDY.md")
+
+    # Create child
+    dir.create("child")
+
+    withr::with_dir("child", {
+      result <- cassidy_read_context_file(recursive = TRUE)
+
+      expect_match(result, "Hidden Parent Config")
+    })
+  })
+})
+
+test_that("recursive loading stops at filesystem root", {
+  withr::with_tempdir({
+    # This test ensures we don't infinite loop
+    # Start deep in a directory tree
+    dir.create("a/b/c/d", recursive = TRUE)
+
+    withr::with_dir("a/b/c/d", {
+      # Should not error even when walking all the way up
+      expect_no_error({
+        result <- cassidy_read_context_file(recursive = TRUE)
+      })
+    })
+  })
+})

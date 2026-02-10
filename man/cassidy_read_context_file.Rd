@@ -10,8 +10,9 @@ cassidy_read_context_file(path = ".", recursive = FALSE, include_user = TRUE)
 \item{path}{Directory to search (default: current directory)}
 
 \item{recursive}{Whether to search parent directories (default: FALSE).
-When TRUE, searches up the directory tree like Claude Code does.
-For R packages, FALSE is recommended for predictability.}
+When TRUE, searches up the directory tree like Claude Code does, enabling
+company-wide configurations in parent directories. This is the default
+behavior when called from \code{cassidy_context_project()}.}
 
 \item{include_user}{Whether to include user-level memory from ~/.cassidy/
 (default: TRUE)}
@@ -20,8 +21,8 @@ For R packages, FALSE is recommended for predictability.}
 Character string with config file contents, or NULL if none found
 }
 \description{
-Looks for project-specific configuration files. By default, only searches
-the current working directory and user-level location (~/.cassidy/).
+Looks for project-specific configuration files in the current directory,
+parent directories (when recursive=TRUE), and user-level location.
 }
 \examples{
 \dontrun{

@@ -3,9 +3,14 @@
 #' Collects comprehensive information about the current R project including
 #' file structure, Git status, configuration files, and more.
 #'
+#' By default, searches for CASSIDY.md files recursively up the directory tree
+#' (like Claude Code), allowing company-wide configurations in parent directories
+#' to be combined with project-specific configurations.
+#'
 #' @param level Context detail level: "minimal", "standard", or "comprehensive"
 #' @param max_size Maximum context size in characters (approximate)
-#' @param include_config Whether to include cassidy.md or similar config files
+#' @param include_config Whether to include cassidy.md or similar config files.
+#'   When TRUE (default), searches recursively up the directory tree.
 #'
 #' @return An object of class \code{cassidy_context} containing project information
 #' @export
@@ -37,8 +42,10 @@ cassidy_context_project <- function(
   context_parts$r_info <- cassidy_session_info()
 
   # Include project config files if they exist
+  # Default to recursive=TRUE to match Claude Code behavior:
+  # walks up directory tree to find upstream CASSIDY.md files
   if (include_config) {
-    config_text <- cassidy_read_context_file()
+    config_text <- cassidy_read_context_file(recursive = TRUE)
     if (!is.null(config_text)) {
       context_parts$config <- config_text
     }

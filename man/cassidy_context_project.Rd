@@ -15,7 +15,8 @@ cassidy_context_project(
 
 \item{max_size}{Maximum context size in characters (approximate)}
 
-\item{include_config}{Whether to include cassidy.md or similar config files}
+\item{include_config}{Whether to include cassidy.md or similar config files.
+When TRUE (default), searches recursively up the directory tree.}
 }
 \value{
 An object of class \code{cassidy_context} containing project information
@@ -23,6 +24,11 @@ An object of class \code{cassidy_context} containing project information
 \description{
 Collects comprehensive information about the current R project including
 file structure, Git status, configuration files, and more.
+}
+\details{
+By default, searches for CASSIDY.md files recursively up the directory tree
+(like Claude Code), allowing company-wide configurations in parent directories
+to be combined with project-specific configurations.
 }
 \examples{
 \dontrun{
