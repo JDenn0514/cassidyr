@@ -1,156 +1,232 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# AGENTIC WORKFLOW - Integration with CassidyAI Workflows
-# Handles structured tool decision via workflow webhooks
+# AGENTIC PARSING - Direct Tool Decision Parsing
+# Parses assistant responses to extract tool decisions (no workflow needed)
 # ══════════════════════════════════════════════════════════════════════════════
 
-#' Call CassidyAI Tool Decision Workflow
+#' Parse Tool Decision from Assistant Response
 #'
-#' Makes a webhook request to a CassidyAI Workflow configured with structured
-#' output fields for reliable tool decision-making.
+#' Parses structured text from the assistant to extract tool decisions.
+#' Expected format:
+#'   <TOOL_DECISION>
+#'   ACTION: tool_name
+#'   INPUT: {"param": "value"}
+#'   REASONING: explanation
+#'   STATUS: continue|final
+#'   </TOOL_DECISION>
 #'
-#' @param reasoning Character. The assistant's reasoning about next steps
+#' @param response Character. The assistant's full response
 #' @param available_tools Character vector. Tools the agent can use
-#' @param context List. Current state/context
-#' @param workflow_webhook Character. Webhook URL from CASSIDY_WORKFLOW_WEBHOOK env var
 #'
 #' @return List with action, input, reasoning, status
 #' @keywords internal
 #' @noRd
-.call_tool_workflow <- function(
-  reasoning,
-  available_tools,
-  context = NULL,
-  workflow_webhook = Sys.getenv("CASSIDY_WORKFLOW_WEBHOOK")
-) {
+.parse_tool_decision <- function(response, available_tools) {
 
-  if (!nzchar(workflow_webhook)) {
-    cli::cli_abort(c(
-      "Workflow webhook URL not found",
-      "i" = "Set {.envvar CASSIDY_WORKFLOW_WEBHOOK} in .Renviron",
-      "i" = "Create workflow in CassidyAI with structured output fields",
-      "i" = "Run {.run cassidy_setup_workflow()} for setup instructions"
+  # Debug output
+  if (getOption("cassidy.debug", FALSE)) {
+    cli::cli_h3("Parsing Response")
+    cli::cli_text("Length: {nchar(response)} chars")
+    cli::cli_text("Preview: {substr(response, 1, 200)}...")
+  }
+
+  # Check if response indicates completion (simplified pattern)
+  if (grepl("TASK\\s+COMPLETE|TASK_COMPLETE|TASK COMPLETE", response, ignore.case = TRUE)) {
+    if (getOption("cassidy.debug", FALSE)) {
+      cli::cli_alert_info("Detected TASK COMPLETE")
+    }
+    # Extract completion message (everything after TASK COMPLETE:)
+    completion_msg <- sub("^.*?TASK[\\s_]+COMPLETE[:\\s]*", "", response, ignore.case = TRUE, perl = TRUE)
+
+    # Clean up the message
+    completion_msg <- trimws(completion_msg)
+    if (!nzchar(completion_msg)) {
+      completion_msg <- "Task completed successfully"
+    }
+
+    return(list(
+      action = NULL,
+      input = list(),
+      reasoning = completion_msg,
+      status = "final"
     ))
   }
 
-  # Build payload
-  payload <- list(
-    reasoning = reasoning,
-    available_tools = available_tools
-  )
+  # Try to extract structured tool decision (use [\s\S] to match newlines)
+  tool_decision_pattern <- "<TOOL_DECISION>([\\s\\S]+?)</TOOL_DECISION>"
+  tool_match <- regmatches(response, regexpr(tool_decision_pattern, response, perl = TRUE))
 
-  # Add context if provided
-  if (!is.null(context)) {
-    payload$context <- context
+  if (length(tool_match) == 0) {
+    if (getOption("cassidy.debug", FALSE)) {
+      cli::cli_alert_warning("No <TOOL_DECISION> tags found, using fallback parser")
+    }
+    # No structured decision found - try to infer from response
+    return(.infer_tool_decision(response, available_tools))
   }
 
-  # Call workflow
-  resp <- tryCatch({
-    httr2::request(workflow_webhook) |>
-      httr2::req_body_json(payload) |>
-      httr2::req_timeout(120) |>
-      httr2::req_retry(
-        max_tries = 3,
-        is_transient = function(resp) {
-          httr2::resp_status(resp) %in% c(429, 503, 504)
-        }
-      ) |>
-      httr2::req_error(body = function(resp) {
-        body <- httr2::resp_body_json(resp)
-        body$message %||% body$error %||% "Unknown workflow error"
-      }) |>
-      httr2::req_perform()
+  if (getOption("cassidy.debug", FALSE)) {
+    cli::cli_alert_success("Found <TOOL_DECISION> block")
+  }
+
+  # Extract the content between tags
+  content <- gsub("</?TOOL_DECISION>", "", tool_match)
+
+  # Parse fields
+  action <- .extract_field(content, "ACTION")
+  input_json <- .extract_field(content, "INPUT")
+  reasoning <- .extract_field(content, "REASONING")
+  status <- .extract_field(content, "STATUS")
+
+  # Parse INPUT JSON
+  input <- tryCatch({
+    if (nzchar(input_json)) {
+      jsonlite::fromJSON(input_json, simplifyVector = FALSE)
+    } else {
+      list()
+    }
   }, error = function(e) {
-    cli::cli_abort(c(
-      "Failed to call workflow",
-      "x" = e$message,
-      "i" = "Check that {.envvar CASSIDY_WORKFLOW_WEBHOOK} is correct",
-      "i" = "Verify workflow is active in CassidyAI platform"
-    ))
+    cli::cli_warn("Failed to parse INPUT JSON, using empty list")
+    list()
   })
 
-  # Parse structured output
-  result <- httr2::resp_body_json(resp)
-
-  # Check if response is wrapped in CassidyAI workflow execution metadata
-  if ("workflowRun" %in% names(result) && "actionResults" %in% names(result$workflowRun)) {
-    # Extract the actual output from the first action
-    action_results <- result$workflowRun$actionResults
-
-    if (length(action_results) == 0) {
-      cli::cli_abort(c(
-        "Workflow returned no action results",
-        "i" = "Check that workflow has a Generate Text action",
-        "i" = "Verify workflow completed successfully"
-      ))
-    }
-
-    # Get output from first action (should be the Generate Text action)
-    output <- action_results[[1]]$output
-
-    if (is.null(output)) {
-      cli::cli_abort(c(
-        "Action output is null",
-        "i" = "Check that Generate Text action has structured output fields",
-        "i" = "Verify action completed successfully"
-      ))
-    }
-
-    # Parse the JSON string output
-    if (is.character(output)) {
-      result <- jsonlite::fromJSON(output, simplifyVector = FALSE)
-    } else {
-      result <- output
-    }
-  }
-
-  # Validate required fields
-  required <- c("action", "input", "reasoning", "status")
-  missing <- setdiff(required, names(result))
-
-  if (length(missing) > 0) {
-    cli::cli_abort(c(
-      "Workflow returned invalid structure",
-      "x" = "Missing fields: {.field {missing}}",
-      "i" = "Expected fields: {.field {required}}",
-      "i" = "Got fields: {.field {names(result)}}",
-      "i" = "Check workflow structured output configuration"
-    ))
-  }
-
   # Validate status
-  if (!result$status %in% c("continue", "final")) {
-    cli::cli_warn(c(
-      "Unexpected status value: {.val {result$status}}",
-      "i" = "Expected 'continue' or 'final'",
-      "i" = "Defaulting to 'continue'"
-    ))
-    result$status <- "continue"
+  if (!status %in% c("continue", "final")) {
+    status <- "continue"
   }
 
-  result
+  list(
+    action = action,
+    input = input,
+    reasoning = reasoning,
+    status = status
+  )
 }
 
-#' Setup Tool Decision Workflow
+#' Extract field from structured text
 #'
-#' Displays instructions for creating a CassidyAI Workflow with structured
-#' output fields for reliable tool decision-making in agentic mode.
+#' @param text Character. Text to search
+#' @param field Character. Field name
+#'
+#' @return Character. Field value
+#' @keywords internal
+#' @noRd
+.extract_field <- function(text, field) {
+  pattern <- paste0(field, ":\\s*(.+?)(?=\n[A-Z]+:|$)")
+  match <- regmatches(text, regexpr(pattern, text, perl = TRUE))
+
+  if (length(match) == 0) {
+    return("")
+  }
+
+  # Remove field name and clean up
+  value <- gsub(paste0("^", field, ":\\s*"), "", match)
+  trimws(value)
+}
+
+#' Infer tool decision from unstructured response
+#'
+#' Fallback parser for when assistant doesn't use structured format.
+#'
+#' @param response Character. Assistant response
+#' @param available_tools Character vector. Available tools
+#'
+#' @return List with action, input, reasoning, status
+#' @keywords internal
+#' @noRd
+.infer_tool_decision <- function(response, available_tools) {
+
+  # Look for tool names mentioned in response
+  mentioned_tools <- available_tools[sapply(available_tools, function(tool) {
+    grepl(tool, response, fixed = TRUE)
+  })]
+
+  if (length(mentioned_tools) == 0) {
+    # No tool mentioned - ask for clarification
+    return(list(
+      action = NULL,
+      input = list(),
+      reasoning = "No tool decision found in response. Please use <TOOL_DECISION> format.",
+      status = "continue"
+    ))
+  }
+
+  # Use first mentioned tool
+  tool <- mentioned_tools[1]
+
+  # Try to extract parameters (very basic)
+  input <- list()
+
+  # Common parameter patterns
+  if (grepl("filepath|file|path", response, ignore.case = TRUE)) {
+    path_match <- regmatches(
+      response,
+      regexpr("['\"]([^'\"]+\\.[a-zA-Z]+)['\"]", response, perl = TRUE)
+    )
+    if (length(path_match) > 0) {
+      input$filepath <- gsub("['\"]", "", path_match)
+    }
+  }
+
+  list(
+    action = tool,
+    input = input,
+    reasoning = paste("Inferred tool from response:", tool),
+    status = "continue"
+  )
+}
+
+#' Setup Tool Decision Workflow (DEPRECATED)
+#'
+#' This function is deprecated. The agentic system now uses direct parsing
+#' instead of workflows, so no workflow setup is needed.
 #'
 #' @details
-#' This function displays step-by-step instructions for creating a workflow
-#' in the CassidyAI platform that will be used by [cassidy_agentic_task()]
-#' to make tool decisions with guaranteed JSON structure.
+#' **NOTE:** As of the latest version, `cassidy_agentic_task()` uses direct
+#' parsing of assistant responses instead of requiring a separate workflow.
+#' This function is kept for backward compatibility but is no longer needed.
 #'
-#' The workflow uses **structured output fields** to eliminate parsing errors
-#' and ensure reliable tool calling.
+#' The new approach:
+#' - Simpler setup (no workflow configuration needed)
+#' - More reliable (no webhook dependencies)
+#' - Easier to debug (everything happens in R)
+#'
+#' Simply use `cassidy_agentic_task()` directly - it will work out of the box!
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Display workflow setup instructions
-#' cassidy_setup_workflow()
+#' # No setup needed! Just use:
+#' cassidy_agentic_task("List all R files")
 #' }
 cassidy_setup_workflow <- function() {
+  cli::cli_h1("Workflow Setup (DEPRECATED)")
+
+  cli::cli_alert_warning("This function is deprecated and no longer needed!")
+  cli::cli_text("")
+  cli::cli_text(
+    "The agentic system now uses {.strong direct parsing} instead of workflows."
+  )
+  cli::cli_text("")
+
+  cli::cli_h2("Good News!")
+  cli::cli_ul(c(
+    "No workflow setup required",
+    "No webhook configuration needed",
+    "Works out of the box with just {.envvar CASSIDY_ASSISTANT_ID} and {.envvar CASSIDY_API_KEY}",
+    "More reliable and easier to debug"
+  ))
+  cli::cli_text("")
+
+  cli::cli_h2("Just Use It!")
+  cli::cli_code('
+# That\'s it! No workflow setup needed.
+result <- cassidy_agentic_task("List all R files in this directory")
+  ')
+  cli::cli_text("")
+
+  return(invisible(NULL))
+
+  # Old instructions below (kept for reference)
   cli::cli_h1("Setup Tool Decision Workflow")
 
   cli::cli_text(
@@ -172,23 +248,38 @@ cassidy_setup_workflow <- function() {
   cli::cli_text("Add this prompt to the action:")
   cli::cli_text("")
   cli::cli_code('
-You are a tool selection expert for an R programming assistant.
+You are a tool selection expert for an R programming assistant in an agentic workflow.
 
-Based on the reasoning provided, choose the most appropriate tool and parameters.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  CRITICAL: ONLY USE ALLOWED TOOLS ⚠️
 
-## Available Tools
+You MUST choose EXACTLY ONE tool from this list (exact spelling):
+
 {{available_tools}}
 
-## Current Reasoning
+Any other tool name is INVALID and will fail.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Assistant Reasoning
 {{reasoning}}
 
 ## Context
 {{context}}
 
-Choose ONE tool and provide exact parameters needed. If the task is complete,
-set status to "final". Otherwise set status to "continue".
+INSTRUCTIONS:
+1. Read the assistant reasoning above to understand what they want to do
+2. Choose EXACTLY ONE tool from the ALLOWED TOOLS list (spelling must match exactly)
+3. In the "action" field, enter ONLY the tool name (e.g., "list_files")
+4. In the "input" field, provide the exact parameters needed as an object
+5. In the "reasoning" field, explain why you chose this tool
+6. Set "status":
+   - "continue" = A tool needs to be executed (default - use this most of the time)
+   - "final" = The assistant has explicitly confirmed the task is complete with "TASK COMPLETE" after receiving results
 
-Be precise with parameters - use exact file paths and clear instructions.
+IMPORTANT RULES:
+- The "action" field must contain ONLY the tool name from the allowed list
+- Only set status to "final" if the assistant says "TASK COMPLETE" AND has already received and confirmed results
+- If the assistant is planning to do something or requesting a tool, set status to "continue"
   ')
   cli::cli_text("")
 
@@ -198,12 +289,17 @@ Be precise with parameters - use exact file paths and clear instructions.
   cli::cli_text("")
 
   cli::cli_dl(c(
-    "action" = "Dropdown: read_file, write_file, execute_code, list_files, search_files, get_context, describe_data",
+    "action" = "Text (Required): Tool name from available tools (e.g., 'list_files')",
     "input" = "Object: Tool parameters as key-value pairs",
     "reasoning" = "Text (Required): Why this action was chosen",
     "status" = "Dropdown: continue, final"
   ))
   cli::cli_text("")
+
+  cli::cli_alert_warning(paste(
+    "Note: Use {.strong Text} for action field, not Dropdown.",
+    "This allows dynamic tool filtering based on available_tools."
+  ))
 
   # Save webhook
   cli::cli_h2("4. Save Webhook URL")

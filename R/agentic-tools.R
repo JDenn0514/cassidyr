@@ -114,15 +114,19 @@
     risky = FALSE,
     parameters = list(
       directory = "Directory to list (default: current)",
+      path = "Alias for directory",
       pattern = "Optional file pattern to match"
     ),
-    handler = function(directory = ".", pattern = NULL) {
-      if (!dir.exists(directory)) {
-        stop(paste("Directory not found:", directory))
+    handler = function(directory = ".", path = NULL, pattern = NULL) {
+      # Accept either 'directory' or 'path' parameter
+      dir_to_list <- if (!is.null(path)) path else directory
+
+      if (!dir.exists(dir_to_list)) {
+        stop(paste("Directory not found:", dir_to_list))
       }
 
       files <- list.files(
-        directory,
+        dir_to_list,
         pattern = pattern,
         recursive = TRUE,
         full.names = FALSE

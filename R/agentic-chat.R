@@ -16,10 +16,9 @@
 #' @param task Character. The task description
 #' @param assistant_id Character. CassidyAI assistant ID (default: env var)
 #' @param api_key Character. CassidyAI API key (default: env var)
-#' @param workflow_webhook Character. Workflow webhook URL (default: env var)
 #' @param tools Character vector. Tools to enable (default: all)
 #' @param working_dir Character. Working directory (default: current)
-#' @param max_iterations Integer. Max tool calls (default: 10)
+#' @param max_iterations Integer. Max tool calls (default: 10). Use `Inf` for unlimited.
 #' @param initial_context Character/list. Optional context to provide
 #' @param safe_mode Logical. Require approval for risky tools? (default: TRUE)
 #' @param approval_callback Function. Custom approval handler (default: NULL)
@@ -38,13 +37,15 @@
 #' @details
 #' ## How It Works
 #'
-#' The agentic system uses a hybrid architecture:
+#' The agentic system uses direct parsing:
 #'
-#' 1. **Assistant** provides high-level reasoning about the task
-#' 2. **Workflow** makes structured tool decisions (guaranteed JSON)
+#' 1. **Assistant** analyzes the task and chooses a tool in structured format
+#' 2. **R parsing** extracts the tool decision from the response
 #' 3. **R functions** execute tools with proper error handling
+#' 4. **Results** are sent back to the assistant for next steps
 #'
-#' This architecture eliminates parsing errors and provides reliable tool calling.
+#' The assistant responds with structured `<TOOL_DECISION>` blocks that specify
+#' which tool to use and what parameters to provide.
 #'
 #' ## Safe Mode
 #'
@@ -87,6 +88,12 @@
 #'   max_iterations = 5
 #' )
 #'
+#' # Unlimited iterations for complex tasks
+#' result <- cassidy_agentic_task(
+#'   "Refactor all test files to use modern patterns",
+#'   max_iterations = Inf
+#' )
+#'
 #' # Allow risky operations without approval (use with caution!)
 #' result <- cassidy_agentic_task(
 #'   "Create a helper function in R/helpers.R",
@@ -104,7 +111,6 @@ cassidy_agentic_task <- function(
   task,
   assistant_id = Sys.getenv("CASSIDY_ASSISTANT_ID"),
   api_key = Sys.getenv("CASSIDY_API_KEY"),
-  workflow_webhook = Sys.getenv("CASSIDY_WORKFLOW_WEBHOOK"),
   tools = names(.cassidy_tools),
   working_dir = getwd(),
   max_iterations = 10,
@@ -127,12 +133,11 @@ cassidy_agentic_task <- function(
     ))
   }
 
-  if (!nzchar(workflow_webhook)) {
-    cli::cli_abort(c(
-      "Workflow webhook URL not found",
-      "i" = "Set {.envvar CASSIDY_WORKFLOW_WEBHOOK} in your {.file .Renviron}",
-      "i" = "Run {.run cassidy_setup_workflow()} for setup instructions"
-    ))
+  # Warn about unlimited iterations
+  if (!is.finite(max_iterations) && verbose) {
+    cli::cli_alert_warning(
+      "Unlimited iterations enabled. Task will run until completion or manual interrupt."
+    )
   }
 
   # Create thread
@@ -140,7 +145,7 @@ cassidy_agentic_task <- function(
   thread_id <- cassidy_create_thread(assistant_id, api_key)
 
   # Build system prompt for assistant
-  system_prompt <- .build_agentic_prompt(working_dir, max_iterations)
+  system_prompt <- .build_agentic_prompt(working_dir, max_iterations, tools)
 
   # Build initial message
   message <- paste0(
@@ -158,7 +163,9 @@ cassidy_agentic_task <- function(
     cli::cli_rule(left = "Starting Agentic Task")
     cli::cli_text("Task: {.emph {task}}")
     cli::cli_text("Safe mode: {.val {safe_mode}}")
-    cli::cli_text("Max iterations: {.val {max_iterations}}")
+    cli::cli_text(
+      "Max iterations: {.val {if (is.finite(max_iterations)) max_iterations else 'unlimited'}}"
+    )
     cli::cli_text("")
   }
 
@@ -166,18 +173,23 @@ cassidy_agentic_task <- function(
   current_message <- message
 
   repeat {
-    iteration <- iteration + 1
-
-    if (iteration > max_iterations) {
+    if (iteration >= max_iterations) {
       if (verbose) cli::cli_alert_warning("Max iterations reached")
       break
     }
 
+    iteration <- iteration + 1
+
     if (verbose) {
-      cli::cli_rule(left = paste("Iteration", iteration, "/", max_iterations))
+      iter_label <- if (is.finite(max_iterations)) {
+        paste("Iteration", iteration, "/", max_iterations)
+      } else {
+        paste("Iteration", iteration)
+      }
+      cli::cli_rule(left = iter_label)
     }
 
-    # Get assistant reasoning
+    # Get assistant response with tool decision
     if (verbose) cli::cli_alert_info("Consulting assistant...")
     response <- cassidy_send_message(thread_id, current_message, api_key)
 
@@ -186,35 +198,37 @@ cassidy_agentic_task <- function(
       cli::cli_text("")
     }
 
-    # Get tool decision from workflow
-    if (verbose) cli::cli_alert_info("Getting tool decision...")
+    # Parse tool decision from response
+    if (verbose) cli::cli_alert_info("Parsing tool decision...")
 
     decision <- tryCatch({
-      .call_tool_workflow(
-        reasoning = response$content,
-        available_tools = tools,
-        context = list(
-          iteration = iteration,
-          working_dir = working_dir
-        ),
-        workflow_webhook = workflow_webhook
+      .parse_tool_decision(
+        response = response$content,
+        available_tools = tools
       )
     }, error = function(e) {
       if (verbose) {
-        cli::cli_alert_danger("Workflow error: {e$message}")
+        cli::cli_alert_danger("Parsing error: {e$message}")
       }
       list(
-        status = "final",
-        reasoning = paste("Error calling workflow:", e$message)
+        action = NULL,
+        input = list(),
+        status = "continue",
+        reasoning = paste("Error parsing response:", e$message)
       )
     })
 
-    # Check if done
-    if (decision$status == "final") {
+    # Check if done or no action specified
+    if (decision$status == "final" || is.null(decision$action)) {
       if (verbose) {
         cli::cli_rule()
-        cli::cli_alert_success("Task completed!")
-        cli::cli_text(decision$reasoning)
+        if (decision$status == "final") {
+          cli::cli_alert_success("Task completed!")
+          cli::cli_text(decision$reasoning)
+        } else {
+          cli::cli_alert_warning("No tool action specified")
+          cli::cli_text(decision$reasoning)
+        }
       }
 
       return(structure(
@@ -224,10 +238,32 @@ cassidy_agentic_task <- function(
           iterations = iteration,
           actions_taken = actions_taken,
           thread_id = thread_id,
-          success = TRUE
+          success = decision$status == "final"
         ),
         class = "cassidy_agentic_result"
       ))
+    }
+
+    # Validate tool is in available list
+    if (!decision$action %in% tools) {
+      if (verbose) {
+        cli::cli_alert_danger("Workflow chose unavailable tool: {.field {decision$action}}")
+        cli::cli_text("Available tools: {.field {tools}}")
+        cli::cli_text("")
+      }
+      # Send STRONG error back to assistant
+      current_message <- paste0(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
+        "❌ CRITICAL ERROR ❌\n",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n",
+        "The tool decision workflow selected '", decision$action, "' but this tool is NOT AVAILABLE.\n\n",
+        "AVAILABLE TOOLS (you MUST choose from these):\n",
+        paste0("  - ", tools, collapse = "\n"), "\n\n",
+        "The tool '", decision$action, "' is NOT in the available tools list.\n",
+        "You MUST select from the available tools listed above.\n\n",
+        "Please analyze the task and choose the appropriate tool from the AVAILABLE TOOLS list."
+      )
+      next
     }
 
     # Handle tool execution
@@ -334,20 +370,42 @@ cassidy_agentic_task <- function(
 #' @return Character. System prompt
 #' @keywords internal
 #' @noRd
-.build_agentic_prompt <- function(working_dir, max_iterations) {
+.build_agentic_prompt <- function(working_dir, max_iterations, available_tools) {
+  tools_list <- paste0("  - ", available_tools, collapse = "\n")
+
   paste0(
     "You are an expert R programming assistant working in: ", working_dir, "\n\n",
-    "Your role is to analyze tasks and provide clear reasoning about what needs to be done. ",
-    "After you provide your reasoning, a tool decision system will choose which tool to use.\n\n",
-    "Guidelines:\n",
-    "- Break down complex tasks into clear, logical steps\n",
-    "- Explain your reasoning thoroughly\n",
-    "- Consider edge cases and potential errors\n",
-    "- Follow R and tidyverse best practices\n",
-    "- Be precise about file paths and parameters\n",
-    "- You have ", max_iterations, " iterations to complete the task\n\n",
-    "When you believe the task is complete, clearly state: 'TASK COMPLETE' ",
-    "followed by a summary of what was accomplished."
+    "## Your Role\n",
+    "You execute tasks by choosing and using tools. Each iteration:\n",
+    "1. You analyze the current situation\n",
+    "2. You choose ONE tool to use (from available tools only)\n",
+    "3. The tool executes and returns results\n",
+    "4. You analyze results and repeat until task is complete\n\n",
+    "## Available Tools\n",
+    "You can ONLY use these tools:\n",
+    tools_list, "\n\n",
+    "## Response Format\n",
+    "You MUST respond in this EXACT format:\n\n",
+    "<TOOL_DECISION>\n",
+    "ACTION: tool_name\n",
+    "INPUT: {\"param1\": \"value1\", \"param2\": \"value2\"}\n",
+    "REASONING: Explain why you chose this tool and these parameters\n",
+    "STATUS: continue\n",
+    "</TOOL_DECISION>\n\n",
+    "## Important Rules\n",
+    "- ACTION must be ONE of the available tools listed above\n",
+    "- INPUT must be valid JSON with the tool's required parameters\n",
+    "- STATUS is 'continue' (unless task is complete, then see below)\n",
+    "- DO NOT make up or predict tool results - wait for actual execution\n",
+    "- Use ONLY tools from the available tools list\n\n",
+    "## Task Completion\n",
+    "When you receive tool results that fully satisfy the task, respond with:\n\n",
+    "TASK COMPLETE: [summary of what was accomplished with actual results]\n\n",
+    if (is.finite(max_iterations)) {
+      paste0("You have ", max_iterations, " iterations to complete this task.")
+    } else {
+      "You have unlimited iterations to complete this task."
+    }
   )
 }
 
