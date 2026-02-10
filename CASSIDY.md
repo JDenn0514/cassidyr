@@ -38,8 +38,10 @@ and follows R package development best practices.
      - `cassidy_create_*`, `cassidy_send_*` (API functions)
      - `cassidy_chat()`, `cassidy_session()` (chat interface)
      - `cassidy_context_*()` (context gathering)
+     - `cassidy_describe_*()` (context description functions)
      - `cassidy_app()` (Shiny chat interface)
-   - Internal helpers use `.` prefix (e.g., `.detect_ide()`)
+     - `cassidy_read_context_file()`, `use_cassidy_md()` (config files)
+   - Internal helpers use `.` prefix (e.g., `.detect_ide()`, `.get_env_dataframes()`)
 
 4. **User-Friendly Errors**
    - Use `cli::cli_abort()` for errors with helpful messages
@@ -56,26 +58,40 @@ and follows R package development best practices.
 
 cassidyr/
 ├── R/
-│   ├── api-core.R              ✓ Complete (API layer)
-│   ├── chat-core.R             ✓ Complete (chat interface)
-│   ├── chat-ui.R               ✓ Complete (Shiny app main)
-│   ├── chat-ui-components.R    ✓ Complete (UI components)
-│   ├── chat-server-handlers.R  ✓ Complete (Server handlers)
-│   ├── chat-conversation.R     ✓ Complete (S7 ConversationManager)
-│   ├── chat-persistence.R      ✓ Complete (Save/load conversations)
-│   ├── chat-helpers.R          ✓ Complete (Write code/files)
-│   ├── chat-css.R              ✓ Complete (App styling + copy code button)
-│   ├── chat-js.R               ✓ Complete (App JavaScript + copy code button)
-│   ├── context-project.R       ✓ Complete (project context)
-│   ├── context-data.R          ✓ Complete (data frame context)
-│   ├── context-env.R           ✓ Complete (environment context)
-│   ├── context-file.R          ✓ Complete (file context)
-│   ├── context-combine.R       ✓ Complete (combine contexts)
-│   ├── context-tools.R         ✓ Complete (internal helpers)
-│   ├── scripts.R               ✓ Complete (script-to-quarto, commenting)
-│   ├── utils.R                 ✓ Complete (%||% operator)
-│   ├── cassidyr-package.R      ✓ Complete (package docs)
-│   └── addins.R                ⏳ Phase 4 (RStudio/Positron addins)
+│   ├── api-core.R                      ✓ Complete (API layer)
+│   ├── cassidy-classes.R               ✓ Complete (S3 print methods)
+│   ├── cassidyr-package.R              ✓ Complete (package docs)
+│   │
+│   ├── chat-core.R                     ✓ Complete (chat interface)
+│   ├── chat-ui.R                       ✓ Complete (Shiny app main)
+│   ├── chat-ui-components.R            ✓ Complete (UI components)
+│   ├── chat-conversation.R             ✓ Complete (S7 ConversationManager)
+│   ├── chat-persistence.R              ✓ Complete (Save/load conversations)
+│   ├── chat-context-gather.R           ✓ Complete (Context gathering logic)
+│   ├── chat-helpers.R                  ✓ Complete (Write code/files)
+│   ├── chat-utils.R                    ✓ Complete (File tree, data frame utils)
+│   ├── chat-css.R                      ✓ Complete (App styling + copy code button)
+│   ├── chat-js.R                       ✓ Complete (App JavaScript + copy code button)
+│   │
+│   ├── chat-handlers-message.R         ✓ Complete (Message handling)
+│   ├── chat-handlers-conversation.R    ✓ Complete (Conversation management)
+│   ├── chat-handlers-context-apply.R   ✓ Complete (Apply context to messages)
+│   ├── chat-handlers-context-data.R    ✓ Complete (Data frame context handlers)
+│   ├── chat-handlers-context-files.R   ✓ Complete (File context handlers)
+│   │
+│   ├── context-project.R               ✓ Complete (project context)
+│   ├── context-data.R                  ✓ Complete (data frame context)
+│   ├── context-env.R                   ✓ Complete (environment context)
+│   ├── context-file.R                  ✓ Complete (file context)
+│   ├── context-file-parse.R            ✓ Complete (R file parsing for context)
+│   ├── context-combine.R               ✓ Complete (combine contexts)
+│   ├── context-config.R                ✓ Complete (read CASSIDY.md files)
+│   ├── context-git.R                   ✓ Complete (Git status context)
+│   ├── context-tools.R                 ✓ Complete (internal helpers)
+│   │
+│   ├── scripts.R                       ✓ Complete (script-to-quarto, commenting)
+│   ├── utils.R                         ✓ Complete (%||% operator)
+│   └── xyz.R                           ✓ Complete (dev helpers - update imports)
 │
 ├── tests/
 │   ├── testthat/
@@ -172,6 +188,54 @@ cassidyr/
   - Max 3 retries
   - 120-second timeout (configurable)
 
+## File Organization
+
+### Modular Structure
+
+The package follows a modular organization with clear separation of concerns:
+
+**API Layer** (`api-core.R`)
+- Low-level API communication
+- Thread and message management
+- HTTP request handling with retry logic
+
+**Chat Interface** (7 files)
+- `chat-core.R` - Main chat functions
+- `chat-ui.R` - Shiny UI structure
+- `chat-ui-components.R` - Reusable UI components
+- `chat-conversation.R` - S7 ConversationManager class
+- `chat-persistence.R` - Save/load functionality
+- `chat-context-gather.R` - Context gathering logic
+- `chat-helpers.R` - File/code writing utilities
+- `chat-utils.R` - File tree rendering, data frame detection
+- `chat-css.R` - Styling
+- `chat-js.R` - Client-side JavaScript
+
+**Chat Handlers** (5 files, split for maintainability)
+- `chat-handlers-message.R` - Send message logic
+- `chat-handlers-conversation.R` - New/switch/delete conversations
+- `chat-handlers-context-apply.R` - Apply context when sending messages
+- `chat-handlers-context-data.R` - Data frame selection handlers
+- `chat-handlers-context-files.R` - File selection/refresh handlers
+
+**Context System** (9 files)
+- `context-project.R` - Project-level context
+- `context-data.R` - Data frame descriptions
+- `context-env.R` - Environment information
+- `context-file.R` - File descriptions with tiered levels
+- `context-file-parse.R` - Parse R files for function info
+- `context-combine.R` - Combine multiple context sources
+- `context-config.R` - Read CASSIDY.md configuration files
+- `context-git.R` - Git repository status
+- `context-tools.R` - Internal helper functions
+
+**Utilities**
+- `cassidy-classes.R` - S3 print methods
+- `cassidyr-package.R` - Package documentation and imports
+- `scripts.R` - Script conversion utilities
+- `utils.R` - General utilities (%||% operator)
+- `xyz.R` - Development helpers (import scanning)
+
 ## Key Design Patterns
 
 ### S3 Objects
@@ -201,10 +265,25 @@ cassidyr/
 
 ### Context System
 
+**Configuration Files**
+- Supports CASSIDY.md, .cassidy/CASSIDY.md, and CASSIDY.local.md
+- `use_cassidy_md()` creates configuration files with templates
+- `cassidy_read_context_file()` reads project and user-level configs
+- Automatic loading in `cassidy_app()`
+- Modular rules supported in `.cassidy/rules/*.md`
+
+**File Context Tiers** (automatic based on size)
+- **Full tier** (≤2000 lines total): Complete file contents
+- **Summary tier** (2001-5000 lines): Summaries with previews
+- **Index tier** (>5000 lines): File listings only
+- Request specific files with `[REQUEST_FILE:path]` syntax
+
+**Context Management**
 - Context sent **once at thread creation** (not per message)
-- Tiered levels: minimal, standard, comprehensive
-- Multiple methods with automatic fallback
-- Configuration files automatically detected
+- Incremental context updates (only send new/changed items)
+- Automatic refresh when resuming saved conversations
+- Support for project, session, Git, data, and file context
+- Multiple description methods with automatic fallback
 
 ### Conversation Persistence
 
@@ -217,12 +296,25 @@ cassidyr/
 
 ### Adding a New Function
 
-1. Write function in appropriate `R/` file
-2. Add roxygen2 documentation with @export
-3. Document with `devtools::document()`
+1. **Choose the right file** based on function purpose:
+   - API functions → `api-core.R`
+   - Context functions → `context-*.R`
+   - Chat UI → `chat-ui*.R`
+   - Chat handlers → `chat-handlers-*.R`
+   - Utilities → `utils.R` or `context-tools.R`
+
+2. Write function with roxygen2 documentation
+   - Include `@export` for public functions
+   - Use `@keywords internal` for internal helpers
+
+3. Update imports if using new packages:
+   - Add package::function calls in code
+   - Run `source("R/xyz.R")` then `update_package_imports(dry_run = FALSE)`
+   - Run `devtools::document()` to update NAMESPACE
+
 4. Write tests in corresponding `tests/testthat/test-*.R`
 5. Add example to manual test file if needed
-6. Update README if it's a major feature
+6. Update README/CASSIDY.md if it's a major feature
 
 ### Testing Workflow
 
@@ -230,6 +322,23 @@ cassidyr/
 - Run specific test file: `devtools::test_active_file()`
 - Check package: `devtools::check()`
 - Manual testing: `source("tests/manual/test-context-live.R")`
+- Live chat testing: `cassidy_app()` with your own API key
+
+### Working with Modular Structure
+
+**Chat Handlers:**
+When adding new Shiny handlers, add them to the appropriate file:
+- Message sending logic → `chat-handlers-message.R`
+- Conversation management → `chat-handlers-conversation.R`
+- Context application → `chat-handlers-context-apply.R`
+- Data frame handlers → `chat-handlers-context-data.R`
+- File handlers → `chat-handlers-context-files.R`
+
+**Context System:**
+When extending context capabilities:
+- New context sources → Create new `context-*.R` file
+- Parsing/formatting → `context-file-parse.R` or `context-tools.R`
+- Context gathering logic → `chat-context-gather.R`
 
 ## Common Pitfalls to Avoid
 
@@ -239,6 +348,10 @@ cassidyr/
 4. **Don't forget `skip_on_cran()`** for system commands
 5. **Don't make git tests strict** - git behavior varies by environment
 6. **Always use `suppressMessages()`** around `use_cassidy_md()` in tests
+7. **Don't forget to update imports** - run `update_package_imports()` after adding package:: calls
+8. **Keep handlers modular** - put new Shiny handlers in appropriate chat-handlers-*.R file
+9. **Test file tree rendering** - ensure file paths are preserved correctly through nested folders
+10. **Watch context size** - tiered file context prevents API limits from being exceeded
 
 ## IDE Support
 
@@ -262,22 +375,50 @@ Functions detect IDE automatically and adapt behavior (e.g., file opening).
 
 ### ✅ Phase 2: Context System (Complete)
 
+**Project & Environment Context:**
 - `cassidy_context_project()` - Gather project context
-- `cassidy_context_data()` - Describe data frames
 - `cassidy_context_env()` - Environment information
-- `cassidy_describe_file()` - File summaries
-- `use_cassidy_md()` - Create configuration file
+- `cassidy_context_git()` - Git repository status and commits
+
+**Data Context:**
+- `cassidy_context_data()` - Describe data frames
+- `cassidy_describe_df()` - Individual data frame descriptions
+
+**File Context:**
+- `cassidy_describe_file()` - File summaries with tiered levels
+- Context parsing for R, Rmd, qmd files
+
+**Configuration:**
+- `use_cassidy_md()` - Create configuration files
+- `cassidy_read_context_file()` - Read CASSIDY.md files
+- Templates: default, package, analysis, survey
+- Location options: root, hidden (.cassidy/), local (.gitignored)
 
 ### ✅ Phase 3: Interactive Shiny Chatbot (Complete)
 
+**Core Features:**
 - `cassidy_app()` - Launch interactive Shiny chat interface
-- Context integration - Automatic project/data context in chat
 - Conversation persistence - Auto-save/load conversation history
-- File context management - Add/remove/refresh files in context
 - Conversation sidebar - Switch between multiple conversations
 - Export conversations - Save chat history as markdown
 - Mobile-responsive design - Collapsible sidebar, clean UI
 - **Copy code button** - One-click copy for code blocks
+
+**Context Management:**
+- Automatic project/data context integration
+- **Nested file tree** - Collapsible folders with file counts
+- File context with refresh - Re-send updated files
+- Incremental context - Only send new/changed items
+- Smart tiering - Automatic full/summary/index based on size
+- Data frame selection - Choose which data to include
+- Context refresh on resume - Auto-update when loading conversations
+- **CASSIDY.md support** - Project configuration files
+
+**File Handling:**
+- File request detection - Detect `[REQUEST_FILE:path]` patterns
+- Visual status indicators - Show sent/pending/refresh states
+- Collapsible folder tree - Navigate project structure easily
+- Individual file refresh - Update specific files without re-sending all
 
 ### ⏳ Phase 4: IDE Integration (Next)
 
@@ -314,6 +455,11 @@ Functions detect IDE automatically and adapt behavior (e.g., file opening).
 
 - This package is **self-documenting** - it can use its own context system to help build itself
 - When working on cassidyr, always gather context first with `cassidy_context_project(level = "comprehensive")`
+- The package uses a **modular structure** - handlers and context functions are split into focused files
+- **Incremental context** - only new/changed items are sent to avoid redundancy
+- **Smart tiering** - file context automatically adjusts based on total size
+- **Configuration files** - CASSIDY.md files provide project-specific instructions
+- **xyz.R** contains development helpers like `update_package_imports()` for managing dependencies
 
 ## Package Development Status
 
