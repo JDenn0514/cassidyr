@@ -146,7 +146,7 @@ setup_context_skills_renderer <- function(output, input, conv_manager) {
       shiny::checkboxInput(
         paste0("ctx_skill_", skill_id),
         shiny::tagList(
-          shiny::icon("magic"),
+          shiny::icon("wand-magic-sparkles"),
           " ",
           skill_name,
           auto_badge

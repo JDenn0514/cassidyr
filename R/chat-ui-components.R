@@ -269,7 +269,7 @@ chat_context_sidebar_ui <- function() {
           class = "context-section-header",
           onclick = "toggleContextSection('skills')",
           shiny::icon("chevron-down", class = "section-chevron"),
-          shiny::icon("magic"),
+          shiny::icon("wand-magic-sparkles"),
           " Skills",
           shiny::tags$small(
             class = "text-muted ms-1",
