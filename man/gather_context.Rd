@@ -11,7 +11,8 @@ gather_context(
   data = TRUE,
   data_method = "basic",
   files = NULL,
-  data_frames = NULL
+  data_frames = NULL,
+  skills = NULL
 )
 }
 \description{
