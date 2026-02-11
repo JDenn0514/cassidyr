@@ -7,7 +7,8 @@
 cassidy_context_project(
   level = c("standard", "minimal", "comprehensive"),
   max_size = 8000,
-  include_config = TRUE
+  include_config = TRUE,
+  include_skills = TRUE
 )
 }
 \arguments{
@@ -17,6 +18,8 @@ cassidy_context_project(
 
 \item{include_config}{Whether to include cassidy.md or similar config files.
 When TRUE (default), searches recursively up the directory tree.}
+
+\item{include_skills}{Whether to include available skills metadata. Default TRUE.}
 }
 \value{
 An object of class \code{cassidy_context} containing project information
