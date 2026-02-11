@@ -277,8 +277,8 @@ gather_chat_context <- function(context_level, include_data, include_files) {
   context_parts <- list()
 
   # Define unicode symbols
-  checkmark <- stringi::stri_unescape_unicode("\\u2713")
-  warning_sign <- stringi::stri_unescape_unicode("\\u26A0")
+  checkmark <- "\u2713"
+  warning_sign <- "\u26A0"
 
   # 1. ALWAYS: Refresh CASSIDY.md files
   memory_text <- cassidy_read_context_file()

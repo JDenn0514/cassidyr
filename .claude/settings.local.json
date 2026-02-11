@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(Rscript:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:docs.cassidyai.com)",
+      "WebSearch",
+      "WebFetch(domain:app.cassidyai.com)",
+      "Bash(chmod:*)",
+      "WebFetch(domain:docs.cassidy.ai)",
+      "Bash(grep:*)",
+      "Bash(cassidy --help:*)",
+      "Bash(cassidy agent:*)"
     ]
   }
 }

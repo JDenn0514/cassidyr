@@ -36,8 +36,8 @@ chat_app_js <- function() {
 }
 
 .js_copy_buttons <- function() {
-  clipboard <- stringi::stri_unescape_unicode("\\U0001F4CB")
-  checkmark <- stringi::stri_unescape_unicode("\\u2713")
+  clipboard <- "\U0001F4CB"
+  checkmark <- "\u2713"
 
   paste0(
     "
@@ -271,8 +271,8 @@ chat_app_js <- function() {
 }
 
 .js_helper_functions <- function() {
-  right_arrow <- stringi::stri_unescape_unicode("\\u25B6")
-  down_arrow <- stringi::stri_unescape_unicode("\\u25BC")
+  right_arrow <- "\u25B6"
+  down_arrow <- "\u25BC"
 
   paste0(
     "

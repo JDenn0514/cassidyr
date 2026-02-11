@@ -56,7 +56,41 @@
 - Collapsible folder tree - Navigate project structure easily
 - Individual file refresh - Update specific files without re-sending all
 
-### ⏳ Phase 4: IDE Integration (Next)
+### ✅ Phase 4: Agentic System (Complete)
+
+**Hybrid Architecture:**
+- **Assistant** - High-level reasoning and planning (CassidyAI)
+- **Workflow** - Structured tool decisions with guaranteed JSON (CassidyAI)
+- **R Functions** - Tool execution with error handling
+
+**Core Features:**
+- `cassidy_agentic_task()` - Main agentic function
+- **Safe mode by default** - Interactive approval for risky operations
+- Custom approval callbacks - Define your own approval logic
+- 7 built-in tools - read_file, write_file, execute_code, list_files, search_files, get_context, describe_data
+- Iteration management - Max iterations with early completion detection
+- Error handling - Graceful handling of tool failures and workflow errors
+
+**Tool System:**
+- Tool registry - Extensible system for adding new tools
+- Risk flagging - Automatic detection of risky operations
+- Context-aware - Uses existing cassidyr functions (cassidy_describe_file, cassidy_context_project, etc.)
+- Working directory support - All file operations respect working directory
+
+**CLI Integration:**
+- `cassidy_install_cli()` - Install command-line tool
+- Interactive REPL mode - `cassidy agent` for interactive sessions
+- Direct task mode - `cassidy agent "task"` for one-off tasks
+- Context commands - `cassidy context` to view project context
+- Cross-platform - Mac, Linux, and Windows support
+
+**Direct Parsing:**
+- No workflow setup required - works out of the box
+- Structured `<TOOL_DECISION>` blocks parsed directly from assistant responses
+- Automatic fallback to inference when structure is missing
+- Simpler, more reliable than webhook-based workflows
+
+### ⏳ Phase 5: IDE Integration (Next)
 
 **Planned Features:**
 
@@ -73,13 +107,6 @@
 - Keep addins optional (in Suggests)
 - Test across different environments
 
-### 🔮 Phase 5: Agent System (Future)
-
-- `cassidy_agent()` - Iterative problem solving
-- `cassidy_execute_code()` - Safe code execution with sandboxing
-- Multi-step workflows with state management
-- Tool calling and function execution
-
 ### 🔮 Phase 6: Survey Research Tools (Future)
 
 - `cassidy_interpret_efa()` - EFA interpretation with recommendations
@@ -90,9 +117,9 @@
 ## Package Development Status
 
 - The package follows **ellmer's testing pattern** for API tests
-- Ready for **CRAN submission** after Phase 4 (IDE Integration)
+- Ready for **CRAN submission** after Phase 5 (IDE Integration)
 - Built with **R 4.1+** in mind (native pipe `|>` support)
-- Currently on **Phase 3 complete** - Interactive Shiny Chatbot implemented
+- Currently on **Phase 4 complete** - Agentic System implemented
 
 ## IDE Support
 

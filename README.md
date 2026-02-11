@@ -27,6 +27,9 @@ workflows.
 - 💾 **Conversation Persistence**: Auto-save and restore chat history
 - 📋 **Copy Code Button**: One-click copy for code blocks in chat
   responses
+- 🤖 **Agentic Workflows**: Autonomous task completion with tool
+  calling and safe mode
+- 🖥️ **CLI Tool**: Command-line interface for agentic workflows
 - 🔧 **IDE Integration** (coming soon): RStudio/Positron addins for
   AI-assisted coding
 
@@ -146,6 +149,90 @@ Memory files can be placed at multiple levels: - **User-level**:
 `CASSIDY.local.md` (personal, auto-gitignored) - **Modular**:
 `.cassidy/rules/*.md` (organized by topic)
 
+### Agentic Capabilities
+
+cassidyr includes an agentic system that allows the AI to autonomously
+use tools to complete complex tasks. This uses a hybrid architecture:
+**Assistant** for reasoning, **Direct parsing** for tool decisions,
+and **R functions** for execution.
+
+#### Setup
+
+Simply configure your environment variables - no additional setup needed:
+
+``` r
+# Add to .Renviron
+CASSIDY_ASSISTANT_ID=your-assistant-id
+CASSIDY_API_KEY=your-api-key
+```
+
+#### Basic Usage
+
+``` r
+# Simple agentic task (safe mode enabled by default)
+result <- cassidy_agentic_task(
+  "List all R files in this directory and describe what they do"
+)
+
+# Task with specific tools
+result <- cassidy_agentic_task(
+  "Search for TODO comments in my code",
+  tools = c("list_files", "search_files", "read_file"),
+  max_iterations = 5
+)
+
+# Disable safe mode (use with caution!)
+result <- cassidy_agentic_task(
+  "Create a helper function in R/helpers.R",
+  safe_mode = FALSE
+)
+```
+
+#### CLI Tool
+
+Install the command-line interface for quick access:
+
+``` r
+# Install CLI tool
+cassidy_install_cli()
+```
+
+Then use from your terminal:
+
+``` bash
+# Direct task
+cassidy agent "List all R files"
+
+# Interactive mode
+cassidy agent
+
+# Show project context
+cassidy context standard
+
+# Launch chat app
+cassidy chat
+
+# Help
+cassidy help
+```
+
+#### Available Tools
+
+The agentic system includes:
+
+- `read_file`: Read file contents (uses `cassidy_describe_file()` for R
+  files)
+- `write_file`: Write content to files (requires approval)
+- `execute_code`: Execute R code safely (requires approval)
+- `list_files`: List files matching patterns
+- `search_files`: Search for text in files
+- `get_context`: Gather project context
+- `describe_data`: Describe data frames
+
+**Safe mode is enabled by default**, requiring interactive approval for
+risky operations (write_file, execute_code). You can approve, deny,
+edit parameters, or view tool details.
+
 ## Roadmap
 
 cassidyr is under active development. Current status and upcoming
@@ -158,10 +245,12 @@ features:
   gathering
 - **Phase 3: Interactive Chat** - Shiny app with persistence, copy code
   button
+- **Phase 4: Agentic System** - Autonomous task completion with hybrid
+  architecture (Assistant + Workflow + R), safe mode, CLI tool
 
 ### ⏳ In Progress
 
-- **Phase 4: IDE Integration**
+- **Phase 5: IDE Integration**
   - `cassidy_document_function()` - Generate roxygen2 docs
   - `cassidy_explain_selection()` - Explain selected code
   - `cassidy_refactor_selection()` - Improve code quality
@@ -169,8 +258,6 @@ features:
 
 ### 🔮 Future
 
-- **Phase 5: Agent System** - Iterative problem solving, safe code
-  execution
 - **Phase 6: Survey Research Tools** - EFA interpretation, methods
   sections, codebooks
 
