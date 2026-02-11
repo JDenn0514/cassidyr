@@ -7,7 +7,8 @@ gather_context <- function(
   data = TRUE,
   data_method = "basic",
   files = NULL,
-  data_frames = NULL
+  data_frames = NULL,
+  skills = NULL
 ) {
   context_parts <- list()
 
@@ -97,6 +98,29 @@ gather_context <- function(
     }
   }
 
+  # Skills (load full content with dependencies)
+  if (!is.null(skills) && length(skills) > 0) {
+    cli::cli_alert_info(
+      "Adding {length(skills)} skill{?s} to context (with dependencies)"
+    )
+
+    for (skill_name in skills) {
+      skill_result <- .load_skill(skill_name)
+      if (skill_result$success) {
+        context_parts[[paste0("skill_", skill_name)]] <- paste0(
+          "\n## Skill: ",
+          skill_name,
+          "\n\n",
+          skill_result$content
+        )
+      } else {
+        cli::cli_alert_warning(
+          "Failed to load skill {.field {skill_name}}: {skill_result$error}"
+        )
+      }
+    }
+  }
+
   # Combine
   if (length(context_parts) == 0) {
     return(NULL)
@@ -122,12 +146,17 @@ gather_selected_context <- function(input, conv_manager, incremental = TRUE) {
     logical(1)
   )]
 
+  # Get selected skills from conv_manager
+  selected_skills <- conv_context_skills(conv_manager)
+
   # Calculate what needs to be sent (incremental)
   if (incremental) {
     sent_files <- conv_sent_context_files(conv_manager)
     sent_data <- conv_sent_data_frames(conv_manager)
+    sent_skills <- conv_sent_skills(conv_manager)
     pending_files <- conv_pending_refresh_files(conv_manager)
     pending_data <- conv_pending_refresh_data(conv_manager)
+    pending_skills <- conv_pending_refresh_skills(conv_manager)
 
     files_to_send <- union(
       setdiff(selected_files, sent_files),
@@ -138,9 +167,15 @@ gather_selected_context <- function(input, conv_manager, incremental = TRUE) {
       setdiff(selected_data, sent_data),
       pending_data
     )
+
+    skills_to_send <- union(
+      setdiff(selected_skills, sent_skills),
+      pending_skills
+    )
   } else {
     files_to_send <- selected_files
     data_to_send <- selected_data
+    skills_to_send <- selected_skills
   }
 
   # Call unified gather_context with filtered items
@@ -151,13 +186,15 @@ gather_selected_context <- function(input, conv_manager, incremental = TRUE) {
     data = length(data_to_send) > 0,
     data_method = input$data_description_method %||% "basic",
     files = files_to_send,
-    data_frames = data_to_send
+    data_frames = data_to_send,
+    skills = skills_to_send
   )
 
   # Attach metadata
   if (!is.null(result)) {
     attr(result, "files_to_send") <- files_to_send
     attr(result, "data_to_send") <- data_to_send
+    attr(result, "skills_to_send") <- skills_to_send
   }
 
   result
