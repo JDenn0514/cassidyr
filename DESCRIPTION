@@ -14,26 +14,24 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
+    base64enc,
     bslib,
     cli,
     commonmark,
     devtools,
     fs,
     gert,
+    htmltools,
     httr2,
     jsonlite,
-    markdown,
     rlang,
     rstudioapi,
     S7,
     shiny,
     skimr,
-    stringi,
     usethis,
     vctrs
 Suggests:
-    base64enc,
-    htmltools,
     knitr,
     quarto,
     pak,
