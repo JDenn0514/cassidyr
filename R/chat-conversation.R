@@ -16,9 +16,13 @@ ConversationManager <- S7::new_class(
     # NEW: Track what's actually been sent to Cassidy
     sent_context_files = S7::class_any,
     sent_data_frames = S7::class_any,
+    # NEW: Track skills
+    context_skills = S7::class_any,
+    sent_skills = S7::class_any,
     # NEW: Track items queued for refresh (re-send)
     pending_refresh_files = S7::class_any,
-    pending_refresh_data = S7::class_any
+    pending_refresh_data = S7::class_any,
+    pending_refresh_skills = S7::class_any
   ),
   constructor = function() {
     S7::new_object(
@@ -32,8 +36,11 @@ ConversationManager <- S7::new_class(
       # NEW: Initialize tracking
       sent_context_files = shiny::reactiveVal(character()),
       sent_data_frames = shiny::reactiveVal(character()),
+      context_skills = shiny::reactiveVal(character()),
+      sent_skills = shiny::reactiveVal(character()),
       pending_refresh_files = shiny::reactiveVal(character()),
-      pending_refresh_data = shiny::reactiveVal(character())
+      pending_refresh_data = shiny::reactiveVal(character()),
+      pending_refresh_skills = shiny::reactiveVal(character())
     )
   }
 )
@@ -150,6 +157,33 @@ conv_set_pending_refresh_data <- S7::new_generic(
   "x"
 )
 
+#' Get context skills
+#' @keywords internal
+conv_context_skills <- S7::new_generic("conv_context_skills", "x")
+
+#' Set context skills
+#' @keywords internal
+conv_set_context_skills <- S7::new_generic("conv_set_context_skills", "x")
+
+#' Get sent skills
+#' @keywords internal
+conv_sent_skills <- S7::new_generic("conv_sent_skills", "x")
+
+#' Set sent skills
+#' @keywords internal
+conv_set_sent_skills <- S7::new_generic("conv_set_sent_skills", "x")
+
+#' Get pending refresh skills
+#' @keywords internal
+conv_pending_refresh_skills <- S7::new_generic("conv_pending_refresh_skills", "x")
+
+#' Set pending refresh skills
+#' @keywords internal
+conv_set_pending_refresh_skills <- S7::new_generic(
+  "conv_set_pending_refresh_skills",
+  "x"
+)
+
 # ---- Methods ----
 
 S7::method(conv_get_all, ConversationManager) <- function(x) {
@@ -245,6 +279,36 @@ S7::method(conv_set_pending_refresh_data, ConversationManager) <- function(
   invisible(x)
 }
 
+S7::method(conv_context_skills, ConversationManager) <- function(x) {
+  x@context_skills()
+}
+
+S7::method(conv_set_context_skills, ConversationManager) <- function(x, value) {
+  x@context_skills(value)
+  invisible(x)
+}
+
+S7::method(conv_sent_skills, ConversationManager) <- function(x) {
+  x@sent_skills()
+}
+
+S7::method(conv_set_sent_skills, ConversationManager) <- function(x, value) {
+  x@sent_skills(value)
+  invisible(x)
+}
+
+S7::method(conv_pending_refresh_skills, ConversationManager) <- function(x) {
+  x@pending_refresh_skills()
+}
+
+S7::method(conv_set_pending_refresh_skills, ConversationManager) <- function(
+  x,
+  value
+) {
+  x@pending_refresh_skills(value)
+  invisible(x)
+}
+
 S7::method(conv_get_current, ConversationManager) <- function(x) {
   convs <- x@conversations()
   current_id <- x@current_id()
@@ -309,6 +373,8 @@ S7::method(conv_create_new, ConversationManager) <- function(
     # NEW: Initialize sent tracking in conversation record
     sent_context_files = character(),
     sent_data_frames = character(),
+    context_skills = character(),
+    sent_skills = character(),
     created_at = Sys.time()
   )
 
@@ -323,8 +389,11 @@ S7::method(conv_create_new, ConversationManager) <- function(
   # NEW: Clear all tracking for new conversation
   x@sent_context_files(character())
   x@sent_data_frames(character())
+  x@context_skills(character())
+  x@sent_skills(character())
   x@pending_refresh_files(character())
   x@pending_refresh_data(character())
+  x@pending_refresh_skills(character())
 
   if (!is.null(session)) {
     session$sendCustomMessage("clearInput", list())
@@ -367,9 +436,12 @@ S7::method(conv_switch_to, ConversationManager) <- function(
     # Restore sent tracking from conversation
     x@sent_context_files(conv$sent_context_files %||% character())
     x@sent_data_frames(conv$sent_data_frames %||% character())
+    x@context_skills(conv$context_skills %||% character())
+    x@sent_skills(conv$sent_skills %||% character())
     # Clear pending on switch (start fresh)
     x@pending_refresh_files(character())
     x@pending_refresh_data(character())
+    x@pending_refresh_skills(character())
 
     if (!is.null(session)) {
       session$sendCustomMessage("clearInput", list())
@@ -436,6 +508,8 @@ S7::method(conv_delete, ConversationManager) <- function(x, conv_id) {
       # NEW: Restore sent tracking from new current conversation
       x@sent_context_files(convs[[1]]$sent_context_files %||% character())
       x@sent_data_frames(convs[[1]]$sent_data_frames %||% character())
+      x@context_skills(convs[[1]]$context_skills %||% character())
+      x@sent_skills(convs[[1]]$sent_skills %||% character())
     } else {
       x@current_id(NULL)
       x@context_sent(FALSE)
@@ -443,10 +517,13 @@ S7::method(conv_delete, ConversationManager) <- function(x, conv_id) {
       # NEW: Clear sent tracking
       x@sent_context_files(character())
       x@sent_data_frames(character())
+      x@context_skills(character())
+      x@sent_skills(character())
     }
     # NEW: Clear pending on delete
     x@pending_refresh_files(character())
     x@pending_refresh_data(character())
+    x@pending_refresh_skills(character())
   }
 
   cli::cli_alert_success("Deleted conversation")
@@ -540,8 +617,11 @@ S7::method(conv_load_and_set, ConversationManager) <- function(
     # NEW: Restore sent tracking from loaded conversation
     x@sent_context_files(conv$sent_context_files %||% character())
     x@sent_data_frames(conv$sent_data_frames %||% character())
+    x@context_skills(conv$context_skills %||% character())
+    x@sent_skills(conv$sent_skills %||% character())
     x@pending_refresh_files(character())
     x@pending_refresh_data(character())
+    x@pending_refresh_skills(character())
 
     if (!is.null(session)) {
       session$sendCustomMessage("clearInput", list())

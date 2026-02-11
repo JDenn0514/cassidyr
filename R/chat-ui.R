@@ -399,6 +399,7 @@ cassidy_app <- function(
 
     # Setup context renderers and handlers
     setup_context_data_renderer(output, input, conv_manager)
+    setup_context_skills_renderer(output, input, conv_manager)
     setup_context_summary_renderer(output, input, conv_manager)
     setup_refresh_context_handler(
       input,
@@ -420,6 +421,9 @@ cassidy_app <- function(
     # Setup file tree renderer and handlers
     setup_file_tree_renderer(output, input, conv_manager)
     setup_file_selection_handlers(input, session, conv_manager)
+
+    # Setup skills handlers
+    setup_skill_selection_handlers(input, session, conv_manager)
 
     # Setup handlers
     setup_conversation_switch_handler(input, session, conv_manager)

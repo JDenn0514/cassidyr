@@ -156,7 +156,7 @@ css_context_sections <- function() {
 }
 
 .context-section.collapsed .context-section-body {
-  display: none;
+  display: none !important;
 }
 
 .context-section-body {

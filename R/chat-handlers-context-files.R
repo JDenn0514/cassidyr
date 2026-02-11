@@ -656,14 +656,14 @@ setup_file_tree_renderer <- function(output, input, conv_manager) {
         class = "file-tree-controls",
         shiny::actionButton(
           "expand_all_folders",
-          shiny::icon("folder-open"),
           "Expand All",
+          icon = shiny::icon("folder-open"),
           class = "btn btn-sm btn-outline-secondary"
         ),
         shiny::actionButton(
           "collapse_all_folders",
-          shiny::icon("folder"),
           "Collapse All",
+          icon = shiny::icon("folder"),
           class = "btn btn-sm btn-outline-secondary"
         )
       ),

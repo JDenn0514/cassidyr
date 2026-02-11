@@ -21,6 +21,7 @@ setup_apply_context_handler <- function(
     # Get what was actually gathered (from attributes)
     files_to_send <- attr(context_text, "files_to_send") %||% character()
     data_to_send <- attr(context_text, "data_to_send") %||% character()
+    skills_to_send <- attr(context_text, "skills_to_send") %||% character()
 
     # Check if project items changed (config, session, git)
     # These are always re-sent if selected, so check if any are selected
@@ -32,6 +33,7 @@ setup_apply_context_handler <- function(
     if (
       length(files_to_send) == 0 &&
         length(data_to_send) == 0 &&
+        length(skills_to_send) == 0 &&
         (is.null(context_text) || !nzchar(context_text))
     ) {
       shiny::showNotification(
@@ -141,6 +143,7 @@ setup_apply_context_handler <- function(
         # === NEW: Update sent tracking ===
         current_sent_files <- conv_sent_context_files(conv_manager)
         current_sent_data <- conv_sent_data_frames(conv_manager)
+        current_sent_skills <- conv_sent_skills(conv_manager)
 
         # Add newly sent items to tracking
         conv_set_sent_context_files(
@@ -151,17 +154,23 @@ setup_apply_context_handler <- function(
           conv_manager,
           union(current_sent_data, data_to_send)
         )
+        conv_set_sent_skills(
+          conv_manager,
+          union(current_sent_skills, skills_to_send)
+        )
 
         # Clear pending refresh queues
         conv_set_pending_refresh_files(conv_manager, character())
         conv_set_pending_refresh_data(conv_manager, character())
+        conv_set_pending_refresh_skills(conv_manager, character())
 
         # Update conversation record for persistence
         conv_update_current(
           conv_manager,
           list(
             sent_context_files = conv_sent_context_files(conv_manager),
-            sent_data_frames = conv_sent_data_frames(conv_manager)
+            sent_data_frames = conv_sent_data_frames(conv_manager),
+            sent_skills = conv_sent_skills(conv_manager)
           )
         )
 
@@ -194,6 +203,7 @@ setup_apply_context_handler <- function(
         # Success notification with details
         new_files_count <- length(files_to_send)
         new_data_count <- length(data_to_send)
+        new_skills_count <- length(skills_to_send)
 
         detail_msg <- c()
         if (new_files_count > 0) {
@@ -201,6 +211,9 @@ setup_apply_context_handler <- function(
         }
         if (new_data_count > 0) {
           detail_msg <- c(detail_msg, paste0(new_data_count, " data frame(s)"))
+        }
+        if (new_skills_count > 0) {
+          detail_msg <- c(detail_msg, paste0(new_skills_count, " skill(s)"))
         }
 
         shiny::showNotification(

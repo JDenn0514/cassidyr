@@ -94,6 +94,9 @@ setup_context_summary_renderer <- function(output, input, conv_manager) {
     # Get files without triggering reactivity
     file_items <- shiny::isolate(conv_context_files(conv_manager))
 
+    # Get skills without triggering reactivity
+    skill_items <- shiny::isolate(conv_context_skills(conv_manager))
+
     # Check if context has been applied
     context_applied <- !is.null(conv_context_text(conv_manager))
 
@@ -158,6 +161,23 @@ setup_context_summary_renderer <- function(output, input, conv_manager) {
             "Files: ",
             if (length(file_items) > 0) {
               paste(basename(file_items), collapse = ", ")
+            } else {
+              "none"
+            }
+          )
+        ),
+        shiny::div(
+          class = paste(
+            "summary-item",
+            if (length(skill_items) > 0) "has-items" else "no-items"
+          ),
+          shiny::icon(
+            if (length(skill_items) > 0) "check-circle" else "circle"
+          ),
+          paste0(
+            "Skills: ",
+            if (length(skill_items) > 0) {
+              paste(skill_items, collapse = ", ")
             } else {
               "none"
             }
