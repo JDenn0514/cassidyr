@@ -35,6 +35,10 @@ cassidyr/
 │   ├── context-git.R                   ✓ Complete (Git status context)
 │   ├── context-tools.R                 ✓ Complete (internal helpers)
 │   │
+│   ├── skills-discovery.R              ✓ Complete (Skill discovery & loading)
+│   ├── skills-context.R                ✓ Complete (Context integration)
+│   ├── skills-functions.R              ✓ Complete (User functions)
+│   │
 │   ├── scripts.R                       ✓ Complete (script-to-quarto, commenting)
 │   ├── utils.R                         ✓ Complete (%||% operator)
 │   └── xyz.R                           ✓ Complete (dev helpers - update imports)
@@ -46,7 +50,8 @@ cassidyr/
 │   │   ├── test-context-project.R    ✓ Complete
 │   │   ├── test-context-data.R       ✓ Complete
 │   │   ├── test-context-environment.R ✓ Complete
-│   │   └── test-context-tools.R      ✓ Complete
+│   │   ├── test-context-tools.R      ✓ Complete
+│   │   └── test-skills.R             ✓ Complete
 │   └── manual/
 │       ├── test-api-live.R
 │       ├── test-chat-live.R
@@ -92,6 +97,11 @@ The package follows a modular organization with clear separation of concerns:
 - `context-config.R` - Read CASSIDY.md configuration files
 - `context-git.R` - Git repository status
 - `context-tools.R` - Internal helper functions
+
+### Skills System (3 files)
+- `skills-discovery.R` - Discover and load skill files
+- `skills-context.R` - Context integration for skills
+- `skills-functions.R` - User-facing skill management
 
 ### Utilities
 - `cassidy-classes.R` - S3 print methods

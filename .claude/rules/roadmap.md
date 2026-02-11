@@ -90,7 +90,33 @@
 - Automatic fallback to inference when structure is missing
 - Simpler, more reliable than webhook-based workflows
 
-### ⏳ Phase 5: IDE Integration (Next)
+### ✅ Phase 5: Skills System (Complete)
+
+**Core Features:**
+- Progressive disclosure - Metadata vs full content loading
+- Skill composition - Skills can reference other skills as dependencies
+- Context integration - Skills automatically included in project context
+- Dual invocation - Agent can auto-invoke OR user can explicitly call
+- Simple markdown format - No YAML complexity
+- Two locations - Project (.cassidy/skills/) and personal (~/.cassidy/skills/)
+
+**Functions:**
+- `cassidy_context_skills()` - Get skill metadata for context
+- `cassidy_list_skills()` - List available skills
+- `cassidy_use_skill()` - Preview or execute skill
+- `cassidy_create_skill()` - Create new skill from template
+
+**Agentic Integration:**
+- Skills available alongside tools in `cassidy_agentic_task()`
+- Auto-invoke skills when task matches skill description
+- Dependency resolution with circular dependency prevention
+- Skills injected into conversation with full workflow content
+
+**Example Skills:**
+- `apa-tables.md` - APA 7th edition table formatting guidelines
+- `efa-workflow.md` - Complete EFA workflow with best practices
+
+### ⏳ Phase 6: IDE Integration (Next)
 
 **Planned Features:**
 
@@ -107,7 +133,7 @@
 - Keep addins optional (in Suggests)
 - Test across different environments
 
-### 🔮 Phase 6: Survey Research Tools (Future)
+### 🔮 Phase 7: Survey Research Tools (Future)
 
 - `cassidy_interpret_efa()` - EFA interpretation with recommendations
 - `cassidy_write_methods()` - Generate methods sections in APA format
@@ -117,9 +143,9 @@
 ## Package Development Status
 
 - The package follows **ellmer's testing pattern** for API tests
-- Ready for **CRAN submission** after Phase 5 (IDE Integration)
+- Ready for **CRAN submission** after Phase 6 (IDE Integration)
 - Built with **R 4.1+** in mind (native pipe `|>` support)
-- Currently on **Phase 4 complete** - Agentic System implemented
+- Currently on **Phase 5 complete** - Skills System implemented
 
 ## IDE Support
 

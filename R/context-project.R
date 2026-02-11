@@ -11,6 +11,7 @@
 #' @param max_size Maximum context size in characters (approximate)
 #' @param include_config Whether to include cassidy.md or similar config files.
 #'   When TRUE (default), searches recursively up the directory tree.
+#' @param include_skills Whether to include available skills metadata. Default TRUE.
 #'
 #' @return An object of class \code{cassidy_context} containing project information
 #' @export
@@ -32,7 +33,8 @@
 cassidy_context_project <- function(
   level = c("standard", "minimal", "comprehensive"),
   max_size = 8000,
-  include_config = TRUE
+  include_config = TRUE,
+  include_skills = TRUE
 ) {
   level <- match.arg(level)
 
@@ -48,6 +50,14 @@ cassidy_context_project <- function(
     config_text <- cassidy_read_context_file(recursive = TRUE)
     if (!is.null(config_text)) {
       context_parts$config <- config_text
+    }
+  }
+
+  # Include skills metadata
+  if (include_skills) {
+    skills_ctx <- cassidy_context_skills(location = "all", format = "text")
+    if (!is.null(skills_ctx) && nchar(skills_ctx$text) > 0) {
+      context_parts$skills <- skills_ctx$text
     }
   }
 
