@@ -70,6 +70,7 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_add_message.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_context_files.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_context_sent.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_context_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_context_text.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_create_new.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_current_id.html</loc></url>
@@ -81,17 +82,22 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_load_and_set.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_pending_refresh_data.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_pending_refresh_files.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_pending_refresh_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_save_current.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_sent_context_files.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_sent_data_frames.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_sent_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_context.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_context_files.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_context_sent.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_context_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_loading.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_pending_refresh_data.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_pending_refresh_files.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_pending_refresh_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_sent_context_files.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_sent_data_frames.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_set_sent_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_switch_to.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/conv_update_current.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/css_chat_area.html</loc></url>
@@ -120,6 +126,7 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/dot-refresh_conversation_context.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/dot-render_file_item_nested.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/dot-render_file_tree_nested.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/dot-render_skill_item.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/dot-sanitize_filename.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/gather_chat_context.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/gather_context.html</loc></url>
@@ -128,6 +135,7 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/print.cassidy_agentic_result.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_apply_context_handler.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_context_data_renderer.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_context_skills_renderer.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_context_summary_renderer.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_conversation_delete_handlers.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_conversation_export_handler.html</loc></url>
@@ -145,6 +153,7 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_new_chat_handler.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_refresh_context_handler.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_send_message_handler.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_skill_selection_handlers.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/use_cassidy_md.html</loc></url>
 </urlset>
 
