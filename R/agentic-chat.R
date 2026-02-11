@@ -1,7 +1,7 @@
-# ══════════════════════════════════════════════════════════════════════════════
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 # AGENTIC CHAT - Main Agentic Loop
-# Orchestrates Assistant ↔ Workflow ↔ Tools for autonomous task completion
-# ══════════════════════════════════════════════════════════════════════════════
+# Orchestrates Assistant \u2194 Workflow \u2194 Tools for autonomous task completion
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 #' Run an Agentic Task with CassidyAI
 #'
@@ -115,7 +115,7 @@ cassidy_agentic_task <- function(
   working_dir = getwd(),
   max_iterations = 10,
   initial_context = NULL,
-  safe_mode = TRUE,  # ← DEFAULT TRUE
+  safe_mode = TRUE,  # \u2190 DEFAULT TRUE
   approval_callback = NULL,
   verbose = TRUE
 ) {
@@ -253,9 +253,9 @@ cassidy_agentic_task <- function(
       }
       # Send STRONG error back to assistant
       current_message <- paste0(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
-        "❌ CRITICAL ERROR ❌\n",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n",
+        "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n",
+        "\u274c CRITICAL ERROR \u274c\n",
+        "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\n",
         "The tool decision workflow selected '", decision$action, "' but this tool is NOT AVAILABLE.\n\n",
         "AVAILABLE TOOLS (you MUST choose from these):\n",
         paste0("  - ", tools, collapse = "\n"), "\n\n",
@@ -371,7 +371,26 @@ cassidy_agentic_task <- function(
 #' @keywords internal
 #' @noRd
 .build_agentic_prompt <- function(working_dir, max_iterations, available_tools) {
-  tools_list <- paste0("  - ", available_tools, collapse = "\n")
+  # Build detailed tool documentation with parameters
+  tools_doc <- sapply(available_tools, function(tool_name) {
+    tool <- .cassidy_tools[[tool_name]]
+    if (is.null(tool)) return(paste0("  - ", tool_name))
+
+    # Get parameter names from the handler function
+    params <- names(formals(tool$handler))
+    # Remove working_dir as it's added automatically
+    params <- setdiff(params, "working_dir")
+
+    param_str <- if (length(params) > 0) {
+      paste0("(", paste(params, collapse = ", "), ")")
+    } else {
+      "()"
+    }
+
+    paste0("  - ", tool_name, param_str, ": ", tool$description)
+  })
+
+  tools_list <- paste0(tools_doc, collapse = "\n")
 
   paste0(
     "You are an expert R programming assistant working in: ", working_dir, "\n\n",
@@ -382,8 +401,12 @@ cassidy_agentic_task <- function(
     "3. The tool executes and returns results\n",
     "4. You analyze results and repeat until task is complete\n\n",
     "## Available Tools\n",
-    "You can ONLY use these tools:\n",
+    "You can ONLY use these tools (with their exact parameter names):\n",
     tools_list, "\n\n",
+    "IMPORTANT: Use the EXACT parameter names shown above. For example:\n",
+    "  read_file uses: {\"filepath\": \"path/to/file.R\"}\n",
+    "  write_file uses: {\"filepath\": \"path/to/file.R\", \"content\": \"text\"}\n",
+    "  list_files uses: {\"directory\": \".\", \"pattern\": \"*.R\"}\n\n",
     "## Response Format\n",
     "You MUST respond in this EXACT format:\n\n",
     "<TOOL_DECISION>\n",

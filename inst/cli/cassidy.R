@@ -131,13 +131,6 @@ Examples:
   cat(ctx$text)
   cat("\n")
 
-} else if (args[1] == "setup") {
-  # ────────────────────────────────────────────────────────────────────────────
-  # SETUP MODE - Show workflow setup instructions
-  # ────────────────────────────────────────────────────────────────────────────
-
-  cassidy_setup_workflow()
-
 } else if (args[1] == "help" || args[1] == "--help" || args[1] == "-h") {
   # ────────────────────────────────────────────────────────────────────────────
   # HELP MODE
@@ -150,7 +143,6 @@ Usage:
   cassidy agent [task]       Start agentic session
   cassidy chat               Launch Shiny chat interface
   cassidy context [level]    Show project context
-  cassidy setup              Show workflow setup instructions
   cassidy help               Show this help message
 
 Agent Mode:
@@ -171,12 +163,10 @@ Examples:
   cassidy agent \"Create a helper function\"
   cassidy agent                    # Interactive mode
   cassidy context standard         # Show project context
-  cassidy setup                    # Setup workflow integration
 
 Environment Variables:
   CASSIDY_API_KEY              Your CassidyAI API key
-  CASSIDY_ASSISTANT_ID         Assistant ID for chat
-  CASSIDY_WORKFLOW_WEBHOOK     Workflow webhook for agentic mode
+  CASSIDY_ASSISTANT_ID         Assistant ID for chat and agent
 
 For more information, visit: https://github.com/JDenn0514/cassidyr
 ")

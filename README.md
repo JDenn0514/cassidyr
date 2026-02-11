@@ -153,23 +153,17 @@ Memory files can be placed at multiple levels: - **User-level**:
 
 cassidyr includes an agentic system that allows the AI to autonomously
 use tools to complete complex tasks. This uses a hybrid architecture:
-**Assistant** for reasoning, **Workflow** for structured tool decisions,
+**Assistant** for reasoning, **Direct parsing** for tool decisions,
 and **R functions** for execution.
 
 #### Setup
 
-1.  **Create a Tool Decision Workflow** in CassidyAI:
-
-``` r
-# Run setup instructions
-cassidy_setup_workflow()
-```
-
-2.  **Configure environment variables**:
+Simply configure your environment variables - no additional setup needed:
 
 ``` r
 # Add to .Renviron
-CASSIDY_WORKFLOW_WEBHOOK=https://webhook.cassidyai.com/your-webhook-id
+CASSIDY_ASSISTANT_ID=your-assistant-id
+CASSIDY_API_KEY=your-api-key
 ```
 
 #### Basic Usage

@@ -8,7 +8,6 @@ cassidy_agentic_task(
   task,
   assistant_id = Sys.getenv("CASSIDY_ASSISTANT_ID"),
   api_key = Sys.getenv("CASSIDY_API_KEY"),
-  workflow_webhook = Sys.getenv("CASSIDY_WORKFLOW_WEBHOOK"),
   tools = names(.cassidy_tools),
   working_dir = getwd(),
   max_iterations = 10,
@@ -25,13 +24,11 @@ cassidy_agentic_task(
 
 \item{api_key}{Character. CassidyAI API key (default: env var)}
 
-\item{workflow_webhook}{Character. Workflow webhook URL (default: env var)}
-
 \item{tools}{Character vector. Tools to enable (default: all)}
 
 \item{working_dir}{Character. Working directory (default: current)}
 
-\item{max_iterations}{Integer. Max tool calls (default: 10)}
+\item{max_iterations}{Integer. Max tool calls (default: 10). Use \code{Inf} for unlimited.}
 
 \item{initial_context}{Character/list. Optional context to provide}
 
@@ -63,14 +60,16 @@ operations like writing files or executing code. This protects against
 unintended changes to your system.
 \subsection{How It Works}{
 
-The agentic system uses a hybrid architecture:
+The agentic system uses direct parsing:
 \enumerate{
-\item \strong{Assistant} provides high-level reasoning about the task
-\item \strong{Workflow} makes structured tool decisions (guaranteed JSON)
+\item \strong{Assistant} analyzes the task and chooses a tool in structured format
+\item \strong{R parsing} extracts the tool decision from the response
 \item \strong{R functions} execute tools with proper error handling
+\item \strong{Results} are sent back to the assistant for next steps
 }
 
-This architecture eliminates parsing errors and provides reliable tool calling.
+The assistant responds with structured \verb{<TOOL_DECISION>} blocks that specify
+which tool to use and what parameters to provide.
 }
 
 \subsection{Safe Mode}{
@@ -111,6 +110,12 @@ result <- cassidy_agentic_task(
   "Analyze the package structure",
   tools = c("list_files", "read_file", "get_context"),
   max_iterations = 5
+)
+
+# Unlimited iterations for complex tasks
+result <- cassidy_agentic_task(
+  "Refactor all test files to use modern patterns",
+  max_iterations = Inf
 )
 
 # Allow risky operations without approval (use with caution!)

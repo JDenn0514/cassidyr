@@ -231,7 +231,7 @@ css_context_sections <- function() {
 }
 
 css_file_tree <- function() {
-  checkmark <- stringi::stri_unescape_unicode("\\u2713")
+  checkmark <- "\u2713"
   paste0(
     "
     /* ===== FILE TREE ===== */
@@ -650,8 +650,8 @@ css_downloads <- function() {
 #' Context item state styles
 #' @keywords internal
 css_context_states <- function() {
-  checkmark <- stringi::stri_unescape_unicode("\\u2713")
-  refresh <- stringi::stri_unescape_unicode("\\u21bb")
+  checkmark <- "\u2713"
+  refresh <- "\u21bb"
 
   paste0(
     "

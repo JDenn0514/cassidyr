@@ -82,14 +82,13 @@
 - Interactive REPL mode - `cassidy agent` for interactive sessions
 - Direct task mode - `cassidy agent "task"` for one-off tasks
 - Context commands - `cassidy context` to view project context
-- Setup helper - `cassidy setup` for workflow configuration
 - Cross-platform - Mac, Linux, and Windows support
 
-**Workflow Integration:**
-- `cassidy_setup_workflow()` - Step-by-step setup instructions
-- Structured output fields - Guaranteed JSON schema compliance
-- Webhook integration - Direct communication with CassidyAI Workflows
-- Validation - Automatic checking of response structure
+**Direct Parsing:**
+- No workflow setup required - works out of the box
+- Structured `<TOOL_DECISION>` blocks parsed directly from assistant responses
+- Automatic fallback to inference when structure is missing
+- Simpler, more reliable than webhook-based workflows
 
 ### ⏳ Phase 5: IDE Integration (Next)
 
