@@ -42,6 +42,9 @@ reference:
     desc: Autonomous task execution with tools (safe mode by default)
     contents:
       - cassidy_agentic_task
+      - cassidy_list_tools
+      - cassidy_tool_preset
+      - print.cassidy_agentic_result
 
   - subtitle: Skills System
     desc: Manage and use workflow templates
@@ -95,6 +98,7 @@ reference:
       - cassidy_list_conversations
       - cassidy_delete_conversation
       - cassidy_export_conversation
+      - cassidy_get_thread_id
 
   - subtitle: Code Helpers
     desc: Write code and files from chat responses
@@ -120,3 +124,5 @@ reference:
     desc: Setup and configuration
     contents:
       - use_cassidy_md
+      - cassidy_install_cli
+      - cassidy_uninstall_cli

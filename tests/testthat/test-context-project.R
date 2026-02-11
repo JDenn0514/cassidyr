@@ -274,7 +274,7 @@ test_that("use_cassidy_md creates file", {
     })
 
     expect_true(result)
-    expect_true(file.exists("cassidy.md"))
+    expect_true(file.exists("CASSIDY.md"))  # Uppercase!
   })
 })
 
@@ -284,7 +284,7 @@ test_that("use_cassidy_md creates correct template", {
       use_cassidy_md(template = "package", open = FALSE)
     })
 
-    content <- readLines("cassidy.md")
+    content <- readLines("CASSIDY.md")  # Uppercase!
     expect_true(any(grepl("Package Development", content)))
   })
 
@@ -293,7 +293,7 @@ test_that("use_cassidy_md creates correct template", {
       use_cassidy_md(template = "analysis", open = FALSE)
     })
 
-    content <- readLines("cassidy.md")
+    content <- readLines("CASSIDY.md")  # Uppercase!
     expect_true(any(grepl("Data Analysis", content)))
   })
 
@@ -302,7 +302,7 @@ test_that("use_cassidy_md creates correct template", {
       use_cassidy_md(template = "survey", open = FALSE)
     })
 
-    content <- readLines("cassidy.md")
+    content <- readLines("CASSIDY.md")  # Uppercase!
     expect_true(any(grepl("Survey Research", content)))
   })
 })
@@ -335,7 +335,7 @@ test_that("use_cassidy_md templates are well-formed", {
         use_cassidy_md(template = template, open = FALSE)
       })
 
-      content <- readLines("cassidy.md")
+      content <- readLines("CASSIDY.md")  # Uppercase!
 
       # Should have content
       expect_gt(length(content), 0)
