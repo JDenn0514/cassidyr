@@ -25,7 +25,10 @@ navbar:
 
 
 reference:
-  - title: Chat Interface
+  - title: "Interactive Interfaces"
+    desc: "High-level user interfaces for AI assistance"
+
+  - subtitle: Chat Interface
     desc: Interactive chat with AI assistants
     contents:
       - cassidy_app
@@ -35,58 +38,56 @@ reference:
       - chat
       - chat_text
 
-  - title: API Functions
-    desc: Low-level API interaction
+  - subtitle: Agentic System
+    desc: Autonomous task execution with tools (safe mode by default)
     contents:
-      - cassidy_create_thread
-      - cassidy_send_message
-      - cassidy_get_thread
-      - cassidy_list_threads
+      - cassidy_agentic_task
 
-  - title: Context Gathering
-    desc: Collect project and data context for AI assistance
-    contents:
-      - cassidy_context_project
-      - cassidy_context_data
-      - cassidy_context_env
-      - cassidy_context_combined
-      - cassidy_context_git
-      - cassidy_context_skills
-
-  - title: Skills System
+  - subtitle: Skills System
     desc: Manage and use workflow templates
     contents:
       - cassidy_list_skills
       - cassidy_use_skill
       - cassidy_create_skill
 
-  - title: Agentic System
-    desc: Autonomous task execution with tools
-    contents:
-      - cassidy_agentic_task
+  - title: "Context System"
+    desc: "Gather project, data, and environment context for AI assistance"
 
-  - title: Data Description
+  - subtitle: Project & Git Context
+    desc: Collect project-level information
+    contents:
+      - cassidy_context_project
+      - cassidy_context_combined
+      - cassidy_context_git
+      - cassidy_context_skills
+
+  - subtitle: Data Context
     desc: Describe data frames and detect issues
     contents:
+      - cassidy_context_data
       - cassidy_describe_df
       - cassidy_describe_variable
       - cassidy_detect_issues
       - cassidy_describe_codebook
 
-  - title: File Context
+  - subtitle: File Context
     desc: Read and summarize files
     contents:
       - cassidy_describe_file
       - cassidy_file_summary
       - cassidy_read_context_file
 
-  - title: Environment Info
-    desc: Gather R session information
+  - subtitle: Environment Context
+    desc: Gather R session and object information
     contents:
+      - cassidy_context_env
       - cassidy_list_objects
       - cassidy_session_info
 
-  - title: Conversation Management
+  - title: "Utilities"
+    desc: "Supporting functions and low-level operations"
+
+  - subtitle: Conversation Management
     desc: Save, load, and export conversations
     contents:
       - cassidy_save_conversation
@@ -95,19 +96,27 @@ reference:
       - cassidy_delete_conversation
       - cassidy_export_conversation
 
-  - title: Code Helpers
+  - subtitle: Code Helpers
     desc: Write code and files from chat responses
     contents:
       - cassidy_write_code
       - cassidy_write_file
 
-  - title: Script Tools
+  - subtitle: Script Tools
     desc: Transform and document R scripts
     contents:
       - cassidy_script_to_quarto
       - cassidy_comment_script
 
-  - title: Configuration
+  - subtitle: API Functions
+    desc: Low-level API interaction
+    contents:
+      - cassidy_create_thread
+      - cassidy_send_message
+      - cassidy_get_thread
+      - cassidy_list_threads
+
+  - subtitle: Configuration
     desc: Setup and configuration
     contents:
       - use_cassidy_md
