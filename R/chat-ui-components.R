@@ -260,6 +260,31 @@ chat_context_sidebar_ui <- function() {
             shiny::uiOutput("context_files_tree_ui")
           )
         )
+      ),
+
+      # Skills section
+      shiny::div(
+        class = "context-section",
+        shiny::div(
+          class = "context-section-header",
+          onclick = "toggleContextSection('skills')",
+          shiny::icon("chevron-down", class = "section-chevron"),
+          shiny::icon("magic"),
+          " Skills",
+          shiny::tags$small(
+            class = "text-muted ms-1",
+            shiny::uiOutput("skills_count_ui", inline = TRUE)
+          )
+        ),
+        shiny::div(
+          class = "context-section-body",
+          id = "context_section_skills",
+          shiny::div(
+            class = "context-skills-list",
+            id = "context_skills_list",
+            shiny::uiOutput("context_skills_ui")
+          )
+        )
       )
     ),
 
