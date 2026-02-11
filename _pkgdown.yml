@@ -51,6 +51,19 @@ reference:
       - cassidy_context_env
       - cassidy_context_combined
       - cassidy_context_git
+      - cassidy_context_skills
+
+  - title: Skills System
+    desc: Manage and use workflow templates
+    contents:
+      - cassidy_list_skills
+      - cassidy_use_skill
+      - cassidy_create_skill
+
+  - title: Agentic System
+    desc: Autonomous task execution with tools
+    contents:
+      - cassidy_agentic_task
 
   - title: Data Description
     desc: Describe data frames and detect issues
