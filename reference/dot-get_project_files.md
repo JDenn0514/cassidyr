@@ -5,5 +5,5 @@ Get project files
 ## Usage
 
 ``` r
-.get_project_files(include_hidden = FALSE)
+.get_project_files(include_hidden = TRUE)
 ```

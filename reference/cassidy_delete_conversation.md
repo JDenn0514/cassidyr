@@ -23,6 +23,7 @@ TRUE if deleted successfully, FALSE otherwise (invisibly).
 Other chat-app:
 [`cassidy_app()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_app.md),
 [`cassidy_export_conversation()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_export_conversation.md),
+[`cassidy_get_thread_id()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_get_thread_id.md),
 [`cassidy_list_conversations()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_conversations.md)
 
 ## Examples

@@ -1,15 +1,23 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://jdenn0514.github.io/cassidyr/404.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/AGENTIC_SYSTEM_TEST_REPORT.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/AGENTIC_TOOLS_GUIDE.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/CASSIDY.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/CLAUDE.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/DIRECT_PARSING_MIGRATION.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/LICENSE-text.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/LICENSE.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/RECURSIVE_MEMORY_UPDATE.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/WORKFLOW_CLEANUP_SUMMARY.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/articles/context-system.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/articles/getting_started.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/articles/index.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/articles/project-memory.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/authors.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/index.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/news/index.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/ConversationManager.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_agentic_task.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_app.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_chat.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_comment_script.html</loc></url>
@@ -18,7 +26,9 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_context_env.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_context_git.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_context_project.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_context_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_continue.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_create_skill.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_create_thread.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_delete_conversation.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_codebook.html</loc></url>
@@ -29,9 +39,13 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_export_conversation.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_file_summary.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_get_thread.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_get_thread_id.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_install_cli.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_list_conversations.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_list_objects.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_list_skills.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_list_threads.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_list_tools.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_load_conversation.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_read_context_file.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_save_conversation.html</loc></url>
@@ -39,6 +53,9 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_send_message.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_session.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_session_info.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_tool_preset.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_uninstall_cli.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_use_skill.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_write_code.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidy_write_file.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/cassidyr-package.html</loc></url>
@@ -83,6 +100,7 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/css_conversations.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/css_downloads.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/css_layout.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/css_loading.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/css_messages.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/css_responsive.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/css_sidebars.html</loc></url>
@@ -107,6 +125,7 @@
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/gather_context.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/gather_selected_context.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/index.html</loc></url>
+<url><loc>https://jdenn0514.github.io/cassidyr/reference/print.cassidy_agentic_result.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_apply_context_handler.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_context_data_renderer.html</loc></url>
 <url><loc>https://jdenn0514.github.io/cassidyr/reference/setup_context_summary_renderer.html</loc></url>

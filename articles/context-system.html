@@ -42,6 +42,7 @@
     <li><a class="dropdown-item" href="../articles/project-memory.html">Managing Project Memory in cassidyr</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/JDenn0514/cassidyr/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -109,7 +110,7 @@
 </h3>
 <p>You can place your configuration in several locations:</p>
 <div class="line-block">Location | File | Use Case | |———-|——|———-| | Project root | <code>CASSIDY.md</code> | Shared with team via Git | | Hidden directory | <code>.cassidy/CASSIDY.md</code> | Keeps root directory clean | | Local only | <code>CASSIDY.local.md</code> | Personal preferences (gitignored) | | User-level | <code>~/.cassidy/CASSIDY.md</code> | Applies to all your projects |</div>
-<p>cassidyr reads these in order from lowest to highest priority, so project-specific settings override user-level defaults.</p>
+<p>cassidyr searches recursively up from your working directory (inspired by Claude Code), reading these files in order from lowest to highest priority. More specific (project-level) settings override broader (user-level) defaults. This enables organization-wide standards in parent directories to be combined with project-specific configurations.</p>
 </section><section class="level3"><h3 id="gathering-project-context">Gathering Project Context<a class="anchor" aria-label="anchor" href="#gathering-project-context"></a>
 </h3>
 <div class="cell">

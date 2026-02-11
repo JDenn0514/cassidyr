@@ -101,11 +101,17 @@ One of cassidyr’s most powerful features is automatic context gathering.
 When you start a chat, cassidyr can share information about your project
 with the AI assistant.
 
+cassidyr’s memory system is inspired by [Claude
+Code](https://code.claude.com/docs/en/memory), using a hierarchical
+structure that searches recursively up your directory tree. This enables
+organization-wide standards in parent directories to be combined with
+project-specific settings.
+
 ### Create a CASSIDY.md File
 
-For the best experience, create a `CASSIDY.md` file in your project
-root. This file tells the AI about your project’s conventions, goals,
-and preferences:
+For the best experience, create a `CASSIDY.md` file in your project.
+This file tells the AI about your project’s conventions, goals, and
+preferences:
 
 ``` r
 # Create a configuration file
@@ -121,8 +127,26 @@ use_cassidy_md(template = "analysis")
 use_cassidy_md(template = "survey")
 ```
 
-The AI will automatically read this file and tailor its responses to
-your project.
+You can place your configuration in several locations:
+
+- **`CASSIDY.md`** - Project root, shared with team via Git
+- **`.cassidy/CASSIDY.md`** - Hidden directory, keeps root clean
+- **`CASSIDY.local.md`** - Local-only (auto-gitignored), for personal
+  project preferences
+- **`~/.cassidy/CASSIDY.md`** - User-level, applies to all your R
+  projects
+
+When you start
+[`cassidy_app()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_app.md),
+it searches up from your working directory to find all memory files,
+with more specific (project-level) settings taking precedence over
+broader (user-level) ones. For complex projects, you can also organize
+instructions into modular files in `.cassidy/rules/*.md`.
+
+The AI will automatically read these files and tailor its responses to
+your project. See
+[`vignette("project-memory")`](https://jdenn0514.github.io/cassidyr/articles/project-memory.md)
+for complete details.
 
 ### Example CASSIDY.md
 

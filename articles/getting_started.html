@@ -42,6 +42,7 @@
     <li><a class="dropdown-item" href="../articles/project-memory.html">Managing Project Memory in cassidyr</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/JDenn0514/cassidyr/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -148,9 +149,10 @@
 </section></section><section class="level2"><h2 id="project-context">Project Context<a class="anchor" aria-label="anchor" href="#project-context"></a>
 </h2>
 <p>One of cassidyr’s most powerful features is automatic context gathering. When you start a chat, cassidyr can share information about your project with the AI assistant.</p>
+<p>cassidyr’s memory system is inspired by <a href="https://code.claude.com/docs/en/memory" class="external-link">Claude Code</a>, using a hierarchical structure that searches recursively up your directory tree. This enables organization-wide standards in parent directories to be combined with project-specific settings.</p>
 <section class="level3"><h3 id="create-a-cassidy-md-file">Create a CASSIDY.md File<a class="anchor" aria-label="anchor" href="#create-a-cassidy-md-file"></a>
 </h3>
-<p>For the best experience, create a <code>CASSIDY.md</code> file in your project root. This file tells the AI about your project’s conventions, goals, and preferences:</p>
+<p>For the best experience, create a <code>CASSIDY.md</code> file in your project. This file tells the AI about your project’s conventions, goals, and preferences:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a configuration file</span></span>
@@ -165,7 +167,19 @@
 <span><span class="co"># For survey research</span></span>
 <span><span class="fu"><a href="../reference/use_cassidy_md.html">use_cassidy_md</a></span><span class="op">(</span>template <span class="op">=</span> <span class="st">"survey"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>The AI will automatically read this file and tailor its responses to your project.</p>
+<p>You can place your configuration in several locations:</p>
+<ul>
+<li>
+<strong><code>CASSIDY.md</code></strong> - Project root, shared with team via Git</li>
+<li>
+<strong><code>.cassidy/CASSIDY.md</code></strong> - Hidden directory, keeps root clean</li>
+<li>
+<strong><code>CASSIDY.local.md</code></strong> - Local-only (auto-gitignored), for personal project preferences</li>
+<li>
+<strong><code>~/.cassidy/CASSIDY.md</code></strong> - User-level, applies to all your R projects</li>
+</ul>
+<p>When you start <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>, it searches up from your working directory to find all memory files, with more specific (project-level) settings taking precedence over broader (user-level) ones. For complex projects, you can also organize instructions into modular files in <code>.cassidy/rules/*.md</code>.</p>
+<p>The AI will automatically read these files and tailor its responses to your project. See <code><a href="../articles/project-memory.html">vignette("project-memory")</a></code> for complete details.</p>
 </section><section class="level3"><h3 id="example-cassidy-md">Example CASSIDY.md<a class="anchor" aria-label="anchor" href="#example-cassidy-md"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Coding Preferences</span></span>

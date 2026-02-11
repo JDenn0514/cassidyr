@@ -1,8 +1,7 @@
 # Read CASSIDY.md or similar context configuration files
 
-Looks for project-specific configuration files. By default, only
-searches the current working directory and user-level location
-(~/.cassidy/).
+Looks for project-specific configuration files in the current directory,
+parent directories (when recursive=TRUE), and user-level location.
 
 ## Usage
 
@@ -19,8 +18,10 @@ cassidy_read_context_file(path = ".", recursive = FALSE, include_user = TRUE)
 - recursive:
 
   Whether to search parent directories (default: FALSE). When TRUE,
-  searches up the directory tree like Claude Code does. For R packages,
-  FALSE is recommended for predictability.
+  searches up the directory tree like Claude Code does, enabling
+  company-wide configurations in parent directories. This is the default
+  behavior when called from
+  [`cassidy_context_project()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_project.md).
 
 - include_user:
 

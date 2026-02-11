@@ -42,6 +42,7 @@
     <li><a class="dropdown-item" href="../articles/project-memory.html">Managing Project Memory in cassidyr</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/JDenn0514/cassidyr/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -72,7 +73,10 @@
 </h2>
 <p>This vignette explains how to manage <em>cassidyr</em>’s project memory across sessions using different memory locations and best practices.</p>
 <p>The <em>cassidyr</em> package can remember your preferences, project context, and coding guidelines across chat sessions. When you launch <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>, it automatically loads project memory files to provide relevant context to the AI assistant.</p>
-</section><section class="section level2"><h2 id="memory-types-and-locations">Memory Types and Locations<a class="anchor" aria-label="anchor" href="#memory-types-and-locations"></a>
+<section class="level2"><h3 id="design-philosophy">Design Philosophy<a class="anchor" aria-label="anchor" href="#design-philosophy"></a>
+</h3>
+<p>cassidyr’s memory system is inspired by <a href="https://code.claude.com/docs/en/memory" class="external-link">Claude Code’s memory system</a>, adapting its hierarchical structure and recursive search patterns for R package development. Like Claude Code, cassidyr searches up the directory tree to find configuration files, enabling company-wide standards in parent directories to be combined with project-specific settings.</p>
+</section></section><section class="section level2"><h2 id="memory-types-and-locations">Memory Types and Locations<a class="anchor" aria-label="anchor" href="#memory-types-and-locations"></a>
 </h2>
 <p><em>cassidyr</em> offers multiple memory locations in a hierarchical structure, each serving a different purpose:</p>
 <table class="table caption-top">
@@ -129,37 +133,50 @@
 </blockquote>
 </section><section class="section level2"><h2 id="how-cassidyr-looks-up-memory-files">How cassidyr Looks Up Memory Files<a class="anchor" aria-label="anchor" href="#how-cassidyr-looks-up-memory-files"></a>
 </h2>
-<p>By default, cassidyr searches for memory files in two locations:</p>
+<p>cassidyr searches for memory files <strong>recursively up the directory tree</strong> (following Claude Code’s approach), enabling organization-wide configurations in parent directories to be combined with project-specific settings.</p>
+<section class="level2"><h3 id="automatic-recursive-search-default">Automatic Recursive Search (Default)<a class="anchor" aria-label="anchor" href="#automatic-recursive-search-default"></a>
+</h3>
+<p>When you use <code><a href="../reference/cassidy_context_project.html">cassidy_context_project()</a></code> or <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>, cassidyr automatically:</p>
 <ol type="1">
 <li>
-<strong>User-level memory</strong>: <code>~/.cassidy/CASSIDY.md</code> and <code>~/.cassidy/rules/*.md</code>
+<strong>Searches upward</strong> from your current working directory to the filesystem root</li>
+<li>
+<strong>Loads user-level memory</strong> first: <code>~/.cassidy/CASSIDY.md</code> and <code>~/.cassidy/rules/*.md</code>
+</li>
+<li>
+<strong>Loads project memory</strong> found along the path:
 <ul>
-<li>Your personal preferences that apply to all R projects</li>
-<li>Loaded first (lowest priority)</li>
+<li>
+<code>CASSIDY.md</code> or <code>.cassidy/CASSIDY.md</code>
+</li>
+<li>
+<code>CASSIDY.local.md</code> (gitignored, personal notes)</li>
+<li>
+<code>.cassidy/rules/*.md</code> (modular rules)</li>
 </ul>
 </li>
 <li>
-<strong>Project-level memory</strong>: Files in your current working directory
-<ul>
-<li>
-<code>./CASSIDY.md</code> or <code>./.cassidy/CASSIDY.md</code>
-</li>
-<li>
-<code>./CASSIDY.local.md</code> (gitignored, personal project notes)</li>
-<li>
-<code>./.cassidy/rules/*.md</code> (modular rules)</li>
-<li>Loaded second (highest priority, overrides user-level)</li>
-</ul>
-</li>
+<strong>Applies precedence</strong>: More specific (project-level) instructions override broader (user-level) ones</li>
 </ol>
-<p>This design keeps memory files discoverable and predictable - anyone who clones your R package will see exactly what context is being used.</p>
-<section class="level3"><h4 id="optional-recursive-search">Optional: Recursive Search<a class="anchor" aria-label="anchor" href="#optional-recursive-search"></a>
+<p>This recursive search is particularly useful in monorepos or when working in nested directories within a larger project structure. Anyone who clones your R package will see exactly what context is being used.</p>
+<section class="level3"><h4 id="precedence-rules">Precedence Rules<a class="anchor" aria-label="anchor" href="#precedence-rules"></a>
 </h4>
-<p>If you’re working in a large monorepo or nested project structure, you can enable upward recursive search:</p>
+<p>When multiple memory files are found, cassidyr applies them in order with <strong>more specific instructions taking precedence</strong>:</p>
+<ol type="1">
+<li>
+<strong>User-level memory</strong> (<code>~/.cassidy/</code>) - <strong>Lowest priority</strong> (applies to all projects)</li>
+<li>
+<strong>Ancestor directory memory</strong> - <strong>Medium priority</strong> (applies to project families)</li>
+<li>
+<strong>Current directory memory</strong> - <strong>Highest priority</strong> (applies to this specific project)</li>
+</ol>
+<p>Within each level, <code>CASSIDY.local.md</code> has the same priority as <code>CASSIDY.md</code>, allowing personal preferences to coexist with team settings without conflicts.</p>
+</section><section class="level3"><h4 id="non-recursive-mode">Non-Recursive Mode<a class="anchor" aria-label="anchor" href="#non-recursive-mode"></a>
+</h4>
+<p>When calling <code><a href="../reference/cassidy_read_context_file.html">cassidy_read_context_file()</a></code> directly, the default is non-recursive (searches only the current directory). Enable recursive search with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Search parent directories (like Claude Code)</span></span>
-<span><span class="fu"><a href="../reference/cassidy_app.html">cassidy_app</a></span><span class="op">(</span>recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</section></section><section class="section level2"><h2 id="setting-up-project-memory">Setting Up Project Memory<a class="anchor" aria-label="anchor" href="#setting-up-project-memory"></a>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/cassidy_read_context_file.html">cassidy_read_context_file</a></span><span class="op">(</span>recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</section></section></section><section class="section level2"><h2 id="setting-up-project-memory">Setting Up Project Memory<a class="anchor" aria-label="anchor" href="#setting-up-project-memory"></a>
 </h2>
 <section class="level2"><h3 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h3>
@@ -549,7 +566,66 @@
 <span>    append <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-</section></section><section class="section level2"><h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
+</section></section><section class="section level2"><h2 id="relationship-to-claude-code">Relationship to Claude Code<a class="anchor" aria-label="anchor" href="#relationship-to-claude-code"></a>
+</h2>
+<p>cassidyr adapts Claude Code’s memory patterns for R:</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 40%">
+<col style="width: 31%">
+</colgroup>
+<thead><tr class="header">
+<th>Feature</th>
+<th>Claude Code</th>
+<th>cassidyr</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>Recursive search</strong></td>
+<td>✅ Always enabled</td>
+<td>✅ Default in normal usage</td>
+</tr>
+<tr class="even">
+<td><strong>User-level memory</strong></td>
+<td>~/.claude/CLAUDE.md</td>
+<td>~/.cassidy/CASSIDY.md</td>
+</tr>
+<tr class="odd">
+<td><strong>Project memory</strong></td>
+<td>CLAUDE.md</td>
+<td>CASSIDY.md</td>
+</tr>
+<tr class="even">
+<td><strong>Local memory</strong></td>
+<td>CLAUDE.local.md</td>
+<td>CASSIDY.local.md</td>
+</tr>
+<tr class="odd">
+<td><strong>Modular rules</strong></td>
+<td>.claude/rules/*.md</td>
+<td>.cassidy/rules/*.md</td>
+</tr>
+<tr class="even">
+<td><strong>Auto memory</strong></td>
+<td>✅ Claude learns automatically</td>
+<td>❌ Not implemented</td>
+</tr>
+<tr class="odd">
+<td><strong>Path-specific rules</strong></td>
+<td>✅ Glob patterns</td>
+<td>❌ Not implemented</td>
+</tr>
+<tr class="even">
+<td><strong>Imports</strong></td>
+<td>✅ <span class="citation" data-cites="path/to/file">@path/to/file</span>
+</td>
+<td>❌ Not implemented</td>
+</tr>
+</tbody>
+</table>
+<p>While cassidyr doesn’t implement all of Claude Code’s features (like auto memory or path-specific rules), it maintains the same core philosophy: hierarchical, recursive memory that scales from personal preferences to organization-wide standards.</p>
+</section><section class="section level2"><h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
 </h2>
 <section class="level2"><h3 id="memory-files-not-loading">Memory files not loading?<a class="anchor" aria-label="anchor" href="#memory-files-not-loading"></a>
 </h3>
@@ -581,16 +657,23 @@
 <li>Use <code>context_level = "minimal"</code> when starting the app.</li>
 </ul></section><section class="level2"><h3 id="files-in-subdirectories-not-loading">Files in subdirectories not loading?<a class="anchor" aria-label="anchor" href="#files-in-subdirectories-not-loading"></a>
 </h3>
-<p>Remember: <em>cassidyr</em> searches <em>up</em> the directory tree from your working directory, not down. If you have <code>project/subdir/CASSIDY.md</code> and you are working from <code>project/</code>, that file will not be loaded. It is only loaded when you work from <code>project/subdir/</code> or deeper.</p>
+<p>cassidyr searches <strong>up</strong> the directory tree from your working directory (like Claude Code), not down. If you have <code>project/subdir/CASSIDY.md</code> and you are working from <code>project/</code>, that file will not be loaded. It is only loaded when you work from <code>project/subdir/</code> or deeper.</p>
+<p>This is intentional: subdirectory memory files only apply when you’re working within those subdirectories, maintaining clear boundaries between different parts of your project.</p>
 </section></section><section class="section level2"><h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <ul>
-<li>Use <code>CASSIDY.md</code> for team-shared project context.</li>
-<li>Use <code>CASSIDY.local.md</code> for personal project settings (auto-gitignored).</li>
-<li>Use <code>.cassidy/rules/</code> for modular, organized guidelines.</li>
-<li>Files are automatically loaded when you start <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>.</li>
-<li>Memory files are searched recursively up the directory tree.</li>
-<li>Be specific, use structure, and review periodically.</li>
+<li>
+<strong>Inspired by Claude Code</strong>: cassidyr adapts Claude Code’s memory system for R</li>
+<li>
+<strong>Recursive by default</strong>: Searches up directory tree in normal usage (<code><a href="../reference/cassidy_context_project.html">cassidy_context_project()</a></code>, <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>)</li>
+<li>
+<strong>Hierarchical precedence</strong>: User-level → ancestor directories → current directory (more specific wins)</li>
+<li>Use <code>CASSIDY.md</code> for team-shared project context</li>
+<li>Use <code>CASSIDY.local.md</code> for personal project settings (auto-gitignored)</li>
+<li>Use <code>.cassidy/rules/</code> for modular, organized guidelines</li>
+<li>Files are automatically loaded when you start <code><a href="../reference/cassidy_app.html">cassidy_app()</a></code>
+</li>
+<li>Be specific, use structure, and review periodically</li>
 </ul>
 <p>For more information on context gathering and chat functionality, see:</p>
 <ul>

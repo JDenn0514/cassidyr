@@ -82,8 +82,11 @@ Location \| File \| Use Case \| \|———-\|——\|———-\| \| Project ro
 \| `CASSIDY.local.md` \| Personal preferences (gitignored) \| \|
 User-level \| `~/.cassidy/CASSIDY.md` \| Applies to all your projects \|
 
-cassidyr reads these in order from lowest to highest priority, so
-project-specific settings override user-level defaults.
+cassidyr searches recursively up from your working directory (inspired
+by Claude Code), reading these files in order from lowest to highest
+priority. More specific (project-level) settings override broader
+(user-level) defaults. This enables organization-wide standards in
+parent directories to be combined with project-specific configurations.
 
 ### Gathering Project Context
 

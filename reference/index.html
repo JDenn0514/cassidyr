@@ -22,6 +22,7 @@
     <li><a class="dropdown-item" href="../articles/getting_started.html">Getting Started with cassidyr</a></li>
     <li><a class="dropdown-item" href="../articles/project-memory.html">Managing Project Memory in cassidyr</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/JDenn0514/cassidyr/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
@@ -35,8 +36,13 @@
     </div>
 
     <div class="section level2">
-      <h2 id="chat-interface">Chat Interface<a class="anchor" aria-label="anchor" href="#chat-interface"></a></h2>
+      <h2 id="interactive-interfaces">Interactive Interfaces<a class="anchor" aria-label="anchor" href="#interactive-interfaces"></a></h2>
 
+      <div class="section-desc"><p>High-level user interfaces for AI assistance</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="chat-interface">Chat Interface<a class="anchor" aria-label="anchor" href="#chat-interface"></a></h3>
       <div class="section-desc"><p>Interactive chat with AI assistants</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -86,9 +92,9 @@
         </dt>
         <dd>Extract text content from a chat result</dd>
       </dl></div><div class="section level2">
-      <h2 id="api-functions">API Functions<a class="anchor" aria-label="anchor" href="#api-functions"></a></h2>
 
-      <div class="section-desc"><p>Low-level API interaction</p></div>
+      <h3 id="agentic-system">Agentic System<a class="anchor" aria-label="anchor" href="#agentic-system"></a></h3>
+      <div class="section-desc"><p>Autonomous task execution with tools (safe mode by default)</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -97,35 +103,70 @@
 
       <dl><dt>
 
-          <code><a href="cassidy_create_thread.html">cassidy_create_thread()</a></code>
+          <code><a href="cassidy_agentic_task.html">cassidy_agentic_task()</a></code>
 
         </dt>
-        <dd>Create a new CassidyAI conversation thread</dd>
+        <dd>Run an Agentic Task with CassidyAI</dd>
 
         <dt>
 
-          <code><a href="cassidy_send_message.html">cassidy_send_message()</a></code>
+          <code><a href="cassidy_list_tools.html">cassidy_list_tools()</a></code>
 
         </dt>
-        <dd>Send Message to Cassidy Thread</dd>
+        <dd>List Available Agentic Tools</dd>
 
         <dt>
 
-          <code><a href="cassidy_get_thread.html">cassidy_get_thread()</a></code>
+          <code><a href="cassidy_tool_preset.html">cassidy_tool_preset()</a></code>
 
         </dt>
-        <dd>Retrieve conversation history from a thread</dd>
+        <dd>Get Tool Presets for Common Tasks</dd>
 
         <dt>
 
-          <code><a href="cassidy_list_threads.html">cassidy_list_threads()</a></code>
+          <code><a href="print.cassidy_agentic_result.html">print(<i>&lt;cassidy_agentic_result&gt;</i>)</a></code>
 
         </dt>
-        <dd>List all threads for an assistant</dd>
+        <dd>Print method for agentic results</dd>
       </dl></div><div class="section level2">
-      <h2 id="context-gathering">Context Gathering<a class="anchor" aria-label="anchor" href="#context-gathering"></a></h2>
 
-      <div class="section-desc"><p>Collect project and data context for AI assistance</p></div>
+      <h3 id="skills-system">Skills System<a class="anchor" aria-label="anchor" href="#skills-system"></a></h3>
+      <div class="section-desc"><p>Manage and use workflow templates</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="cassidy_list_skills.html">cassidy_list_skills()</a></code>
+
+        </dt>
+        <dd>List Available Skills</dd>
+
+        <dt>
+
+          <code><a href="cassidy_use_skill.html">cassidy_use_skill()</a></code>
+
+        </dt>
+        <dd>Use a Skill</dd>
+
+        <dt>
+
+          <code><a href="cassidy_create_skill.html">cassidy_create_skill()</a></code>
+
+        </dt>
+        <dd>Create a New Skill Template</dd>
+      </dl></div><div class="section level2">
+      <h2 id="context-system">Context System<a class="anchor" aria-label="anchor" href="#context-system"></a></h2>
+
+      <div class="section-desc"><p>Gather project, data, and environment context for AI assistance</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="project-git-context">Project &amp; Git Context<a class="anchor" aria-label="anchor" href="#project-git-context"></a></h3>
+      <div class="section-desc"><p>Collect project-level information</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -141,20 +182,6 @@
 
         <dt>
 
-          <code><a href="cassidy_context_data.html">cassidy_context_data()</a></code>
-
-        </dt>
-        <dd>Gather context from data frames in environment</dd>
-
-        <dt>
-
-          <code><a href="cassidy_context_env.html">cassidy_context_env()</a></code>
-
-        </dt>
-        <dd>Get current environment snapshot</dd>
-
-        <dt>
-
           <code><a href="cassidy_context_combined.html">cassidy_context_combined()</a></code>
 
         </dt>
@@ -166,9 +193,16 @@
 
         </dt>
         <dd>Get Git repository status and recent commits</dd>
-      </dl></div><div class="section level2">
-      <h2 id="data-description">Data Description<a class="anchor" aria-label="anchor" href="#data-description"></a></h2>
 
+        <dt>
+
+          <code><a href="cassidy_context_skills.html">cassidy_context_skills()</a></code>
+
+        </dt>
+        <dd>Get Skills Context</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="data-context">Data Context<a class="anchor" aria-label="anchor" href="#data-context"></a></h3>
       <div class="section-desc"><p>Describe data frames and detect issues</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -177,6 +211,13 @@
 
 
       <dl><dt>
+
+          <code><a href="cassidy_context_data.html">cassidy_context_data()</a></code>
+
+        </dt>
+        <dd>Gather context from data frames in environment</dd>
+
+        <dt>
 
           <code><a href="cassidy_describe_df.html">cassidy_describe_df()</a></code>
 
@@ -204,8 +245,8 @@
         </dt>
         <dd>Format data frame description for LLM context</dd>
       </dl></div><div class="section level2">
-      <h2 id="file-context">File Context<a class="anchor" aria-label="anchor" href="#file-context"></a></h2>
 
+      <h3 id="file-context">File Context<a class="anchor" aria-label="anchor" href="#file-context"></a></h3>
       <div class="section-desc"><p>Read and summarize files</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -234,9 +275,9 @@
         </dt>
         <dd>Read CASSIDY.md or similar context configuration files</dd>
       </dl></div><div class="section level2">
-      <h2 id="environment-info">Environment Info<a class="anchor" aria-label="anchor" href="#environment-info"></a></h2>
 
-      <div class="section-desc"><p>Gather R session information</p></div>
+      <h3 id="environment-context">Environment Context<a class="anchor" aria-label="anchor" href="#environment-context"></a></h3>
+      <div class="section-desc"><p>Gather R session and object information</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -244,6 +285,13 @@
 
 
       <dl><dt>
+
+          <code><a href="cassidy_context_env.html">cassidy_context_env()</a></code>
+
+        </dt>
+        <dd>Get current environment snapshot</dd>
+
+        <dt>
 
           <code><a href="cassidy_list_objects.html">cassidy_list_objects()</a></code>
 
@@ -257,8 +305,13 @@
         </dt>
         <dd>Get session info formatted for LLM</dd>
       </dl></div><div class="section level2">
-      <h2 id="conversation-management">Conversation Management<a class="anchor" aria-label="anchor" href="#conversation-management"></a></h2>
+      <h2 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a></h2>
 
+      <div class="section-desc"><p>Supporting functions and low-level operations</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="conversation-management">Conversation Management<a class="anchor" aria-label="anchor" href="#conversation-management"></a></h3>
       <div class="section-desc"><p>Save, load, and export conversations</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -300,9 +353,16 @@
 
         </dt>
         <dd>Export a conversation as Markdown</dd>
-      </dl></div><div class="section level2">
-      <h2 id="code-helpers">Code Helpers<a class="anchor" aria-label="anchor" href="#code-helpers"></a></h2>
 
+        <dt>
+
+          <code><a href="cassidy_get_thread_id.html">cassidy_get_thread_id()</a></code>
+
+        </dt>
+        <dd>Get thread ID from conversation ID</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="code-helpers">Code Helpers<a class="anchor" aria-label="anchor" href="#code-helpers"></a></h3>
       <div class="section-desc"><p>Write code and files from chat responses</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -324,8 +384,8 @@
         </dt>
         <dd>Write Cassidy response to a file</dd>
       </dl></div><div class="section level2">
-      <h2 id="script-tools">Script Tools<a class="anchor" aria-label="anchor" href="#script-tools"></a></h2>
 
+      <h3 id="script-tools">Script Tools<a class="anchor" aria-label="anchor" href="#script-tools"></a></h3>
       <div class="section-desc"><p>Transform and document R scripts</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -347,8 +407,45 @@
         </dt>
         <dd>Add explanatory comments to an R script</dd>
       </dl></div><div class="section level2">
-      <h2 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h2>
 
+      <h3 id="api-functions">API Functions<a class="anchor" aria-label="anchor" href="#api-functions"></a></h3>
+      <div class="section-desc"><p>Low-level API interaction</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="cassidy_create_thread.html">cassidy_create_thread()</a></code>
+
+        </dt>
+        <dd>Create a new CassidyAI conversation thread</dd>
+
+        <dt>
+
+          <code><a href="cassidy_send_message.html">cassidy_send_message()</a></code>
+
+        </dt>
+        <dd>Send Message to Cassidy Thread</dd>
+
+        <dt>
+
+          <code><a href="cassidy_get_thread.html">cassidy_get_thread()</a></code>
+
+        </dt>
+        <dd>Retrieve conversation history from a thread</dd>
+
+        <dt>
+
+          <code><a href="cassidy_list_threads.html">cassidy_list_threads()</a></code>
+
+        </dt>
+        <dd>List all threads for an assistant</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a></h3>
       <div class="section-desc"><p>Setup and configuration</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -362,6 +459,20 @@
 
         </dt>
         <dd>Create a CASSIDY.md configuration file</dd>
+
+        <dt>
+
+          <code><a href="cassidy_install_cli.html">cassidy_install_cli()</a></code>
+
+        </dt>
+        <dd>Install Cassidy CLI Tool</dd>
+
+        <dt>
+
+          <code><a href="cassidy_uninstall_cli.html">cassidy_uninstall_cli()</a></code>
+
+        </dt>
+        <dd>Uninstall Cassidy CLI Tool</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

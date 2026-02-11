@@ -1,6 +1,10 @@
 # Package index
 
-## Chat Interface
+## Interactive Interfaces
+
+High-level user interfaces for AI assistance
+
+### Chat Interface
 
 Interactive chat with AI assistants
 
@@ -17,38 +21,53 @@ Interactive chat with AI assistants
 - [`chat_text()`](https://jdenn0514.github.io/cassidyr/reference/chat_text.md)
   : Extract text content from a chat result
 
-## API Functions
+### Agentic System
 
-Low-level API interaction
+Autonomous task execution with tools (safe mode by default)
 
-- [`cassidy_create_thread()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_create_thread.md)
-  : Create a new CassidyAI conversation thread
-- [`cassidy_send_message()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_send_message.md)
-  : Send Message to Cassidy Thread
-- [`cassidy_get_thread()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_get_thread.md)
-  : Retrieve conversation history from a thread
-- [`cassidy_list_threads()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_threads.md)
-  : List all threads for an assistant
+- [`cassidy_agentic_task()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_agentic_task.md)
+  : Run an Agentic Task with CassidyAI
+- [`cassidy_list_tools()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_tools.md)
+  : List Available Agentic Tools
+- [`cassidy_tool_preset()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_tool_preset.md)
+  : Get Tool Presets for Common Tasks
+- [`print(`*`<cassidy_agentic_result>`*`)`](https://jdenn0514.github.io/cassidyr/reference/print.cassidy_agentic_result.md)
+  : Print method for agentic results
 
-## Context Gathering
+### Skills System
 
-Collect project and data context for AI assistance
+Manage and use workflow templates
+
+- [`cassidy_list_skills()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_skills.md)
+  : List Available Skills
+- [`cassidy_use_skill()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_use_skill.md)
+  : Use a Skill
+- [`cassidy_create_skill()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_create_skill.md)
+  : Create a New Skill Template
+
+## Context System
+
+Gather project, data, and environment context for AI assistance
+
+### Project & Git Context
+
+Collect project-level information
 
 - [`cassidy_context_project()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_project.md)
   : Gather project context
-- [`cassidy_context_data()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_data.md)
-  : Gather context from data frames in environment
-- [`cassidy_context_env()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_env.md)
-  : Get current environment snapshot
 - [`cassidy_context_combined()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_combined.md)
   : Combine Multiple Contexts
 - [`cassidy_context_git()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_git.md)
   : Get Git repository status and recent commits
+- [`cassidy_context_skills()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_skills.md)
+  : Get Skills Context
 
-## Data Description
+### Data Context
 
 Describe data frames and detect issues
 
+- [`cassidy_context_data()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_data.md)
+  : Gather context from data frames in environment
 - [`cassidy_describe_df()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_df.md)
   : Describe a data frame for AI context
 - [`cassidy_describe_variable()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_variable.md)
@@ -58,7 +77,7 @@ Describe data frames and detect issues
 - [`cassidy_describe_codebook()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_describe_codebook.md)
   : Format data frame description for LLM context
 
-## File Context
+### File Context
 
 Read and summarize files
 
@@ -69,16 +88,22 @@ Read and summarize files
 - [`cassidy_read_context_file()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_read_context_file.md)
   : Read CASSIDY.md or similar context configuration files
 
-## Environment Info
+### Environment Context
 
-Gather R session information
+Gather R session and object information
 
+- [`cassidy_context_env()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_context_env.md)
+  : Get current environment snapshot
 - [`cassidy_list_objects()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_objects.md)
   : List objects in global environment
 - [`cassidy_session_info()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_session_info.md)
   : Get session info formatted for LLM
 
-## Conversation Management
+## Utilities
+
+Supporting functions and low-level operations
+
+### Conversation Management
 
 Save, load, and export conversations
 
@@ -92,8 +117,10 @@ Save, load, and export conversations
   : Delete a saved conversation
 - [`cassidy_export_conversation()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_export_conversation.md)
   : Export a conversation as Markdown
+- [`cassidy_get_thread_id()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_get_thread_id.md)
+  : Get thread ID from conversation ID
 
-## Code Helpers
+### Code Helpers
 
 Write code and files from chat responses
 
@@ -102,7 +129,7 @@ Write code and files from chat responses
 - [`cassidy_write_file()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_write_file.md)
   : Write Cassidy response to a file
 
-## Script Tools
+### Script Tools
 
 Transform and document R scripts
 
@@ -111,9 +138,26 @@ Transform and document R scripts
 - [`cassidy_comment_script()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_comment_script.md)
   : Add explanatory comments to an R script
 
-## Configuration
+### API Functions
+
+Low-level API interaction
+
+- [`cassidy_create_thread()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_create_thread.md)
+  : Create a new CassidyAI conversation thread
+- [`cassidy_send_message()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_send_message.md)
+  : Send Message to Cassidy Thread
+- [`cassidy_get_thread()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_get_thread.md)
+  : Retrieve conversation history from a thread
+- [`cassidy_list_threads()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_list_threads.md)
+  : List all threads for an assistant
+
+### Configuration
 
 Setup and configuration
 
 - [`use_cassidy_md()`](https://jdenn0514.github.io/cassidyr/reference/use_cassidy_md.md)
   : Create a CASSIDY.md configuration file
+- [`cassidy_install_cli()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_install_cli.md)
+  : Install Cassidy CLI Tool
+- [`cassidy_uninstall_cli()`](https://jdenn0514.github.io/cassidyr/reference/cassidy_uninstall_cli.md)
+  : Uninstall Cassidy CLI Tool
