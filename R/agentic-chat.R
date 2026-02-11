@@ -198,6 +198,77 @@ cassidy_agentic_task <- function(
       cli::cli_text("")
     }
 
+    # Check for skill invocation (before tool execution)
+    skill_pattern <- "<USE_SKILL>([^<]+)</USE_SKILL>"
+    skill_match <- regmatches(
+      response$content,
+      regexpr(skill_pattern, response$content, perl = TRUE)
+    )
+
+    if (length(skill_match) > 0) {
+      # Extract skill name
+      skill_name <- gsub("</?USE_SKILL>", "", skill_match)
+      skill_name <- trimws(skill_name)
+
+      if (verbose) {
+        cli::cli_alert_info("Loading skill: {.field {skill_name}}")
+      }
+
+      # Load skill with dependencies
+      skill_result <- .load_skill(skill_name)
+
+      if (!skill_result$success) {
+        if (verbose) {
+          cli::cli_alert_danger("Skill load failed: {skill_result$error}")
+          cli::cli_text("")
+        }
+        current_message <- paste0(
+          "ERROR: Failed to load skill '", skill_name, "'\n",
+          skill_result$error, "\n\n",
+          "Available skills: ", paste(names(.discover_skills()), collapse = ", "),
+          "\n\nTry a different approach or use available tools."
+        )
+        next
+      }
+
+      # Show dependencies if loaded
+      if (verbose && length(skill_result$dependencies) > 0) {
+        cli::cli_alert_info(
+          "Loaded dependencies: {.val {skill_result$dependencies}}"
+        )
+      }
+
+      # Inject skill content into conversation
+      if (verbose) {
+        cli::cli_alert_success("Skill loaded successfully")
+        cli::cli_text("")
+      }
+
+      current_message <- paste0(
+        "SKILL LOADED: ", skill_name, "\n\n",
+        if (length(skill_result$dependencies) > 0) {
+          paste0("Dependencies loaded: ",
+                 paste(skill_result$dependencies, collapse = ", "), "\n\n")
+        },
+        skill_result$content, "\n\n",
+        strrep("-", 70), "\n\n",
+        "The skill workflow has been loaded. Follow the steps above to complete the task.\n",
+        "Use the available tools to execute each step."
+      )
+
+      # Record action
+      actions_taken <- c(actions_taken, list(list(
+        iteration = iteration,
+        action = paste0("skill:", skill_name),
+        input = list(skill = skill_name),
+        result = paste0("Loaded skill with ",
+                       length(skill_result$dependencies), " dependencies"),
+        success = TRUE
+      )))
+
+      next
+    }
+
     # Parse tool decision from response
     if (verbose) cli::cli_alert_info("Parsing tool decision...")
 
@@ -392,35 +463,68 @@ cassidy_agentic_task <- function(
 
   tools_list <- paste0(tools_doc, collapse = "\n")
 
+  # Build skills documentation
+  skills <- .discover_skills()
+  auto_invoke_skills <- Filter(function(s) s$auto_invoke, skills)
+
+  skills_doc <- if (length(auto_invoke_skills) > 0) {
+    skill_lines <- sapply(names(auto_invoke_skills), function(name) {
+      skill <- auto_invoke_skills[[name]]
+      deps <- if (length(skill$requires) > 0) {
+        paste0(" [requires: ", paste(skill$requires, collapse = ", "), "]")
+      } else {
+        ""
+      }
+      paste0("  - ", name, ": ", skill$description, deps)
+    })
+
+    paste0(
+      "\n\n## Available Skills (Workflows)\n",
+      "You can use these pre-defined workflows when they match the task:\n",
+      paste0(skill_lines, collapse = "\n"), "\n\n",
+      "To use a skill, respond with:\n",
+      "<USE_SKILL>skill-name</USE_SKILL>\n\n",
+      "Skills provide multi-step workflows and best practices. ",
+      "Use them when the task matches a skill's description."
+    )
+  } else {
+    ""
+  }
+
   paste0(
     "You are an expert R programming assistant working in: ", working_dir, "\n\n",
     "## Your Role\n",
-    "You execute tasks by choosing and using tools. Each iteration:\n",
+    "You execute tasks by choosing and using tools OR skills. Each iteration:\n",
     "1. You analyze the current situation\n",
-    "2. You choose ONE tool to use (from available tools only)\n",
-    "3. The tool executes and returns results\n",
+    "2. You choose ONE tool OR skill to use\n",
+    "3. The tool/skill executes and returns results\n",
     "4. You analyze results and repeat until task is complete\n\n",
     "## Available Tools\n",
     "You can ONLY use these tools (with their exact parameter names):\n",
     tools_list, "\n\n",
+    skills_doc,
     "IMPORTANT: Use the EXACT parameter names shown above. For example:\n",
     "  read_file uses: {\"filepath\": \"path/to/file.R\"}\n",
     "  write_file uses: {\"filepath\": \"path/to/file.R\", \"content\": \"text\"}\n",
     "  list_files uses: {\"directory\": \".\", \"pattern\": \"*.R\"}\n\n",
-    "## Response Format\n",
-    "You MUST respond in this EXACT format:\n\n",
+    "## Response Format\n\n",
+    "For TOOLS, use this EXACT format:\n\n",
     "<TOOL_DECISION>\n",
     "ACTION: tool_name\n",
     "INPUT: {\"param1\": \"value1\", \"param2\": \"value2\"}\n",
     "REASONING: Explain why you chose this tool and these parameters\n",
     "STATUS: continue\n",
     "</TOOL_DECISION>\n\n",
+    "For SKILLS, use this format:\n\n",
+    "<USE_SKILL>skill-name</USE_SKILL>\n\n",
     "## Important Rules\n",
+    "- Choose either a TOOL or a SKILL, not both at once\n",
+    "- Skills provide workflows; tools perform actions\n",
     "- ACTION must be ONE of the available tools listed above\n",
     "- INPUT must be valid JSON with the tool's required parameters\n",
     "- STATUS is 'continue' (unless task is complete, then see below)\n",
     "- DO NOT make up or predict tool results - wait for actual execution\n",
-    "- Use ONLY tools from the available tools list\n\n",
+    "- Use ONLY tools/skills from the available lists\n\n",
     "## Task Completion\n",
     "When you receive tool results that fully satisfy the task, respond with:\n\n",
     "TASK COMPLETE: [summary of what was accomplished with actual results]\n\n",
