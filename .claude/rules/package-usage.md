@@ -75,7 +75,7 @@ Follow the established pipe pattern for HTTP operations:
 # ✅ CORRECT - httr2 with pipes
 resp <- httr2::request(base_url) |>
   httr2::req_headers(
-    Authorization = paste("Bearer", api_key),
+    `x-api-key` = api_key,
     `Content-Type` = "application/json"
   ) |>
   httr2::req_body_json(body_data) |>
