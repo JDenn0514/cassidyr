@@ -42,6 +42,62 @@
     httr2::req_timeout(timeout_seconds)
 }
 
+#' Internal helper to parse error responses robustly
+#'
+#' Handles JSON, HTML, and plain text error responses from the API
+#'
+#' @param resp An httr2 response object
+#' @return Character error message
+#' @keywords internal
+#' @noRd
+.parse_api_error <- function(resp) {
+  status <- httr2::resp_status(resp)
+  content_type <- httr2::resp_content_type(resp)
+
+  # Try to get error message from JSON
+  error_msg <- tryCatch(
+    {
+      body <- httr2::resp_body_json(resp)
+      body$message %||% body$error %||% "Unknown API error"
+    },
+    error = function(e) {
+      # If JSON parsing fails, try to get text
+      tryCatch(
+        {
+          text <- httr2::resp_body_string(resp)
+          # If it's HTML, extract title or show generic message
+          if (grepl("text/html", content_type, fixed = TRUE)) {
+            # Try to extract <title> from HTML
+            title_match <- regmatches(
+              text,
+              regexec("<title>(.*?)</title>", text, ignore.case = TRUE)
+            )
+            if (length(title_match[[1]]) > 1) {
+              paste0("Server error: ", title_match[[1]][2])
+            } else {
+              "Server returned HTML error page (likely 500/502/503 error)"
+            }
+          } else {
+            # Truncate long text responses
+            if (nchar(text) > 200) {
+              paste0(substr(text, 1, 200), "...")
+            } else if (nchar(text) > 0) {
+              text
+            } else {
+              "Empty error response from server"
+            }
+          }
+        },
+        error = function(e2) {
+          "Could not parse error response"
+        }
+      )
+    }
+  )
+
+  paste0("Cassidy API request failed (HTTP ", status, "): ", error_msg)
+}
+
 #' Create a new CassidyAI conversation thread
 #'
 #' Creates a new conversation thread with a specified CassidyAI assistant.
@@ -88,10 +144,7 @@ cassidy_create_thread <- function(
   resp <- .cassidy_client(api_key) |>
     httr2::req_url_path_append("assistants/thread/create") |>
     httr2::req_body_json(list(assistant_id = assistant_id)) |>
-    httr2::req_error(body = function(resp) {
-      body <- httr2::resp_body_json(resp)
-      body$message %||% "Unknown API error"
-    }) |>
+    httr2::req_error(body = .parse_api_error) |>
     httr2::req_perform()
 
   # Extract and return thread_id
@@ -170,57 +223,7 @@ cassidy_send_message <- function(
         status %in% c(429, 503, 504)
       }
     ) |>
-    httr2::req_error(body = function(resp) {
-      # === IMPROVED ERROR HANDLING ===
-      status <- httr2::resp_status(resp)
-      content_type <- httr2::resp_content_type(resp)
-
-      # Try to get error message from JSON
-      error_msg <- tryCatch(
-        {
-          body <- httr2::resp_body_json(resp)
-          body$message %||% body$error %||% "Unknown API error"
-        },
-        error = function(e) {
-          # If JSON parsing fails, try to get text
-          tryCatch(
-            {
-              text <- httr2::resp_body_string(resp)
-              # If it's HTML, extract title or show truncated version
-              if (grepl("text/html", content_type, fixed = TRUE)) {
-                # Try to extract <title> from HTML
-                title_match <- regmatches(
-                  text,
-                  regexec("<title>(.*?)</title>", text, ignore.case = TRUE)
-                )
-                if (length(title_match[[1]]) > 1) {
-                  paste0("Server error: ", title_match[[1]][2])
-                } else {
-                  "Server returned HTML error page (likely 500/502/503 error)"
-                }
-              } else {
-                # Truncate long text responses
-                if (nchar(text) > 200) {
-                  paste0(substr(text, 1, 200), "...")
-                } else {
-                  text
-                }
-              }
-            },
-            error = function(e2) {
-              "Could not parse error response"
-            }
-          )
-        }
-      )
-
-      paste0(
-        "Cassidy API request failed (HTTP ",
-        status,
-        "): ",
-        error_msg
-      )
-    })
+    httr2::req_error(body = .parse_api_error)
 
   resp <- httr2::req_perform(req)
   body <- httr2::resp_body_json(resp)
@@ -324,10 +327,7 @@ cassidy_get_thread <- function(
   resp <- .cassidy_client(api_key) |>
     httr2::req_url_path_append("assistants/thread/get") |>
     httr2::req_url_query(thread_id = thread_id) |>
-    httr2::req_error(body = function(resp) {
-      body <- httr2::resp_body_json(resp)
-      body$message %||% "Unknown API error"
-    }) |>
+    httr2::req_error(body = .parse_api_error) |>
     httr2::req_perform()
 
   result <- httr2::resp_body_json(resp)
@@ -414,10 +414,7 @@ cassidy_list_threads <- function(
       assistant_id = assistant_id,
       limit = limit
     ) |>
-    httr2::req_error(body = function(resp) {
-      body <- httr2::resp_body_json(resp)
-      body$message %||% "Unknown API error"
-    }) |>
+    httr2::req_error(body = .parse_api_error) |>
     httr2::req_perform()
 
   result <- httr2::resp_body_json(resp)
