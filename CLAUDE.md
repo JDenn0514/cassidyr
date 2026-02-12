@@ -93,7 +93,7 @@ When providing help with cassidyr development:
 2. **Provide complete code blocks** - ready to copy and use
 3. **Include tests** - always provide corresponding tests for new functions
 4. **Update documentation** - include roxygen2 comments with all code
-5. **Explain design decisions** - help understand the "why" behind choices
+5. **Explain design decisions** - briefly help understand the "why" behind choices
 6. **Consider edge cases** - think about what could go wrong and handle it
 7. **Keep it simple** - prefer clear over clever code
 
