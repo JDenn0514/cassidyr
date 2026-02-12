@@ -24,7 +24,7 @@
 
   httr2::request("https://app.cassidyai.com/api") |>
     httr2::req_headers(
-      Authorization = paste("Bearer", api_key),
+      `x-api-key` = api_key,
       `Content-Type` = "application/json"
     ) |>
     # Retry on rate limits (429) and server errors (503)
@@ -220,7 +220,7 @@ cassidy_send_message <- function(
       ) |>
         httr2::req_method("POST") |>
         httr2::req_headers(
-          Authorization = paste("Bearer", api_key),
+          `x-api-key` = api_key,
           `Content-Type` = "application/json"
         ) |>
         httr2::req_body_json(
