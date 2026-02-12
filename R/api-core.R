@@ -140,26 +140,38 @@ cassidy_create_thread <- function(
     ))
   }
 
-  # Make API request
-  resp <- .cassidy_client(api_key) |>
-    httr2::req_url_path_append("assistants/thread/create") |>
-    httr2::req_body_json(list(assistant_id = assistant_id)) |>
-    httr2::req_error(body = .parse_api_error) |>
-    httr2::req_perform()
+  # Make API request with improved error handling
+  tryCatch(
+    {
+      resp <- .cassidy_client(api_key) |>
+        httr2::req_url_path_append("assistants/thread/create") |>
+        httr2::req_body_json(list(assistant_id = assistant_id)) |>
+        httr2::req_error(body = .parse_api_error) |>
+        httr2::req_perform()
 
-  # Extract and return thread_id
-  result <- httr2::resp_body_json(resp)
-  thread_id <- result$thread_id
+      # Extract and return thread_id
+      result <- httr2::resp_body_json(resp)
+      thread_id <- result$thread_id
 
-  if (is.null(thread_id)) {
-    cli::cli_abort("API returned no thread_id")
-  }
+      if (is.null(thread_id)) {
+        cli::cli_abort("API returned no thread_id")
+      }
 
-  if (is_verbose) {
-    cli::cli_alert_success("Created thread: {.val {thread_id}}")
-  }
+      if (is_verbose) {
+        cli::cli_alert_success("Created thread: {.val {thread_id}}")
+      }
 
-  thread_id
+      thread_id
+    },
+    httr2_error = function(e) {
+      # Re-throw with the detailed error message from the body
+      if (!is.null(e$body) && nzchar(e$body)) {
+        cli::cli_abort(e$body)
+      } else {
+        cli::cli_abort(e$message)
+      }
+    }
+  )
 }
 
 #' Send Message to Cassidy Thread
@@ -201,47 +213,59 @@ cassidy_send_message <- function(
     cli::cli_abort("Message cannot be empty")
   }
 
-  req <- httr2::request(
-    "https://app.cassidyai.com/api/assistants/message/create"
-  ) |>
-    httr2::req_method("POST") |>
-    httr2::req_headers(
-      Authorization = paste("Bearer", api_key),
-      `Content-Type` = "application/json"
-    ) |>
-    httr2::req_body_json(
-      list(
-        thread_id = thread_id,
-        message = message
-      )
-    ) |>
-    httr2::req_timeout(timeout) |>
-    httr2::req_retry(
-      max_tries = 3,
-      is_transient = function(resp) {
-        status <- httr2::resp_status(resp)
-        status %in% c(429, 503, 504)
+  tryCatch(
+    {
+      req <- httr2::request(
+        "https://app.cassidyai.com/api/assistants/message/create"
+      ) |>
+        httr2::req_method("POST") |>
+        httr2::req_headers(
+          Authorization = paste("Bearer", api_key),
+          `Content-Type` = "application/json"
+        ) |>
+        httr2::req_body_json(
+          list(
+            thread_id = thread_id,
+            message = message
+          )
+        ) |>
+        httr2::req_timeout(timeout) |>
+        httr2::req_retry(
+          max_tries = 3,
+          is_transient = function(resp) {
+            status <- httr2::resp_status(resp)
+            status %in% c(429, 503, 504)
+          }
+        ) |>
+        httr2::req_error(body = .parse_api_error)
+
+      resp <- httr2::req_perform(req)
+      body <- httr2::resp_body_json(resp)
+
+      # Extract response content
+      content <- body$message %||% body$response %||% body$content %||% ""
+
+      if (!nzchar(content)) {
+        cli::cli_warn("API returned empty response")
       }
-    ) |>
-    httr2::req_error(body = .parse_api_error)
 
-  resp <- httr2::req_perform(req)
-  body <- httr2::resp_body_json(resp)
-
-  # Extract response content
-  content <- body$message %||% body$response %||% body$content %||% ""
-
-  if (!nzchar(content)) {
-    cli::cli_warn("API returned empty response")
-  }
-
-  structure(
-    list(
-      content = content,
-      thread_id = thread_id,
-      timestamp = Sys.time()
-    ),
-    class = "cassidy_response"
+      structure(
+        list(
+          content = content,
+          thread_id = thread_id,
+          timestamp = Sys.time()
+        ),
+        class = "cassidy_response"
+      )
+    },
+    httr2_error = function(e) {
+      # Re-throw with the detailed error message from the body
+      if (!is.null(e$body) && nzchar(e$body)) {
+        cli::cli_abort(e$body)
+      } else {
+        cli::cli_abort(e$message)
+      }
+    }
   )
 }
 
@@ -323,39 +347,51 @@ cassidy_get_thread <- function(
     ))
   }
 
-  # Make API request
-  resp <- .cassidy_client(api_key) |>
-    httr2::req_url_path_append("assistants/thread/get") |>
-    httr2::req_url_query(thread_id = thread_id) |>
-    httr2::req_error(body = .parse_api_error) |>
-    httr2::req_perform()
+  # Make API request with improved error handling
+  tryCatch(
+    {
+      resp <- .cassidy_client(api_key) |>
+        httr2::req_url_path_append("assistants/thread/get") |>
+        httr2::req_url_query(thread_id = thread_id) |>
+        httr2::req_error(body = .parse_api_error) |>
+        httr2::req_perform()
 
-  result <- httr2::resp_body_json(resp)
+      result <- httr2::resp_body_json(resp)
 
-  # Parse messages into more usable format
-  messages <- if (!is.null(result$messages) && length(result$messages) > 0) {
-    lapply(result$messages, function(msg) {
-      list(
-        role = msg$role %||% "unknown",
-        content = msg$content %||% msg$message %||% "",
-        timestamp = msg$timestamp %||% msg$created_at %||% NA
+      # Parse messages into more usable format
+      messages <- if (!is.null(result$messages) && length(result$messages) > 0) {
+        lapply(result$messages, function(msg) {
+          list(
+            role = msg$role %||% "unknown",
+            content = msg$content %||% msg$message %||% "",
+            timestamp = msg$timestamp %||% msg$created_at %||% NA
+          )
+        })
+      } else {
+        list()
+      }
+
+      # Return structured S3 object
+      structure(
+        list(
+          thread_id = thread_id,
+          messages = messages,
+          assistant_id = result$assistant_id %||% NA_character_,
+          created_at = result$created_at %||% NA_character_,
+          message_count = length(messages),
+          raw = result
+        ),
+        class = "cassidy_thread"
       )
-    })
-  } else {
-    list()
-  }
-
-  # Return structured S3 object
-  structure(
-    list(
-      thread_id = thread_id,
-      messages = messages,
-      assistant_id = result$assistant_id %||% NA_character_,
-      created_at = result$created_at %||% NA_character_,
-      message_count = length(messages),
-      raw = result
-    ),
-    class = "cassidy_thread"
+    },
+    httr2_error = function(e) {
+      # Re-throw with the detailed error message from the body
+      if (!is.null(e$body) && nzchar(e$body)) {
+        cli::cli_abort(e$body)
+      } else {
+        cli::cli_abort(e$message)
+      }
+    }
   )
 }
 
@@ -407,17 +443,29 @@ cassidy_list_threads <- function(
     ))
   }
 
-  # Make API request
-  resp <- .cassidy_client(api_key) |>
-    httr2::req_url_path_append("assistants/threads/get") |>
-    httr2::req_url_query(
-      assistant_id = assistant_id,
-      limit = limit
-    ) |>
-    httr2::req_error(body = .parse_api_error) |>
-    httr2::req_perform()
+  # Make API request with improved error handling
+  result <- tryCatch(
+    {
+      resp <- .cassidy_client(api_key) |>
+        httr2::req_url_path_append("assistants/threads/get") |>
+        httr2::req_url_query(
+          assistant_id = assistant_id,
+          limit = limit
+        ) |>
+        httr2::req_error(body = .parse_api_error) |>
+        httr2::req_perform()
 
-  result <- httr2::resp_body_json(resp)
+      httr2::resp_body_json(resp)
+    },
+    httr2_error = function(e) {
+      # Re-throw with the detailed error message from the body
+      if (!is.null(e$body) && nzchar(e$body)) {
+        cli::cli_abort(e$body)
+      } else {
+        cli::cli_abort(e$message)
+      }
+    }
+  )
 
   # Parse threads into data frame
   if (!is.null(result$threads) && length(result$threads) > 0) {
