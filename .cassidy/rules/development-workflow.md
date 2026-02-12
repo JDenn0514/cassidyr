@@ -24,11 +24,27 @@
 
 ## Testing Workflow
 
-- Run all tests: `devtools::test()`
-- Run specific test file: `devtools::test_active_file()`
+- Tests for `R/{name}.R` go in `tests/testthat/test-{name}.R`.
+- Use `devtools::test(reporter = "check")` to run all tests
+- Use `devtools::test(filter = "name", reporter = "check")` to run tests for `R/{name}.R`
+- DO NOT USE `devtools::test_active_file()`
+- All testing functions automatically load code; you don't need to.
+
+- All new code should have an accompanying test.
+- If there are existing tests, place new tests next to similar existing tests.
+
 - Check package: `devtools::check()`
 - Manual testing: `source("tests/manual/test-context-live.R")`
 - Live chat testing: `cassidy_app()` with your own API key
+
+## Documentation
+
+- Run `devtools::document()` after changing any roxygen2 docs.
+- Every user facing function should be exported and have roxygen2 documentation.
+- Whenever you add a new documentation file, make sure to also add the topic name to `_pkgdown.yml`.
+- Run `pkgdown::check_pkgdown()` to check that all topics are included in the reference index.
+- Use sentence case for all headings
+- Any user facing changes should be briefly described in a bullet point at the top of NEWS.md, following the tidyverse style guide (https://style.tidyverse.org/news.html).
 
 ## Working with Modular Structure
 
