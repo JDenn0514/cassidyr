@@ -132,6 +132,8 @@ Detailed reference documentation is available in `.cassidy/rules/`:
   checklist
 - **`testing-standards.md`** - Testing approach, code style, common
   pitfalls, dependencies
+- **`package-usage.md`** - How to use package dependencies (fs, gert,
+  httr2, cli, rlang, jsonlite)
 - **`context-system.md`** - Context system details, API information,
   persistence
 - **`roadmap.md`** - Development phases, status, IDE support
