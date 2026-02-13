@@ -1,6 +1,21 @@
 # cassidyr 0.0.0.9000
 
+## Breaking Changes
+
+* Skills now use YAML frontmatter instead of bold markdown metadata
+  - Skills must start with `---` and include YAML block
+  - Required field: `description`
+  - Optional fields: `name`, `auto_invoke`, `requires`
+  - Existing skills need to be converted to new format
+
 ## New Features
+
+* Enhanced `cassidy_create_skill()` with custom metadata parameters
+  - `description` parameter for custom skill description
+  - `auto_invoke` parameter to control automatic invocation
+  - `requires` parameter for skill dependencies
+  - `open` parameter to automatically open file in editor
+  - Templates now generate valid YAML frontmatter
 
 * Added agentic task system with `cassidy_agentic_task()` for autonomous tool use
   - 7 built-in tools: read_file, write_file, execute_code, list_files, search_files, get_context, describe_data
