@@ -8,7 +8,7 @@ This guide documents **how to use** the package dependencies in cassidyr. Follow
 
 ### Use `fs` package for project files
 
-**Prefer `fs::` functions** when working with project files:
+**Use `fs::` functions** for file-system operations
 
 ```r
 # ✅ CORRECT - Use fs package
@@ -17,29 +17,11 @@ if (fs::file_exists(path)) {
   files <- fs::dir_ls(path, recurse = TRUE, regexp = "\\.R$")
   new_path <- fs::path(dir, filename)
 }
+
+# ✅ CORRECT - Use base R for reading/writing file content
+lines <- readLines(path)
+writeLines(lines, new_path)
 ```
-
-### Base R is acceptable for simple operations
-
-```r
-# ✅ ACCEPTABLE - Simple operations
-if (dir.exists(path)) {
-  dir.create(new_dir, recursive = TRUE, showWarnings = FALSE)
-}
-
-content <- readLines(file_path, warn = FALSE)
-writeLines(content, output_path)
-
-file.remove(temp_file)
-full_path <- normalizePath(path, mustWork = FALSE)
-filename <- basename(path)
-directory <- dirname(path)
-```
-
-**When to use which:**
-- Project file discovery and metadata → use `fs::`
-- Simple directory/file operations → base R is fine
-- Path construction → prefer `fs::path()` but `file.path()` is acceptable
 
 ---
 
@@ -47,7 +29,7 @@ directory <- dirname(path)
 
 ### Always use `gert` package
 
-**NEVER use system calls** - always use `gert::` functions:
+**DO NOT use system calls** - always use `gert::` functions:
 
 ```r
 # ✅ CORRECT - Use gert
@@ -56,7 +38,7 @@ branch <- gert::git_branch(repo = ".")
 info <- gert::git_info(repo = ".")
 commits <- gert::git_log(max = 10, repo = ".")
 
-# ❌ NEVER DO THIS - System calls
+# ❌ DO NOT DO THIS - System calls
 system("git status")
 system2("git", c("log", "-10"))
 ```
@@ -301,6 +283,8 @@ message <- sprintf("File: %s (%s KB)", filename, size)
 - `paste()` with `sep =` - Joining with separator between elements
 
 ---
+
+## Non-
 
 ## Summary Table
 

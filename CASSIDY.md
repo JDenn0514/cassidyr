@@ -67,9 +67,9 @@ and follows R package development best practices.
 ### S7 Classes
 
 - `ConversationManager` - Manages Shiny chat state with reactive values
-  - Methods: `conv_get_all`, `conv_get_current`, `conv_update_current`,
-    `conv_create_new`, `conv_switch_to`, `conv_delete`, `conv_add_message`,
-    `conv_save_current`, `conv_load_and_set`
+   - Methods: `conv_get_all`, `conv_get_current`, `conv_update_current`,
+      `conv_create_new`, `conv_switch_to`, `conv_delete`, `conv_add_message`,
+      `conv_save_current`, `conv_load_and_set`
 
 ### Print Methods
 

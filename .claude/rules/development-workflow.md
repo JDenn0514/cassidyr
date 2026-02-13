@@ -7,6 +7,9 @@
    - Context functions → `context-*.R`
    - Chat UI → `chat-ui*.R`
    - Chat handlers → `chat-handlers-*.R`
+   - Agentic functions → `agentic-*.R`
+   - Skills functions → `skills-*.R`
+   - CLI functions → `cli-*.R`
    - Utilities → `utils.R` or `context-tools.R`
 
 2. Write function with roxygen2 documentation
@@ -61,6 +64,22 @@ When extending context capabilities:
 - New context sources → Create new `context-*.R` file
 - Parsing/formatting → `context-file-parse.R` or `context-tools.R`
 - Context gathering logic → `chat-context-gather.R`
+
+### Agentic System
+When extending agentic capabilities:
+- New tools → Add to `.cassidy_tools` registry in `agentic-tools.R`
+- Tool execution logic → `agentic-tools.R`
+- Parsing/workflow → `agentic-workflow.R`
+- Approval system → `agentic-approval.R`
+- Main orchestration → `agentic-chat.R`
+- Helper functions → `agentic-helpers.R`
+
+### Skills System
+When working with skills:
+- Skill discovery/parsing → `skills-discovery.R`
+- Context integration → `skills-context.R`
+- User-facing functions → `skills-functions.R`
+- Skill files → `.cassidy/skills/*.md` (project) or `~/.cassidy/skills/*.md` (personal)
 
 ## Code Review Checklist
 

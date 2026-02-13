@@ -1,7 +1,7 @@
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# ----------------------------------------------------------------------------------
 # AGENTIC CHAT - Main Agentic Loop
 # Orchestrates Assistant \u2194 Workflow \u2194 Tools for autonomous task completion
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# ----------------------------------------------------------------------------------
 
 #' Run an Agentic Task with CassidyAI
 #'
@@ -115,11 +115,10 @@ cassidy_agentic_task <- function(
   working_dir = getwd(),
   max_iterations = 10,
   initial_context = NULL,
-  safe_mode = TRUE,  # \u2190 DEFAULT TRUE
+  safe_mode = TRUE, # \u2190 DEFAULT TRUE
   approval_callback = NULL,
   verbose = TRUE
 ) {
-
   # Validate inputs
   if (!nzchar(task)) {
     cli::cli_abort("Task cannot be empty")
@@ -141,7 +140,9 @@ cassidy_agentic_task <- function(
   }
 
   # Create thread
-  if (verbose) cli::cli_alert_info("Creating conversation thread...")
+  if (verbose) {
+    cli::cli_alert_info("Creating conversation thread...")
+  }
   thread_id <- cassidy_create_thread(assistant_id, api_key)
 
   # Build system prompt for assistant
@@ -151,7 +152,8 @@ cassidy_agentic_task <- function(
   message <- paste0(
     system_prompt,
     if (!is.null(initial_context)) paste0("\n\nCONTEXT:\n", initial_context),
-    "\n\nTASK: ", task
+    "\n\nTASK: ",
+    task
   )
 
   # Initialize tracking
@@ -174,7 +176,9 @@ cassidy_agentic_task <- function(
 
   repeat {
     if (iteration >= max_iterations) {
-      if (verbose) cli::cli_alert_warning("Max iterations reached")
+      if (verbose) {
+        cli::cli_alert_warning("Max iterations reached")
+      }
       break
     }
 
@@ -190,7 +194,9 @@ cassidy_agentic_task <- function(
     }
 
     # Get assistant response with tool decision
-    if (verbose) cli::cli_alert_info("Consulting assistant...")
+    if (verbose) {
+      cli::cli_alert_info("Consulting assistant...")
+    }
     response <- cassidy_send_message(thread_id, current_message, api_key)
 
     if (verbose) {
@@ -223,9 +229,13 @@ cassidy_agentic_task <- function(
           cli::cli_text("")
         }
         current_message <- paste0(
-          "ERROR: Failed to load skill '", skill_name, "'\n",
-          skill_result$error, "\n\n",
-          "Available skills: ", paste(names(.discover_skills()), collapse = ", "),
+          "ERROR: Failed to load skill '",
+          skill_name,
+          "'\n",
+          skill_result$error,
+          "\n\n",
+          "Available skills: ",
+          paste(names(.discover_skills()), collapse = ", "),
           "\n\nTry a different approach or use available tools."
         )
         next
@@ -245,49 +255,67 @@ cassidy_agentic_task <- function(
       }
 
       current_message <- paste0(
-        "SKILL LOADED: ", skill_name, "\n\n",
+        "SKILL LOADED: ",
+        skill_name,
+        "\n\n",
         if (length(skill_result$dependencies) > 0) {
-          paste0("Dependencies loaded: ",
-                 paste(skill_result$dependencies, collapse = ", "), "\n\n")
+          paste0(
+            "Dependencies loaded: ",
+            paste(skill_result$dependencies, collapse = ", "),
+            "\n\n"
+          )
         },
-        skill_result$content, "\n\n",
-        strrep("-", 70), "\n\n",
+        skill_result$content,
+        "\n\n",
+        strrep("-", 70),
+        "\n\n",
         "The skill workflow has been loaded. Follow the steps above to complete the task.\n",
         "Use the available tools to execute each step."
       )
 
       # Record action
-      actions_taken <- c(actions_taken, list(list(
-        iteration = iteration,
-        action = paste0("skill:", skill_name),
-        input = list(skill = skill_name),
-        result = paste0("Loaded skill with ",
-                       length(skill_result$dependencies), " dependencies"),
-        success = TRUE
-      )))
+      actions_taken <- c(
+        actions_taken,
+        list(list(
+          iteration = iteration,
+          action = paste0("skill:", skill_name),
+          input = list(skill = skill_name),
+          result = paste0(
+            "Loaded skill with ",
+            length(skill_result$dependencies),
+            " dependencies"
+          ),
+          success = TRUE
+        ))
+      )
 
       next
     }
 
     # Parse tool decision from response
-    if (verbose) cli::cli_alert_info("Parsing tool decision...")
+    if (verbose) {
+      cli::cli_alert_info("Parsing tool decision...")
+    }
 
-    decision <- tryCatch({
-      .parse_tool_decision(
-        response = response$content,
-        available_tools = tools
-      )
-    }, error = function(e) {
-      if (verbose) {
-        cli::cli_alert_danger("Parsing error: {e$message}")
+    decision <- tryCatch(
+      {
+        .parse_tool_decision(
+          response = response$content,
+          available_tools = tools
+        )
+      },
+      error = function(e) {
+        if (verbose) {
+          cli::cli_alert_danger("Parsing error: {e$message}")
+        }
+        list(
+          action = NULL,
+          input = list(),
+          status = "continue",
+          reasoning = paste("Error parsing response:", e$message)
+        )
       }
-      list(
-        action = NULL,
-        input = list(),
-        status = "continue",
-        reasoning = paste("Error parsing response:", e$message)
-      )
-    })
+    )
 
     # Check if done or no action specified
     if (decision$status == "final" || is.null(decision$action)) {
@@ -318,7 +346,9 @@ cassidy_agentic_task <- function(
     # Validate tool is in available list
     if (!decision$action %in% tools) {
       if (verbose) {
-        cli::cli_alert_danger("Workflow chose unavailable tool: {.field {decision$action}}")
+        cli::cli_alert_danger(
+          "Workflow chose unavailable tool: {.field {decision$action}}"
+        )
         cli::cli_text("Available tools: {.field {tools}}")
         cli::cli_text("")
       }
@@ -327,10 +357,15 @@ cassidy_agentic_task <- function(
         "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n",
         "\u274c CRITICAL ERROR \u274c\n",
         "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\n",
-        "The tool decision workflow selected '", decision$action, "' but this tool is NOT AVAILABLE.\n\n",
+        "The tool decision workflow selected '",
+        decision$action,
+        "' but this tool is NOT AVAILABLE.\n\n",
         "AVAILABLE TOOLS (you MUST choose from these):\n",
-        paste0("  - ", tools, collapse = "\n"), "\n\n",
-        "The tool '", decision$action, "' is NOT in the available tools list.\n",
+        paste0("  - ", tools, collapse = "\n"),
+        "\n\n",
+        "The tool '",
+        decision$action,
+        "' is NOT in the available tools list.\n",
         "You MUST select from the available tools listed above.\n\n",
         "Please analyze the task and choose the appropriate tool from the AVAILABLE TOOLS list."
       )
@@ -354,10 +389,14 @@ cassidy_agentic_task <- function(
       )
 
       if (!approval$approved) {
-        if (verbose) cli::cli_text("")
+        if (verbose) {
+          cli::cli_text("")
+        }
         # Send denial back
         current_message <- paste0(
-          "DENIED: User did not approve the '", decision$action, "' action.\n",
+          "DENIED: User did not approve the '",
+          decision$action,
+          "' action.\n",
           "Try a different approach or ask for clarification."
         )
         next
@@ -369,7 +408,9 @@ cassidy_agentic_task <- function(
     }
 
     # Execute tool
-    if (verbose) cli::cli_alert_info("Executing {.field {decision$action}}...")
+    if (verbose) {
+      cli::cli_alert_info("Executing {.field {decision$action}}...")
+    }
 
     result <- .execute_tool(
       tool_name = decision$action,
@@ -378,13 +419,16 @@ cassidy_agentic_task <- function(
     )
 
     # Record action
-    actions_taken <- c(actions_taken, list(list(
-      iteration = iteration,
-      action = decision$action,
-      input = decision$input,
-      result = if (result$success) result$result else result$error,
-      success = result$success
-    )))
+    actions_taken <- c(
+      actions_taken,
+      list(list(
+        iteration = iteration,
+        action = decision$action,
+        input = decision$input,
+        result = if (result$success) result$result else result$error,
+        success = result$success
+      ))
+    )
 
     # Format for next message
     if (result$success) {
@@ -393,7 +437,9 @@ cassidy_agentic_task <- function(
         cli::cli_text("")
       }
       current_message <- paste0(
-        "RESULT (", decision$action, "):\n",
+        "RESULT (",
+        decision$action,
+        "):\n",
         if (is.character(result$result)) {
           result$result
         } else {
@@ -406,7 +452,10 @@ cassidy_agentic_task <- function(
         cli::cli_text("")
       }
       current_message <- paste0(
-        "ERROR (", decision$action, "):\n", result$error,
+        "ERROR (",
+        decision$action,
+        "):\n",
+        result$error,
         "\n\nTry a different approach or adjust parameters."
       )
     }
@@ -441,11 +490,17 @@ cassidy_agentic_task <- function(
 #' @return Character. System prompt
 #' @keywords internal
 #' @noRd
-.build_agentic_prompt <- function(working_dir, max_iterations, available_tools) {
+.build_agentic_prompt <- function(
+  working_dir,
+  max_iterations,
+  available_tools
+) {
   # Build detailed tool documentation with parameters
   tools_doc <- sapply(available_tools, function(tool_name) {
     tool <- .cassidy_tools[[tool_name]]
-    if (is.null(tool)) return(paste0("  - ", tool_name))
+    if (is.null(tool)) {
+      return(paste0("  - ", tool_name))
+    }
 
     # Get parameter names from the handler function
     params <- names(formals(tool$handler))
@@ -481,7 +536,8 @@ cassidy_agentic_task <- function(
     paste0(
       "\n\n## Available Skills (Workflows)\n",
       "You can use these pre-defined workflows when they match the task:\n",
-      paste0(skill_lines, collapse = "\n"), "\n\n",
+      paste0(skill_lines, collapse = "\n"),
+      "\n\n",
       "To use a skill, respond with:\n",
       "<USE_SKILL>skill-name</USE_SKILL>\n\n",
       "Skills provide multi-step workflows and best practices. ",
@@ -492,7 +548,9 @@ cassidy_agentic_task <- function(
   }
 
   paste0(
-    "You are an expert R programming assistant working in: ", working_dir, "\n\n",
+    "You are an expert R programming assistant working in: ",
+    working_dir,
+    "\n\n",
     "## Your Role\n",
     "You execute tasks by choosing and using tools OR skills. Each iteration:\n",
     "1. You analyze the current situation\n",
@@ -501,7 +559,8 @@ cassidy_agentic_task <- function(
     "4. You analyze results and repeat until task is complete\n\n",
     "## Available Tools\n",
     "You can ONLY use these tools (with their exact parameter names):\n",
-    tools_list, "\n\n",
+    tools_list,
+    "\n\n",
     skills_doc,
     "IMPORTANT: Use the EXACT parameter names shown above. For example:\n",
     "  read_file uses: {\"filepath\": \"path/to/file.R\"}\n",
