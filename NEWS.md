@@ -10,6 +10,16 @@
 
 ## New Features
 
+* **Unified console chat interface** with automatic conversation management
+  - `cassidy_chat()` now automatically continues conversations without tracking thread IDs
+  - Package-level state management for seamless interactive use
+  - Automatic conversation persistence to disk
+  - Three helper functions: `cassidy_conversations()`, `cassidy_current()`, `cassidy_reset()`
+  - Context levels: minimal, standard (default), comprehensive
+  - Easy conversation switching: `cassidy_chat(msg, conversation = conv_id)`
+  - Fully backward compatible with `thread_id` parameter (legacy mode)
+  - Session-based `cassidy_session()` objects remain available for programmatic use
+
 * Enhanced `cassidy_create_skill()` with custom metadata parameters
   - `description` parameter for custom skill description
   - `auto_invoke` parameter to control automatic invocation

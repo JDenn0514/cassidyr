@@ -48,6 +48,9 @@ result2 <- cassidy_continue(session, "How are you?")
 \seealso{
 Other chat-functions: 
 \code{\link{cassidy_chat}()},
+\code{\link{cassidy_conversations}()},
+\code{\link{cassidy_current}()},
+\code{\link{cassidy_reset}()},
 \code{\link{cassidy_session}()},
 \code{\link{cassidy_write_code}()},
 \code{\link{cassidy_write_file}()},

@@ -35,6 +35,9 @@ cassidy_write_file(result, "notes/function-docs.md")
 Other chat-functions: 
 \code{\link{cassidy_chat}()},
 \code{\link{cassidy_continue}()},
+\code{\link{cassidy_conversations}()},
+\code{\link{cassidy_current}()},
+\code{\link{cassidy_reset}()},
 \code{\link{cassidy_session}()},
 \code{\link{cassidy_write_code}()},
 \code{\link{chat}()},

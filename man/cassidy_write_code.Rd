@@ -50,6 +50,9 @@ cassidy_write_code(result, "R/chat-ui.R", show_explanation = FALSE)
 Other chat-functions: 
 \code{\link{cassidy_chat}()},
 \code{\link{cassidy_continue}()},
+\code{\link{cassidy_conversations}()},
+\code{\link{cassidy_current}()},
+\code{\link{cassidy_reset}()},
 \code{\link{cassidy_session}()},
 \code{\link{cassidy_write_file}()},
 \code{\link{chat}()},

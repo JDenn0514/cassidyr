@@ -67,133 +67,8 @@ cassidy_session <- function(
 }
 
 
-#' Chat with CassidyAI
-#'
-#' Send a message to a CassidyAI assistant and get a response. This is the
-#' main function for interacting with CassidyAI in a conversational way.
-#'
-#' If no `thread_id` is provided, a new conversation thread is created
-#' automatically. To continue an existing conversation, pass the `thread_id`
-#' from a previous call.
-#'
-#' @param message Character. The message to send to the assistant.
-#' @param assistant_id Character. The CassidyAI assistant ID. Defaults to
-#'   the `CASSIDY_ASSISTANT_ID` environment variable.
-#' @param thread_id Character or NULL. An existing thread ID to continue a
-#'   conversation. If NULL (default), a new thread is created.
-#' @param context Optional context object from `cassidy_context_project()`,
-#'   `cassidy_describe_df()`, or a custom context object with a `text` element.
-#'   Context is sent once at thread creation for efficiency.
-#' @param api_key Character. Your CassidyAI API key. Defaults to
-#'   the `CASSIDY_API_KEY` environment variable.
-#' @param timeout Numeric. Request timeout in seconds. Default is 120.
-#'
-#' @return A `cassidy_chat` S3 object containing:
-#'   \describe{
-#'     \item{thread_id}{The thread ID (save this to continue the conversation)}
-#'     \item{response}{The assistant's response (a `cassidy_response` object)}
-#'     \item{message}{Your original message}
-#'   }
-#'
-#' @family chat-functions
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#'   # Simple one-off question
-#'   result <- cassidy_chat("What is the tidyverse?")
-#'   print(result)
-#'
-#'   # With project context
-#'   ctx <- cassidy_context_project()
-#'   result <- cassidy_chat("Help me understand this project", context = ctx)
-#'
-#'   # With data frame context
-#'   desc <- cassidy_describe_df(mtcars)
-#'   result <- cassidy_chat("What analyses would you recommend?", context = desc)
-#'
-#'   # Continue the conversation (context already set)
-#'   result2 <- cassidy_continue(result, "Tell me more")
-#' }
-cassidy_chat <- function(
-  message,
-  assistant_id = Sys.getenv("CASSIDY_ASSISTANT_ID"),
-  thread_id = NULL,
-  context = NULL,
-  api_key = Sys.getenv("CASSIDY_API_KEY"),
-  timeout = 120
-) {
-  # Validate message
-  if (missing(message) || is.null(message) || message == "") {
-    cli::cli_abort("message is required and cannot be empty")
-  }
-
-  # Prepare message with context if provided and creating new thread
-  original_message <- message
-  if (!is.null(context) && is.null(thread_id)) {
-    # Extract text from context object
-    context_text <- if (
-      inherits(context, c("cassidy_context", "cassidy_df_description"))
-    ) {
-      context$text
-    } else if (is.list(context) && "text" %in% names(context)) {
-      context$text
-    } else if (is.list(context)) {
-      # If it's a list of contexts, combine them
-      combined <- do.call(cassidy_context_combined, context)
-      combined$text
-    } else if (is.character(context)) {
-      context
-    } else {
-      cli::cli_abort(c(
-        "context must be a cassidy_context, cassidy_df_description, character, or list",
-        "x" = "Got {.cls {class(context)}}"
-      ))
-    }
-
-    # Prepend context to first message
-    message <- paste0(
-      "# Context\n\n",
-      context_text,
-      "\n\n---\n\n# Question\n\n",
-      message
-    )
-
-    # Inform user
-    context_size <- nchar(context_text)
-    cli::cli_alert_info("Including context ({context_size} characters)")
-  } else if (!is.null(context) && !is.null(thread_id)) {
-    # Warn if trying to add context to existing thread
-    cli::cli_alert_warning(
-      "Context ignored - thread already exists. Context is only used at thread creation."
-    )
-  }
-
-  # Create thread if needed
-  if (is.null(thread_id)) {
-    thread_id <- cassidy_create_thread(assistant_id, api_key)
-  }
-
-  # Send message and get response
-  response <- cassidy_send_message(
-    thread_id,
-    message,
-    api_key,
-    timeout = timeout
-  )
-
-  # Return structured result (with original message, not context-augmented)
-  structure(
-    list(
-      thread_id = thread_id,
-      response = response,
-      message = original_message,
-      timestamp = Sys.time(),
-      context_used = !is.null(context) && is.null(thread_id)
-    ),
-    class = "cassidy_chat"
-  )
-}
+# NOTE: cassidy_chat() moved to R/chat-console.R for unified console interface
+# The function now includes automatic state management and conversation persistence
 
 
 #' Continue an existing conversation
@@ -386,8 +261,17 @@ print.cassidy_session <- function(x, ...) {
 
 #' @export
 print.cassidy_chat <- function(x, ...) {
-  # Show the thread info
+  # Show conversation info if available (from unified interface)
+  if (!is.null(x$conversation_id)) {
+    cli::cli_text("{.field Conversation}: {.val {x$conversation_id}}")
+  }
   cli::cli_text("{.field Thread}: {.val {x$thread_id}}")
+
+  # Show context info if available
+  if (!is.null(x$context_level) && !is.null(x$context_used) && x$context_used) {
+    cli::cli_text("{.field Context}: {.val {x$context_level}} level")
+  }
+
   cli::cli_text("")
 
   # Show the response

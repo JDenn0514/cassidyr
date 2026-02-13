@@ -75,7 +75,10 @@ test_that("cassidy_chat() validates message input", {
 })
 
 test_that("cassidy_chat() creates thread when thread_id is NULL", {
-  # Mock both functions to avoid API calls
+  # Clear state to ensure clean test
+  cassidyr:::.clear_state()
+
+  # Mock functions needed for unified interface
   local_mocked_bindings(
     cassidy_create_thread = function(...) "thread_new_123",
     cassidy_send_message = function(thread_id, message, ...) {
@@ -88,7 +91,9 @@ test_that("cassidy_chat() creates thread when thread_id is NULL", {
         ),
         class = "cassidy_response"
       )
-    }
+    },
+    gather_context = function(...) "Mock context",
+    cassidy_save_conversation = function(conv) invisible(NULL)
   )
 
   withr::local_envvar(
@@ -98,12 +103,11 @@ test_that("cassidy_chat() creates thread when thread_id is NULL", {
 
   result <- suppressMessages(cassidy_chat("Test message"))
 
-  # Check structure
+  # Check structure (updated for unified interface)
   expect_s3_class(result, "cassidy_chat")
-  expect_named(
-    result,
-    c("thread_id", "response", "message", "timestamp", "context_used")
-  )
+  expect_true("thread_id" %in% names(result))
+  expect_true("conversation_id" %in% names(result))
+  expect_true("response" %in% names(result))
   expect_equal(result$thread_id, "thread_new_123")
   expect_equal(result$message, "Test message")
   expect_s3_class(result$response, "cassidy_response")

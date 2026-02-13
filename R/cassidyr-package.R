@@ -16,11 +16,7 @@
 #' @importFrom httr2 req_body_json req_error req_headers req_method req_perform
 #'   req_retry req_timeout req_url_path_append req_url_query req_user_agent
 #'   request resp_body_json resp_body_string resp_content_type resp_status
-#' @importFrom item.sent after
 #' @importFrom jsonlite fromJSON toJSON
-#' @importFrom main after
-#' @importFrom name after
-#' @importFrom package function
 #' @importFrom rlang check_installed is_installed
 #' @importFrom rstudioapi isAvailable navigateToFile
 #' @importFrom S7 class_any method new_class new_generic new_object S7_object

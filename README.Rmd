@@ -25,6 +25,7 @@ knitr::opts_chunk$set(
 
 ## Features
 
+- ✨ **Unified Console Chat**: Just call `cassidy_chat()` - conversations are automatically managed, persisted, and resumable
 - 🤖 **Simple API Client**: Create threads, send messages, and manage conversations
 - 📊 **Context-Aware**: Automatically gather project and data context for better AI responses
 - 💬 **Interactive Chat**: Launch a Shiny-based chat interface with `cassidy_app()`
@@ -79,24 +80,35 @@ Features include:
 - One-click code copying
 - Mobile-responsive design
 
-### Programmatic Chat
+### Console Chat (New!)
 
-For scripting and automation:
+The unified console interface makes interactive R sessions effortless - just chat!
 
 ```{r, eval = FALSE}
 library(cassidyr)
 
-# Simple one-off chat
-result <- cassidy_chat("How do I create a bar plot in ggplot2?")
-print(result$response)
+# Just start chatting - conversations are automatically managed
+cassidy_chat("How do I create a bar plot in ggplot2?")
+cassidy_chat("Show me with the mtcars dataset")  # Automatically continues
 
-# Continue the conversation
-result <- cassidy_chat(
-  "Can you show me an example with the mtcars dataset?",
-  thread_id = result$thread_id
-)
+# Start a new conversation
+cassidy_chat("New topic: What is the tidyverse?", conversation = "new")
 
-# Or use session-based chat for interactive use
+# Check your conversations
+cassidy_conversations()
+
+# Switch between conversations
+convs <- cassidy_conversations()
+cassidy_chat("Let's continue", conversation = convs$id[1])
+
+# Reset to start fresh
+cassidy_reset()
+```
+
+For programmatic use (scripts, Quarto documents), session objects provide more control:
+
+```{r, eval = FALSE}
+# Session-based approach (recommended for scripts)
 session <- cassidy_session()
 chat(session, "What is the tidyverse?")
 chat(session, "Which package should I use for data cleaning?")
