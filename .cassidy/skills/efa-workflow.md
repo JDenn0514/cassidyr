@@ -1,10 +1,12 @@
-# EFA Workflow
-
-**Description**: Run exploratory factor analysis following psychometric best practices
-**Auto-invoke**: yes
-**Requires**: apa-tables
-
 ---
+name: "EFA Workflow"
+description: "Run exploratory factor analysis following psychometric best practices"
+auto_invoke: true
+requires:
+  - apa-tables
+---
+
+# EFA Workflow
 
 ## When to Use This Skill
 

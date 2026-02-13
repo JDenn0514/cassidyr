@@ -1,9 +1,11 @@
-# Test skill
-
-**Description**: Brief description of what this skill does and when to use it
-**Auto-invoke**: yes
-
 ---
+name: "Test Skill"
+description: "Brief description of what this skill does and when to use it"
+auto_invoke: true
+requires: []
+---
+
+# Test Skill
 
 ## When to Use This Skill
 

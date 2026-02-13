@@ -1,9 +1,11 @@
-# APA Tables
-
-**Description**: Create APA-formatted results tables following 7th edition guidelines
-**Auto-invoke**: no
-
 ---
+name: "APA Tables"
+description: "Create APA-formatted results tables following 7th edition guidelines"
+auto_invoke: false
+requires: []
+---
+
+# APA Tables
 
 ## Table Formatting Rules
 
