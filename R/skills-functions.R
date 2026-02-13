@@ -265,12 +265,14 @@ cassidy_create_skill <- function(
 
   if (template == "basic") {
     return(c(
-      paste0("# ", title),
-      "",
-      "**Description**: Brief description of what this skill does and when to use it",
-      "**Auto-invoke**: yes",
-      "",
       "---",
+      paste0("name: \"", title, "\""),
+      "description: \"Brief description of what this skill does and when to use it\"",
+      "auto_invoke: true",
+      "requires: []",
+      "---",
+      "",
+      paste0("# ", title),
       "",
       "## When to Use This Skill",
       "",
@@ -294,13 +296,14 @@ cassidy_create_skill <- function(
     ))
   } else if (template == "analysis") {
     return(c(
-      paste0("# ", title),
-      "",
-      "**Description**: Custom analysis workflow",
-      "**Auto-invoke**: yes",
-      "**Requires**: ",
-      "",
       "---",
+      paste0("name: \"", title, "\""),
+      "description: \"Custom analysis workflow\"",
+      "auto_invoke: true",
+      "requires: []",
+      "---",
+      "",
+      paste0("# ", title),
       "",
       "## Analysis Overview",
       "",
@@ -348,13 +351,14 @@ cassidy_create_skill <- function(
     ))
   } else {  # workflow
     return(c(
-      paste0("# ", title),
-      "",
-      "**Description**: Multi-step workflow for complex tasks",
-      "**Auto-invoke**: no",
-      "**Requires**: ",
-      "",
       "---",
+      paste0("name: \"", title, "\""),
+      "description: \"Multi-step workflow for complex tasks\"",
+      "auto_invoke: false",
+      "requires: []",
+      "---",
+      "",
+      paste0("# ", title),
       "",
       "## Workflow Purpose",
       "",
