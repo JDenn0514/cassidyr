@@ -119,6 +119,8 @@ When providing help with cassidyr development:
 6.  **Consider edge cases** - think about what could go wrong and handle
     it
 7.  **Keep it simple** - prefer clear over clever code
+8.  **Use raw encoding for symbols** - never use icons/emojis directly
+    (use `"\u2713"` instead of ✓)
 
 ------------------------------------------------------------------------
 
