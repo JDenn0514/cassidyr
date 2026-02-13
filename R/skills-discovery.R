@@ -140,9 +140,19 @@
 
   skill <- skills[[skill_name]]
 
-  # Load full skill content
+  # Load full skill content (strip YAML frontmatter)
   skill_content <- tryCatch({
-    paste(readLines(skill$file_path, warn = FALSE), collapse = "\n")
+    lines <- readLines(skill$file_path, warn = FALSE)
+
+    # Strip YAML frontmatter if present
+    if (length(lines) > 0 && lines[1] == "---") {
+      yaml_end <- which(lines == "---")[2]
+      if (!is.na(yaml_end)) {
+        lines <- lines[(yaml_end + 1):length(lines)]
+      }
+    }
+
+    paste(lines, collapse = "\n")
   }, error = function(e) {
     return(list(
       success = FALSE,
