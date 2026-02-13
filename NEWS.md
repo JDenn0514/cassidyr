@@ -10,6 +10,17 @@
 
 ## New Features
 
+* **Enhanced file rendering** in `cassidy_app()` chat interface
+  - Markdown, Quarto, and R Markdown files now display as styled blocks with raw content
+  - Files no longer rendered as HTML (prevents nested chunk issues)
+  - File blocks include header bar with filename, file icon, and action buttons
+  - Copy button for one-click copying of entire file content
+  - Download button integrated into file header (moved from bottom)
+  - Visual distinction between AI explanation and file content
+  - Preserves R code chunks and YAML frontmatter as raw text
+  - Scrollable content area (max 500px height) for large files
+  - Support for multiple files in single response
+
 * **Unified console chat interface** with automatic conversation management
   - `cassidy_chat()` now automatically continues conversations without tracking thread IDs
   - Package-level state management for seamless interactive use

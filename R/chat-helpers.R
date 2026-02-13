@@ -542,3 +542,247 @@ cassidy_write_file <- function(x, path, open = interactive(), append = FALSE) {
 
   paste(result, collapse = "\n")
 }
+
+
+#' Extract file blocks and replace with placeholders
+#'
+#' Scans markdown for code blocks tagged as md/qmd/rmd files,
+#' extracts them, and replaces with unique placeholders to prevent
+#' them from being rendered as HTML.
+#'
+#' @param content Character. Raw markdown content
+#' @return List with:
+#'   - processed_content: Content with placeholders
+#'   - files: List of extracted file info (content, extension, filename, placeholder_id)
+#' @keywords internal
+#' @noRd
+.extract_and_replace_file_blocks <- function(content) {
+  if (is.null(content) || !nzchar(content)) {
+    return(list(
+      processed_content = content,
+      files = list()
+    ))
+  }
+
+  files <- list()
+  processed_content <- content
+  lines <- strsplit(content, "\n", fixed = TRUE)[[1]]
+
+  i <- 1
+  file_count <- 0
+
+  while (i <= length(lines)) {
+    line <- lines[i]
+
+    # Check for opening fence with target language
+    if (grepl("^```(md|markdown|qmd|rmd)\\s*$", line, ignore.case = TRUE)) {
+      lang <- tolower(sub("^```", "", trimws(line)))
+
+      extension <- switch(
+        lang,
+        "md" = ".md",
+        "markdown" = ".md",
+        "qmd" = ".qmd",
+        "rmd" = ".Rmd",
+        ".md"
+      )
+
+      # Find closing fence, accounting for nested code blocks
+      start_line <- i + 1
+      end_line <- NULL
+      j <- start_line
+      nesting <- 0
+
+      while (j <= length(lines)) {
+        current_line <- lines[j]
+
+        # Check for nested code block opening
+        if (grepl("^```\\{?[a-zA-Z]", current_line)) {
+          nesting <- nesting + 1
+        } else if (grepl("^```\\s*$", current_line)) {
+          # Bare ``` - either closes nested block or closes our main block
+          if (nesting > 0) {
+            nesting <- nesting - 1
+          } else {
+            end_line <- j - 1
+            break
+          }
+        }
+        j <- j + 1
+      }
+
+      if (!is.null(end_line) && end_line >= start_line) {
+        file_content <- paste(lines[start_line:end_line], collapse = "\n")
+        filename <- .extract_filename_from_content(file_content, extension)
+
+        # Generate unique placeholder (use format that won't be interpreted as markdown)
+        file_count <- file_count + 1
+        placeholder_id <- paste0("{{CASSIDY_FILE_BLOCK_", file_count, "}}")
+
+        # Store file info
+        files <- c(
+          files,
+          list(list(
+            content = file_content,
+            extension = extension,
+            filename = filename,
+            placeholder_id = placeholder_id
+          ))
+        )
+
+        # Replace entire code block with placeholder
+        # Build the full block to replace (from opening fence to closing fence)
+        block_start <- i
+        block_end <- j
+        block_text <- paste(lines[block_start:block_end], collapse = "\n")
+
+        # Replace in processed content
+        processed_content <- sub(
+          block_text,
+          placeholder_id,
+          processed_content,
+          fixed = TRUE
+        )
+
+        i <- j + 1
+        next
+      }
+    }
+    i <- i + 1
+  }
+
+  list(
+    processed_content = processed_content,
+    files = files
+  )
+}
+
+
+#' Create styled HTML block for file content
+#'
+#' Renders file as:
+#' - Header bar with filename + download button
+#' - Raw code block (NOT rendered markdown)
+#' - Copy button for code
+#'
+#' @param content Character. File content
+#' @param filename Character. Filename for display
+#' @param extension Character. File extension (.md, .qmd, .Rmd)
+#' @return Character. HTML string
+#' @keywords internal
+#' @noRd
+.create_file_display_block <- function(content, filename, extension) {
+  # Use base64enc if available for download link
+  has_base64 <- rlang::is_installed("base64enc")
+
+  # Escape content for HTML display
+  escaped_content <- htmltools::htmlEscape(content)
+
+  # Create download button HTML
+  download_btn <- ""
+  if (has_base64 && rlang::is_installed("htmltools")) {
+    encoded <- base64enc::base64encode(charToRaw(content))
+
+    mime_type <- switch(
+      tolower(tools::file_ext(filename)),
+      "md" = "text/markdown",
+      "qmd" = "text/plain",
+      "rmd" = "text/plain",
+      "text/plain"
+    )
+
+    data_uri <- paste0("data:", mime_type, ";base64,", encoded)
+
+    download_btn <- paste0(
+      '<a href="',
+      data_uri,
+      '" download="',
+      htmltools::htmlEscape(filename),
+      '" class="download-file-btn btn btn-sm btn-outline-primary">',
+      as.character(shiny::icon("download")),
+      ' Download</a>'
+    )
+  }
+
+  # Determine file icon based on extension
+  file_icon <- switch(
+    extension,
+    ".md" = "\U0001F4C4",      # Document emoji (raw encoding)
+    ".qmd" = "\U0001F4CA",     # Bar chart emoji (for data doc)
+    ".Rmd" = "\U0001F4C8",     # Chart emoji
+    "\U0001F4C4"               # Default document
+  )
+
+  # Build HTML structure
+  paste0(
+    '<div class="cassidy-file-block">',
+    '<div class="file-header">',
+    '<span class="file-icon">', file_icon, '</span>',
+    '<span class="file-name">', htmltools::htmlEscape(filename), '</span>',
+    '<div class="file-actions">',
+    '<button class="copy-file-btn btn btn-sm btn-outline-secondary" ',
+    'onclick="copyFileContent(this)">',
+    as.character(shiny::icon("copy")),
+    ' Copy</button>',
+    download_btn,
+    '</div>',
+    '</div>',
+    '<pre class="file-content"><code>',
+    escaped_content,
+    '</code></pre>',
+    '</div>'
+  )
+}
+
+
+#' Render message preserving file blocks as raw code
+#'
+#' Two-pass rendering:
+#' 1. Extract file blocks -> placeholders
+#' 2. Render markdown (placeholders preserved)
+#' 3. Replace placeholders with styled code blocks + download buttons
+#'
+#' @param content Character. Raw markdown message
+#' @return Character. HTML with proper file rendering
+#' @keywords internal
+#' @noRd
+.render_message_with_file_blocks <- function(content) {
+  # Pass 1: Extract files
+  extracted <- .extract_and_replace_file_blocks(content)
+
+  # Pass 2: Render markdown (without files)
+  rendered_html <- commonmark::markdown_html(
+    .preprocess_nested_code_blocks(extracted$processed_content)
+  )
+
+  # Pass 3: Replace placeholders with styled file blocks
+  for (file_info in extracted$files) {
+    file_html <- .create_file_display_block(
+      content = file_info$content,
+      filename = file_info$filename,
+      extension = file_info$extension
+    )
+
+    # Try various forms that markdown might have wrapped it in
+    patterns <- c(
+      paste0("<p>", file_info$placeholder_id, "</p>"),  # Normal paragraph
+      paste0("<p>", htmltools::htmlEscape(file_info$placeholder_id), "</p>"),  # Escaped
+      file_info$placeholder_id,  # Raw placeholder
+      htmltools::htmlEscape(file_info$placeholder_id)  # Escaped placeholder
+    )
+
+    for (pattern in patterns) {
+      if (grepl(pattern, rendered_html, fixed = TRUE)) {
+        rendered_html <- gsub(
+          pattern,
+          file_html,
+          rendered_html,
+          fixed = TRUE
+        )
+        break  # Stop after first successful replacement
+      }
+    }
+  }
+
+  rendered_html
+}

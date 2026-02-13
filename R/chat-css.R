@@ -10,6 +10,7 @@ chat_app_css <- function() {
     css_conversations(),
     css_responsive(),
     css_downloads(),
+    css_file_blocks(),
     css_context_states(),
     css_loading()
   )
@@ -642,6 +643,88 @@ css_downloads <- function() {
 
 .message-assistant .message-downloads {
   border-top-color: rgba(0, 0, 0, 0.08);
+}
+"
+}
+
+
+#' File block display styles
+#' @keywords internal
+css_file_blocks <- function() {
+  "
+/* ===== FILE DISPLAY BLOCKS ===== */
+.cassidy-file-block {
+  margin: 1rem 0;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.file-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.file-icon {
+  font-size: 1.2rem;
+}
+
+.file-name {
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  color: #0d6efd;
+  flex: 1;
+}
+
+.file-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.copy-file-btn,
+.download-file-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.copy-file-btn:hover {
+  background-color: #6c757d;
+  color: white;
+}
+
+.download-file-btn:hover {
+  background-color: #0d6efd;
+  color: white;
+  text-decoration: none;
+}
+
+.file-content {
+  margin: 0;
+  padding: 1rem;
+  background-color: #fff;
+  border: none;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.file-content code {
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #333;
+  white-space: pre;
+  display: block;
 }
 "
 }

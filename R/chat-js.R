@@ -273,9 +273,52 @@ chat_app_js <- function() {
 .js_helper_functions <- function() {
   right_arrow <- "\u25B6"
   down_arrow <- "\u25BC"
+  checkmark <- "\u2713"
 
   paste0(
     "
+  // Copy file content from file blocks
+  window.copyFileContent = function(btn) {
+    var $btn = $(btn);
+    var $fileBlock = $btn.closest('.cassidy-file-block');
+    var $code = $fileBlock.find('.file-content code');
+    var text = $code.text();
+
+    // Try modern clipboard API first, fallback to execCommand
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        var originalHTML = $btn.html();
+        $btn.html('", checkmark, " Copied!');
+        setTimeout(function() { $btn.html(originalHTML); }, 1500);
+      }).catch(function(err) {
+        copyFileFallback(text, $btn);
+      });
+    } else {
+      copyFileFallback(text, $btn);
+    }
+  };
+
+  // Fallback copy method for file content
+  function copyFileFallback(text, $btn) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      var originalHTML = $btn.html();
+      $btn.html('", checkmark, " Copied!');
+      setTimeout(function() { $btn.html(originalHTML); }, 1500);
+    } catch (err) {
+      console.error('Copy failed:', err);
+      $btn.text('Error');
+      setTimeout(function() { $btn.html(originalHTML); }, 1500);
+    }
+    document.body.removeChild(textarea);
+  }
+
   $(document).ready(function() {
     // Toggle context sections (collapsible)
     window.toggleContextSection = function(sectionName) {

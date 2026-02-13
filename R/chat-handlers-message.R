@@ -31,45 +31,13 @@ setup_message_renderer <- function(output, conv_manager) {
 
     # Render messages
     message_elements <- lapply(msg_list, function(msg) {
-      rendered_content <- commonmark::markdown_html(
-        .preprocess_nested_code_blocks(msg$content)
-      )
-
-      # Check for downloadable files in assistant messages
-      download_html <- ""
-      if (msg$role == "assistant") {
-        files <- .detect_downloadable_files(msg$content)
-        if (
-          length(files) > 0 &&
-            rlang::is_installed("base64enc") &&
-            rlang::is_installed("htmltools")
-        ) {
-          download_links <- vapply(
-            seq_along(files),
-            function(i) {
-              .create_download_link_html(
-                files[[i]]$content,
-                files[[i]]$filename,
-                i
-              )
-            },
-            character(1)
-          )
-          download_html <- paste(download_links, collapse = "\n")
-        }
-      }
+      # Use new file-aware rendering that preserves file blocks as raw code
+      rendered_content <- .render_message_with_file_blocks(msg$content)
 
       shiny::div(
         class = paste0("message message-", msg$role),
         shiny::div(class = "message-role", msg$role),
-        shiny::div(shiny::HTML(rendered_content)),
-        if (nzchar(download_html)) {
-          shiny::div(
-            class = "message-downloads",
-            style = "margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid #eee;",
-            shiny::HTML(download_html)
-          )
-        }
+        shiny::div(shiny::HTML(rendered_content))
       )
     })
 
