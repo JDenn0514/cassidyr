@@ -178,31 +178,57 @@ cassidy_use_skill <- function(
 #' Create a New Skill Template
 #'
 #' Creates a new skill file from a template, making it easy to add
-#' custom workflows.
+#' custom workflows. Optionally specify metadata like description,
+#' auto-invoke behavior, and dependencies.
 #'
 #' @param name Character. Name of the skill (lowercase, hyphens allowed)
+#' @param description Character. Optional description of what the skill does.
+#'   If NULL, uses template default.
 #' @param location Character. "project" (default) or "personal"
 #' @param template Character. Template to use: "basic" (default), "analysis",
 #'   or "workflow"
+#' @param auto_invoke Logical. Should the skill be automatically invoked by
+#'   the agent? Default is TRUE for basic/analysis, FALSE for workflow.
+#' @param requires Character vector. Names of other skills this skill depends on.
+#'   Default is empty (no dependencies).
+#' @param open Logical. Open the file in editor after creation? Default TRUE.
 #'
 #' @return Path to created file (invisibly)
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Create a basic skill
+#' # Create a basic skill with template defaults
 #' cassidy_create_skill("my-workflow")
 #'
-#' # Create an analysis skill in personal location
-#' cassidy_create_skill("custom-analysis",
-#'   location = "personal",
-#'   template = "analysis"
+#' # Create with full specification
+#' cassidy_create_skill(
+#'   name = "survey-analysis",
+#'   description = "Analyze Likert-scale survey data with reliability analysis",
+#'   location = "project",
+#'   template = "analysis",
+#'   auto_invoke = TRUE,
+#'   requires = c("apa-tables"),
+#'   open = TRUE
+#' )
+#'
+#' # Create a workflow skill (manual invoke)
+#' cassidy_create_skill(
+#'   name = "efa-full-workflow",
+#'   description = "Complete EFA workflow with diagnostics and reporting",
+#'   template = "workflow",
+#'   auto_invoke = FALSE,
+#'   requires = c("efa-workflow", "apa-tables")
 #' )
 #' }
 cassidy_create_skill <- function(
   name,
+  description = NULL,
   location = c("project", "personal"),
-  template = c("basic", "analysis", "workflow")
+  template = c("basic", "analysis", "workflow"),
+  auto_invoke = NULL,
+  requires = character(0),
+  open = TRUE
 ) {
   location <- match.arg(location)
   template <- match.arg(template)
@@ -237,8 +263,14 @@ cassidy_create_skill <- function(
     ))
   }
 
-  # Get template content
-  skill_content <- .get_skill_template(name, template)
+  # Get template content with custom metadata
+  skill_content <- .get_skill_template(
+    name = name,
+    template = template,
+    description = description,
+    auto_invoke = auto_invoke,
+    requires = requires
+  )
 
   # Write file
   writeLines(skill_content, skill_file)
@@ -252,24 +284,52 @@ cassidy_create_skill <- function(
     "Use in tasks: {.run cassidy_use_skill('{name}', task = 'your task')}"
   ))
 
+  # Open file in editor if requested
+  if (open) {
+    if (rlang::is_installed("rstudioapi") && rstudioapi::isAvailable()) {
+      rstudioapi::navigateToFile(skill_file)
+    } else {
+      cli::cli_alert_info("Open to edit: {.path {skill_file}}")
+    }
+  }
+
   invisible(skill_file)
 }
 
 #' Get Skill Template Content
 #' @keywords internal
 #' @noRd
-.get_skill_template <- function(name, template) {
+.get_skill_template <- function(name, template, description = NULL,
+                                auto_invoke = NULL, requires = character(0)) {
   # Convert name to title case for display
   title <- gsub("-", " ", name)
   title <- paste(toupper(substring(title, 1, 1)), substring(title, 2), sep = "")
 
+  # Determine auto_invoke default based on template if not specified
+  if (is.null(auto_invoke)) {
+    auto_invoke <- if (template == "workflow") FALSE else TRUE
+  }
+
+  # Format requires array for YAML
+  if (length(requires) == 0) {
+    requires_yaml <- "requires: []"
+  } else {
+    requires_yaml <- c(
+      "requires:",
+      paste0("  - ", requires)
+    )
+  }
+
   if (template == "basic") {
+    # Use custom description or default
+    desc <- description %||% "Brief description of what this skill does and when to use it"
+
     return(c(
       "---",
       paste0("name: \"", title, "\""),
-      "description: \"Brief description of what this skill does and when to use it\"",
-      "auto_invoke: true",
-      "requires: []",
+      paste0("description: \"", desc, "\""),
+      paste0("auto_invoke: ", tolower(as.character(auto_invoke))),
+      requires_yaml,
       "---",
       "",
       paste0("# ", title),
@@ -295,12 +355,15 @@ cassidy_create_skill <- function(
       "Describe the expected output or deliverables."
     ))
   } else if (template == "analysis") {
+    # Use custom description or default
+    desc <- description %||% "Custom analysis workflow"
+
     return(c(
       "---",
       paste0("name: \"", title, "\""),
-      "description: \"Custom analysis workflow\"",
-      "auto_invoke: true",
-      "requires: []",
+      paste0("description: \"", desc, "\""),
+      paste0("auto_invoke: ", tolower(as.character(auto_invoke))),
+      requires_yaml,
       "---",
       "",
       paste0("# ", title),
@@ -350,12 +413,15 @@ cassidy_create_skill <- function(
       "- Interpretation guide"
     ))
   } else {  # workflow
+    # Use custom description or default
+    desc <- description %||% "Multi-step workflow for complex tasks"
+
     return(c(
       "---",
       paste0("name: \"", title, "\""),
-      "description: \"Multi-step workflow for complex tasks\"",
-      "auto_invoke: false",
-      "requires: []",
+      paste0("description: \"", desc, "\""),
+      paste0("auto_invoke: ", tolower(as.character(auto_invoke))),
+      requires_yaml,
       "---",
       "",
       paste0("# ", title),
