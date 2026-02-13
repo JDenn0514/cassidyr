@@ -37,8 +37,8 @@
 
 #' Parse Skill Metadata from File
 #'
-#' Reads the header portion of a skill file and extracts metadata fields.
-#' Only reads first ~30 lines to avoid loading full content.
+#' Reads YAML frontmatter from a skill file and extracts metadata fields.
+#' Skills must have YAML frontmatter at the beginning of the file.
 #'
 #' @param file_path Character. Path to skill .md file
 #'
@@ -47,53 +47,60 @@
 #' @noRd
 .parse_skill_metadata <- function(file_path) {
   tryCatch({
-    # Read just the header (first 30 lines should contain all metadata)
-    lines <- readLines(file_path, n = 30, warn = FALSE)
+    # Read file content
+    content <- readLines(file_path, warn = FALSE)
 
-    # Extract name (first # heading)
-    name_line <- grep("^#\\s+", lines)[1]
-    name <- if (!is.na(name_line)) {
-      gsub("^#\\s+", "", lines[name_line])
-    } else {
-      tools::file_path_sans_ext(basename(file_path))
+    # Expect YAML frontmatter (starts with ---)
+    if (length(content) == 0 || content[1] != "---") {
+      cli::cli_abort(c(
+        "x" = "Invalid skill file format: {.file {basename(file_path)}}",
+        "i" = "Skills must start with YAML frontmatter",
+        "i" = "Expected first line: {.code ---}"
+      ))
     }
 
-    # Extract description
-    desc_line <- grep("^\\*\\*Description\\*\\*:", lines, ignore.case = TRUE)
-    description <- if (length(desc_line) > 0) {
-      gsub("^\\*\\*Description\\*\\*:\\s*", "", lines[desc_line[1]], ignore.case = TRUE)
-    } else {
-      "No description provided"
+    # Find closing ---
+    yaml_end <- which(content == "---")[2]
+
+    if (is.na(yaml_end) || yaml_end < 2) {
+      cli::cli_abort(c(
+        "x" = "Malformed YAML frontmatter in: {.file {basename(file_path)}}",
+        "i" = "YAML block must be closed with {.code ---} on its own line"
+      ))
     }
 
-    # Extract auto-invoke setting
-    auto_line <- grep("^\\*\\*Auto-invoke\\*\\*:", lines, ignore.case = TRUE)
-    auto_invoke <- if (length(auto_line) > 0) {
-      grepl("yes|true", lines[auto_line[1]], ignore.case = TRUE)
-    } else {
-      TRUE  # Default to auto-invoke
+    # Extract and parse YAML block
+    yaml_lines <- content[2:(yaml_end - 1)]
+    yaml_text <- paste(yaml_lines, collapse = "\n")
+    metadata <- yaml::yaml.load(yaml_text)
+
+    # Validate required fields
+    if (is.null(metadata$description)) {
+      cli::cli_abort(c(
+        "x" = "Missing required field in: {.file {basename(file_path)}}",
+        "i" = "YAML frontmatter must include {.field description}"
+      ))
     }
 
-    # Extract dependencies
-    requires_line <- grep("^\\*\\*Requires\\*\\*:", lines, ignore.case = TRUE)
-    requires <- if (length(requires_line) > 0) {
-      deps_text <- gsub("^\\*\\*Requires\\*\\*:\\s*", "",
-                        lines[requires_line[1]], ignore.case = TRUE)
-      trimws(strsplit(deps_text, ",")[[1]])
-    } else {
-      character(0)
-    }
-
+    # Extract fields with defaults
     list(
-      name = name,
-      description = description,
-      auto_invoke = auto_invoke,
-      requires = requires,
+      name = metadata$name %||% tools::file_path_sans_ext(basename(file_path)),
+      description = metadata$description,
+      auto_invoke = metadata$auto_invoke %||% TRUE,
+      requires = metadata$requires %||% character(0),
       file_path = file_path
     )
+
   }, error = function(e) {
-    cli::cli_warn("Failed to parse skill file: {file_path}")
-    NULL
+    # If already a cli error, re-throw it
+    if (inherits(e, "rlang_error")) {
+      stop(e)
+    }
+    # Otherwise, wrap in a more helpful error
+    cli::cli_abort(c(
+      "x" = "Failed to parse skill file: {.file {basename(file_path)}}",
+      "i" = "Error: {e$message}"
+    ))
   })
 }
 
