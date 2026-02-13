@@ -6,34 +6,64 @@
 \usage{
 cassidy_create_skill(
   name,
+  description = NULL,
   location = c("project", "personal"),
-  template = c("basic", "analysis", "workflow")
+  template = c("basic", "analysis", "workflow"),
+  auto_invoke = NULL,
+  requires = character(0),
+  open = TRUE
 )
 }
 \arguments{
 \item{name}{Character. Name of the skill (lowercase, hyphens allowed)}
 
+\item{description}{Character. Optional description of what the skill does.
+If NULL, uses template default.}
+
 \item{location}{Character. "project" (default) or "personal"}
 
 \item{template}{Character. Template to use: "basic" (default), "analysis",
 or "workflow"}
+
+\item{auto_invoke}{Logical. Should the skill be automatically invoked by
+the agent? Default is TRUE for basic/analysis, FALSE for workflow.}
+
+\item{requires}{Character vector. Names of other skills this skill depends on.
+Default is empty (no dependencies).}
+
+\item{open}{Logical. Open the file in editor after creation? Default TRUE.}
 }
 \value{
 Path to created file (invisibly)
 }
 \description{
 Creates a new skill file from a template, making it easy to add
-custom workflows.
+custom workflows. Optionally specify metadata like description,
+auto-invoke behavior, and dependencies.
 }
 \examples{
 \dontrun{
-# Create a basic skill
+# Create a basic skill with template defaults
 cassidy_create_skill("my-workflow")
 
-# Create an analysis skill in personal location
-cassidy_create_skill("custom-analysis",
-  location = "personal",
-  template = "analysis"
+# Create with full specification
+cassidy_create_skill(
+  name = "survey-analysis",
+  description = "Analyze Likert-scale survey data with reliability analysis",
+  location = "project",
+  template = "analysis",
+  auto_invoke = TRUE,
+  requires = c("apa-tables"),
+  open = TRUE
+)
+
+# Create a workflow skill (manual invoke)
+cassidy_create_skill(
+  name = "efa-full-workflow",
+  description = "Complete EFA workflow with diagnostics and reporting",
+  template = "workflow",
+  auto_invoke = FALSE,
+  requires = c("efa-workflow", "apa-tables")
 )
 }
 }
