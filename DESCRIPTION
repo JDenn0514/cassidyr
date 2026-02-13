@@ -30,7 +30,8 @@ Imports:
     shiny,
     skimr,
     usethis,
-    vctrs
+    vctrs,
+    yaml
 Suggests:
     knitr,
     quarto,
