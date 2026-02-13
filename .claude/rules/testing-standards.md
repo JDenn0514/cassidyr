@@ -31,6 +31,11 @@
 - Maximum line length: 80 characters
 - Use meaningful variable names
 - Comment complex logic
+- **Use raw character encoding instead of icons/emojis** - R best practice
+  - Use `"\u2713"` (✓) instead of copy-pasting ✓
+  - Use `"\u2717"` (✗) instead of copy-pasting ✗
+  - Use `"\u2192"` (→) instead of copy-pasting →
+  - This ensures cross-platform compatibility and proper encoding
 
 ## Dependencies
 
@@ -76,3 +81,7 @@
 - Use markdown formatting in documentation
 - Link related functions with @seealso
 - Include usage examples that are realistic
+- **Never use icons/emojis in code or documentation**
+  - Use raw character encoding (e.g., `"\u2713"`) if symbols are needed
+  - Avoid copy-pasting Unicode characters directly
+  - This ensures proper encoding across platforms and CRAN compliance
