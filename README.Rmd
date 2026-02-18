@@ -31,6 +31,8 @@ knitr::opts_chunk$set(
 - 💬 **Interactive Chat**: Launch a Shiny-based chat interface with `cassidy_app()`
 - 💾 **Conversation Persistence**: Auto-save and restore chat history
 - 📋 **Copy Code Button**: One-click copy for code blocks in chat responses
+- 🎯 **Token Management**: Automatic tracking, warnings, and compaction to prevent limit errors
+- 💭 **Memory System**: Persistent knowledge storage for unlimited conversation length
 - 🔧 **IDE Integration** (coming soon): RStudio/Positron addins for AI-assisted coding
 
 ## Installation
@@ -156,6 +158,91 @@ Memory files can be placed at multiple levels:
 - **Local**: `CASSIDY.local.md` (personal, auto-gitignored)
 - **Modular**: `.cassidy/rules/*.md` (organized by topic)
 
+## Managing Long Conversations
+
+The CassidyAI API has a 200,000 token limit. cassidyr provides comprehensive tools to manage long conversations:
+
+### Automatic Token Tracking
+
+Token usage is tracked automatically across all interfaces:
+
+```{r, eval = FALSE}
+# Console chat shows token warnings
+cassidy_chat("Let's have a long conversation...")
+#> Tokens: 12,450 / 200,000 (6%)
+
+# Session objects track tokens
+session <- cassidy_session()
+session <- chat(session, "Hello!")
+print(session)
+#> Cassidy Session
+#> Thread ID: abc123
+#> Messages: 2
+#> Tokens: 1,234 / 200,000 (0.6%)
+
+# Get detailed statistics
+stats <- cassidy_session_stats(session)
+```
+
+### Automatic Compaction
+
+`cassidy_session()` automatically compacts conversations before hitting limits:
+
+```{r, eval = FALSE}
+# Auto-compaction enabled by default
+session <- cassidy_session()
+
+# Conversation automatically compacts at 85% token usage
+session <- chat(session, "Long message...")
+#> Warning: Approaching token limit, auto-compacting...
+#> Compaction complete. Continuing with your message...
+
+# Customize threshold or disable
+session <- cassidy_session(
+  compact_at = 0.90,      # Wait until 90%
+  auto_compact = FALSE    # Disable (warnings only)
+)
+
+# Manual compaction anytime
+session <- cassidy_compact(session)
+```
+
+### Memory System for Unlimited Conversations
+
+The memory system provides persistent storage that survives compaction:
+
+```{r, eval = FALSE}
+# Save workflow state
+cassidy_write_memory_file(
+  "workflow_state.md",
+  "# Progress\n\nCompleted Phase 3, starting Phase 4..."
+)
+
+# List memory files
+files <- cassidy_list_memory_files()
+
+# Read from memory
+content <- cassidy_read_memory_file("workflow_state.md")
+
+# Organize with subdirectories
+cassidy_write_memory_file("archive/old_notes.md", "...")
+cassidy_rename_memory_file("draft.md", "final.md")
+
+# Delete when done
+cassidy_delete_memory_file("temp.md")
+```
+
+**What to store in memory:**
+- Workflow state and progress tracking
+- Learned insights and debugging discoveries
+- User preferences and project conventions
+- Cross-session knowledge that should persist
+
+**Memory + Compaction = Unlimited Conversations:**
+Save important information to memory before compaction, and it persists across conversation resets.
+
+See `vignette("managing-long-conversations")` for complete documentation.
+
 ## Roadmap
 
 cassidyr is under active development. Current status and upcoming features:
@@ -165,10 +252,13 @@ cassidyr is under active development. Current status and upcoming features:
 - **Phase 1: API Layer** - Thread creation, messaging, history retrieval
 - **Phase 2: Context System** - Project, data, and file context gathering
 - **Phase 3: Interactive Chat** - Shiny app with persistence, copy code button
+- **Phase 4: Agentic System** - Autonomous workflows with tools and safe mode
+- **Phase 5: Skills System** - Reusable methodology templates
+- **Context Engineering** - Token tracking, automatic compaction, memory system, timeout handling
 
 ### ⏳ In Progress
 
-- **Phase 4: IDE Integration**
+- **IDE Integration**
   - `cassidy_document_function()` - Generate roxygen2 docs
   - `cassidy_explain_selection()` - Explain selected code
   - `cassidy_refactor_selection()` - Improve code quality
@@ -176,8 +266,7 @@ cassidyr is under active development. Current status and upcoming features:
 
 ### 🔮 Future
 
-- **Phase 5: Agent System** - Iterative problem solving, safe code execution
-- **Phase 6: Survey Research Tools** - EFA interpretation, methods sections, codebooks
+- **Survey Research Tools** - EFA interpretation, methods sections, codebooks
 
 ## Design Philosophy
 

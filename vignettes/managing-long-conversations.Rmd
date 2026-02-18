@@ -1,0 +1,481 @@
+---
+title: "Managing Long Conversations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Managing Long Conversations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(cassidyr)
+```
+
+## Overview
+
+The CassidyAI API has a token limit of **200,000 tokens** per conversation thread. When working on complex projects or having extended conversations, you can approach this limit. The cassidyr package provides several tools to help you manage long conversations effectively:
+
+- **Automatic token tracking** - See your usage in real-time
+- **Automatic compaction** - Summarize old messages before hitting limits
+- **Manual compaction** - Take control when needed
+- **Memory system** - Persist important information across sessions
+- **Timeout handling** - Graceful recovery from long-running requests
+
+## Token Limits Explained
+
+### What are tokens?
+
+Tokens are pieces of text that the AI model processes. Roughly:
+- 1 token ≈ 3-4 characters for typical content
+- 1 token ≈ 0.75 words on average
+
+The 200,000 token limit includes:
+- Your conversation history (all messages)
+- Context you've provided (project files, data descriptions)
+- System prompts and tool definitions
+- Your new message
+
+### Character estimates
+
+The package uses empirically-determined ratios:
+- **Conservative:** ~2.5 characters per token
+- **Standard:** ~3.0 characters per token
+- **Optimistic:** ~3.5 characters per token (prose-heavy)
+
+A 15% safety buffer is applied by default to prevent unexpected limit errors.
+
+## Using cassidy_session() with Automatic Compaction
+
+For long conversations, use `cassidy_session()` which provides stateful chat with automatic token management:
+
+```{r}
+# Create a session with auto-compaction enabled (default)
+session <- cassidy_session()
+
+# Chat normally - the session tracks tokens
+session <- chat(session, "Hello! Let's start a long conversation.")
+session <- chat(session, "Tell me about exploratory factor analysis.")
+
+# Check token usage anytime
+print(session)
+#> Cassidy Session
+#> Thread ID: abc123
+#> Messages: 4
+#> Tokens: 12,450 / 200,000 (6%)
+
+# Get detailed statistics
+stats <- cassidy_session_stats(session)
+print(stats)
+```
+
+### How automatic compaction works
+
+When your conversation approaches 85% of the token limit (170,000 tokens by default):
+
+1. **Detection** - Before sending your message, the session calculates projected token usage
+2. **Warning** - You see a message: "Approaching token limit, auto-compacting..."
+3. **Compaction** - Old messages are summarized, preserving recent context
+4. **Continuation** - Your message is sent to the new, compacted thread
+
+```{r}
+# This happens automatically when needed
+session <- chat(session, "Another message...")
+#> Warning: Approaching token limit (145,234 + 2,341 = 147,575 tokens)
+#> Auto-compacting conversation history...
+#> Compaction complete. Continuing with your message...
+```
+
+### Customizing compaction behavior
+
+```{r}
+# Change the compaction threshold (default: 0.85 = 85%)
+session <- cassidy_session(
+  compact_at = 0.90  # Wait until 90% full
+)
+
+# Disable auto-compaction (you'll get warnings only)
+session <- cassidy_session(
+  auto_compact = FALSE
+)
+```
+
+## Manual Compaction
+
+Sometimes you want to compact proactively:
+
+```{r}
+# Manually compact at any time
+session <- cassidy_compact(session)
+
+# Control how many recent message pairs to preserve
+session <- cassidy_compact(
+  session,
+  preserve_recent = 3  # Keep last 3 message pairs (6 messages)
+)
+
+# Custom summarization prompt
+session <- cassidy_compact(
+  session,
+  summary_prompt = "Focus on key decisions and action items only."
+)
+```
+
+### What gets preserved vs summarized
+
+**Preserved:**
+- Recent messages (default: last 2 message pairs = 4 messages)
+- The summary itself
+
+**Summarized:**
+- Older conversation history
+- Tool results that are no longer relevant
+- Redundant or superseded information
+
+**Key information retained:**
+- Important decisions and reasoning
+- Unresolved questions
+- Critical outputs (code, insights, recommendations)
+- Next steps and action items
+
+## Memory System for Unlimited Conversations
+
+The memory system provides persistent storage that survives compaction:
+
+### What is memory for?
+
+**Use memory for:**
+- Workflow state ("Currently implementing Phase 3...")
+- Learned insights ("Performance bottleneck traced to reactive values")
+- User preferences ("User prefers detailed statistical explanations")
+- Cross-session progress tracking
+
+**Don't use memory for:**
+- Project conventions (use `~/.cassidy/rules/` instead)
+- Current conversation context (that's automatic)
+- Temporary notes (just chat normally)
+
+### Using memory in interactive chat
+
+In the Shiny app (`cassidy_app()`), memory files are automatically listed in the context. In agentic tasks, the assistant can use the memory tool.
+
+### Using memory functions directly
+
+```{r}
+# List available memory files
+files <- cassidy_list_memory_files()
+print(files)
+#>                           path  size         modified size_human
+#> 1  workflow_state.md          1234  2026-02-18 10:30  1.2K
+#> 2  user_preferences.md         567  2026-02-15 14:22  567B
+
+# Write to memory
+cassidy_write_memory_file(
+  "workflow_state.md",
+  "# Current Progress\n\nCompleted Phase 3, starting Phase 4..."
+)
+
+# Read from memory
+content <- cassidy_read_memory_file("workflow_state.md")
+
+# Organize with subdirectories
+cassidy_write_memory_file("archive/old_notes.md", "...")
+
+# Rename or move files
+cassidy_rename_memory_file("draft.md", "final.md")
+cassidy_rename_memory_file("notes.md", "archive/notes.md")
+
+# Delete when no longer needed
+cassidy_delete_memory_file("temp.md")
+```
+
+### Memory in agentic tasks
+
+The assistant can use the memory tool automatically:
+
+```{r}
+# Memory tool is available alongside other tools
+cassidy_agentic_task(
+  "Analyze this data and save key insights to memory",
+  tools = "all"  # Includes memory tool
+)
+```
+
+The assistant might:
+- Check existing memory: `memory(command = "view")`
+- Read specific files: `memory(command = "read", path = "insights.md")`
+- Save discoveries: `memory(command = "write", path = "insights.md", content = "...")`
+
+### Memory + Compaction = Unlimited Conversations
+
+The power comes from combining both systems:
+
+1. **During conversation** - Use memory to save important state
+2. **Before compaction** - Critical information is already in memory files
+3. **After compaction** - Memory persists, conversation continues
+4. **Next session** - Memory files are still available
+
+```{r}
+# Long-running workflow
+session <- cassidy_session()
+
+# Work on Phase 1
+session <- chat(session, "Let's implement Phase 1...")
+# ... many messages ...
+
+# Save state to memory before moving on
+session <- chat(session,
+  "Save our progress to memory:workflow_state.md"
+)
+
+# Continue working - compaction happens automatically
+session <- chat(session, "Now let's tackle Phase 2...")
+# ... many more messages ...
+
+# Compaction occurs automatically, but workflow state is safe in memory
+
+# Days later, resume
+new_session <- cassidy_session()
+new_session <- chat(new_session,
+  "Read memory:workflow_state.md and continue where we left off"
+)
+```
+
+## Console Chat Token Tracking
+
+For simple conversations, `cassidy_chat()` provides basic token tracking:
+
+```{r}
+# Token tracking enabled by default
+response <- cassidy_chat(
+  "Hello!",
+  conversation = "my_chat"
+)
+
+# Check current conversation token usage
+current <- cassidy_current("my_chat")
+print(current)
+#> Tokens: 1,234 / 200,000 (0.6%)
+
+# Customize warning threshold
+response <- cassidy_chat(
+  "Another message",
+  conversation = "my_chat",
+  warn_at = 0.75  # Warn at 75% instead of default 80%
+)
+```
+
+**Note:** Console chat doesn't support auto-compaction. For long conversations, use `cassidy_session()` instead:
+
+```{r}
+# Console chat will suggest upgrading
+cassidy_chat("Message", conversation = "long_chat")
+#> Warning: Token usage is high: 165,432 (82%)
+#> For long conversations with auto-compaction, use cassidy_session()
+```
+
+## Handling Timeouts
+
+Large or complex requests can timeout (60-100 seconds). The package handles this automatically:
+
+### Automatic retry with chunking
+
+When a timeout occurs:
+
+1. **Detection** - Error 524 or timeout error detected
+2. **Retry** - Request retried with chunking guidance
+3. **Chunking prompt** - Assistant instructed to deliver response incrementally
+4. **Success** - You get the response, possibly in a more focused form
+
+```{r}
+# This happens automatically
+session <- chat(session,
+  "Create a comprehensive implementation plan with 20 detailed steps"
+)
+#> Warning: Request timed out after 100 seconds
+#> Retrying with chunking guidance...
+#> Success: Response received (focused on essential steps)
+```
+
+### Preventing timeouts
+
+**For complex tasks:**
+- Ask for an outline first, then elaborate sections
+- Break large tasks into smaller sub-tasks
+- Use explicit chunking: "Provide this in parts"
+
+**For large inputs:**
+- Keep messages under 100,000 characters when possible
+- Use file context instead of pasting entire files
+- Consider summarizing very long content first
+
+```{r}
+# Good: Incremental approach
+session <- chat(session, "Outline the implementation plan first")
+session <- chat(session, "Now elaborate section 1")
+session <- chat(session, "Now elaborate section 2")
+
+# Risky: Everything at once
+session <- chat(session,
+  "Create complete implementation plan with all details,
+   code examples, tests, documentation, and deployment steps"
+)
+```
+
+### Input size validation
+
+The package warns you about large inputs:
+
+```{r}
+# Very large message
+big_message <- paste(rep("Analyze this data: ", 50000), collapse = "")
+
+session <- chat(session, big_message)
+#> Warning: Very large input: 850,000 characters
+#> High risk of timeout. Consider breaking into smaller messages.
+```
+
+## Best Practices
+
+### 1. Choose the right interface
+
+- **`cassidy_session()`** - Long conversations, complex projects, auto-compaction
+- **`cassidy_chat()`** - Quick questions, simple tasks, no state needed
+- **`cassidy_app()`** - Interactive UI, visual token tracking, easy context management
+
+### 2. Monitor token usage
+
+```{r}
+# Check usage regularly
+print(session)  # Quick overview
+
+# Detailed analysis when needed
+stats <- cassidy_session_stats(session)
+print(stats)
+```
+
+### 3. Use memory strategically
+
+```{r}
+# Save important milestones
+cassidy_write_memory_file("milestones.md", "Phase 3 complete!")
+
+# Track decisions
+cassidy_write_memory_file("decisions.md",
+  "Decided to use method X because of Y"
+)
+
+# Store learned insights
+cassidy_write_memory_file("debugging.md",
+  "Bug was caused by Z - fixed by doing W"
+)
+```
+
+### 4. Compact proactively for very long sessions
+
+```{r}
+# Before starting a major new section
+session <- cassidy_compact(session)
+session <- chat(session, "Now let's work on the next phase...")
+```
+
+### 5. Use context efficiently
+
+```{r}
+# Good: Focused context
+ctx <- cassidy_context_project(level = "standard")
+
+# Less efficient: Everything
+ctx <- cassidy_context_project(level = "comprehensive")
+```
+
+## Troubleshooting
+
+### "Token limit exceeded" error
+
+This shouldn't happen with auto-compaction enabled, but if it does:
+
+```{r}
+# Check if auto-compaction is enabled
+print(session$auto_compact)  # Should be TRUE
+
+# Manually compact
+session <- cassidy_compact(session)
+
+# Lower the threshold for more aggressive compaction
+session$compact_at <- 0.75  # Compact at 75% instead of 85%
+```
+
+### Conversation feels incoherent after compaction
+
+Increase the number of preserved messages:
+
+```{r}
+session <- cassidy_compact(
+  session,
+  preserve_recent = 5  # Keep last 5 pairs (10 messages)
+)
+```
+
+Or use custom summarization prompts to preserve specific information:
+
+```{r}
+session <- cassidy_compact(
+  session,
+  summary_prompt = "Preserve all code examples and technical details"
+)
+```
+
+### Timeout persists even after retry
+
+Break your request into smaller parts:
+
+```{r}
+# Instead of:
+chat(session, "Analyze all 50 variables with detailed explanations")
+
+# Try:
+chat(session, "Analyze variables 1-10")
+chat(session, "Now analyze variables 11-20")
+# etc.
+```
+
+### Lost important information during compaction
+
+Use memory to preserve critical information before it gets compacted:
+
+```{r}
+# Save important details
+chat(session, "Save our key findings to memory:findings.md")
+
+# Then compact
+session <- cassidy_compact(session)
+
+# Retrieve when needed
+chat(session, "What were our key findings? Check memory:findings.md")
+```
+
+## Summary
+
+The cassidyr package provides a comprehensive system for managing long conversations:
+
+1. **Automatic token tracking** shows usage across all interfaces
+2. **Automatic compaction** prevents limit failures in `cassidy_session()`
+3. **Manual compaction** gives you control when needed
+4. **Memory system** enables unlimited conversation length
+5. **Timeout handling** makes complex requests more reliable
+
+With these tools, you can have productive conversations of any length without worrying about hitting API limits or losing important context.
+
+For more information:
+- `?cassidy_session` - Stateful chat with auto-compaction
+- `?cassidy_compact` - Manual compaction control
+- `?cassidy_list_memory_files` - Memory system functions
+- `?cassidy_session_stats` - Detailed token usage statistics

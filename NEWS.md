@@ -41,6 +41,52 @@
   - Fully backward compatible with `thread_id` parameter (legacy mode)
   - Session-based `cassidy_session()` objects remain available for programmatic use
 
+* **Context Engineering System**: Comprehensive token management for unlimited conversations
+  - **Token Estimation** (`R/context-tokens.R`): Character-to-token conversion with 15% safety buffer
+  - **Session Tracking** (`cassidy_session()`): Token tracking fields (token_estimate, token_limit, compact_at, auto_compact)
+  - **Manual Compaction** (`cassidy_compact()`): Summarize old messages, preserve recent context
+  - **Automatic Compaction**: Triggers at 85% token usage (customizable threshold)
+  - **Shiny UI Integration**: Color-coded token display (green/yellow/red) with compact button
+  - **Memory System** (`R/context-memory.R`): Persistent storage for workflow state and learned insights
+  - **Timeout Management**: Automatic retry with chunking guidance for complex tasks
+  - 200+ tests covering all token management and memory functionality
+  - See `vignette("managing-long-conversations")` for complete guide
+
+* **Memory system** for unlimited conversation length (`R/context-memory.R`)
+  - Persistent file storage in `~/.cassidy/memory/` with subdirectory support
+  - 6 memory functions: `cassidy_list_memory_files()`, `cassidy_format_memory_listing()`,
+    `cassidy_read_memory_file()`, `cassidy_write_memory_file()`,
+    `cassidy_delete_memory_file()`, `cassidy_rename_memory_file()`
+  - Security: Path validation prevents directory traversal attacks
+  - Progressive disclosure: Lightweight directory listing (~100 tokens) in context
+  - On-demand file reading: Files loaded only when requested
+  - Memory tool added to agentic registry with 5 commands (view, read, write, delete, rename)
+  - Integration with `cassidy_context_project()` via `include_memory` parameter
+  - Clear separation: Memory (dynamic state) vs Rules (static config) vs Skills (methodologies)
+  - Memory persists across conversation compaction for truly unlimited conversations
+  - 76 comprehensive tests including security validation
+
+* **Token management for sessions** (`cassidy_session()`)
+  - Automatic token tracking for all messages and context
+  - Auto-compaction enabled by default (triggers at 85% token usage)
+  - Customizable compaction threshold via `compact_at` parameter
+  - Manual compaction with `cassidy_compact()` preserves recent messages
+  - Custom summarization prompts for domain-specific compaction
+  - Detailed statistics with `cassidy_session_stats()`
+  - Print method shows token usage with percentage and warnings
+  - Tracks compaction count and timestamps
+  - 59 tests for session token tracking and auto-compaction
+
+* **Token display in Shiny app** (`cassidy_app()`)
+  - Color-coded token usage alerts (green <60%, yellow 60-80%, red >80%)
+  - Visual progress display with percentage
+  - Compact conversation button in token section
+  - Warning notifications when exceeding 80% threshold
+  - Token tracking in message handler (user + assistant + context)
+  - Token tracking in context apply handler
+  - Progress modal during compaction with success/error notifications
+  - Token estimate persisted in conversation objects
+
 * **Token tracking for console chat** in `cassidy_chat()`
   - Automatic token estimation for all messages and context (enabled by default)
   - Warning messages when approaching token limit (default: 80% threshold)
@@ -51,6 +97,7 @@
   - Suggests using `cassidy_session()` for long conversations with auto-compaction
   - Customizable warning threshold via `warn_at` parameter
   - Fully backward compatible with existing conversations
+  - 13 tests for console chat token tracking
 
 * Enhanced `cassidy_create_skill()` with custom metadata parameters
   - `description` parameter for custom skill description
@@ -60,10 +107,11 @@
   - Templates now generate valid YAML frontmatter
 
 * Added agentic task system with `cassidy_agentic_task()` for autonomous tool use
-  - 7 built-in tools: read_file, write_file, execute_code, list_files, search_files, get_context, describe_data
+  - 8 built-in tools: read_file, write_file, execute_code, list_files, search_files, get_context, describe_data, memory
   - Safe mode by default with interactive approval for risky operations
   - Custom approval callbacks for programmatic control
   - Working directory support for all file operations
+  - Memory tool enables persistent knowledge storage across tasks
 
 * Added interactive Shiny chat interface with `cassidy_app()`
   - Conversation persistence with auto-save/load
