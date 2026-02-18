@@ -10,13 +10,13 @@ test_that("cassidy_list_tools returns all tool names", {
   # Should be character vector
   expect_type(tools, "character")
 
-  # Should have all 7 tools
-  expect_length(tools, 7)
+  # Should have all 8 tools (including memory)
+  expect_length(tools, 8)
 
   # Should contain expected tools
   expected_tools <- c(
     "read_file", "write_file", "execute_code",
-    "list_files", "search_files", "get_context", "describe_data"
+    "list_files", "search_files", "get_context", "describe_data", "memory"
   )
   expect_true(all(expected_tools %in% tools))
 })
@@ -30,12 +30,12 @@ test_that("cassidy_tool_preset returns correct tools for 'all'", {
   tools <- cassidy_tool_preset("all")
 
   expect_type(tools, "character")
-  expect_length(tools, 7)
+  expect_length(tools, 8)
 
-  # Should have all tools
+  # Should have all tools (including memory)
   expected_tools <- c(
     "read_file", "write_file", "execute_code",
-    "list_files", "search_files", "get_context", "describe_data"
+    "list_files", "search_files", "get_context", "describe_data", "memory"
   )
   expect_setequal(tools, expected_tools)
 })
@@ -121,11 +121,11 @@ test_that("cassidy_tool_preset defaults to 'all'", {
   # Without argument should default to 'all'
   tools <- cassidy_tool_preset()
 
-  expect_length(tools, 7)
+  expect_length(tools, 8)
   expect_setequal(
     tools,
     c("read_file", "write_file", "execute_code", "list_files",
-      "search_files", "get_context", "describe_data")
+      "search_files", "get_context", "describe_data", "memory")
   )
 })
 

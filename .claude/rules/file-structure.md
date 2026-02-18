@@ -36,6 +36,7 @@ cassidyr/
 │   ├── context-git.R                   ✓ Complete (Git status context)
 │   ├── context-tools.R                 ✓ Complete (internal helpers)
 │   ├── context-tokens.R                ✓ Complete (token estimation & limits)
+│   ├── context-memory.R                ✓ Complete (memory file operations)
 │   │
 │   ├── agentic-approval.R              ✓ Complete (User approval for risky actions)
 │   ├── agentic-chat.R                  ✓ Complete (Main agentic loop)
@@ -62,6 +63,7 @@ cassidyr/
 │   │   ├── test-context-environment.R ✓ Complete
 │   │   ├── test-context-tools.R      ✓ Complete
 │   │   ├── test-context-tokens.R     ✓ Complete
+│   │   ├── test-context-memory.R     ✓ Complete
 │   │   ├── test-agentic-chat.R       ✓ Complete
 │   │   ├── test-agentic-helpers.R    ✓ Complete
 │   │   ├── test-agentic-parsing.R    ✓ Complete
@@ -110,7 +112,7 @@ The package follows a modular organization with clear separation of concerns:
 - `chat-handlers-context-files.R` - File selection/refresh handlers
 - `chat-handlers-tokens.R` - Token usage display and conversation compaction
 
-### Context System (10 files)
+### Context System (11 files)
 - `context-project.R` - Project-level context
 - `context-data.R` - Data frame descriptions
 - `context-env.R` - Environment information
@@ -121,11 +123,12 @@ The package follows a modular organization with clear separation of concerns:
 - `context-git.R` - Git repository status
 - `context-tools.R` - Internal helper functions
 - `context-tokens.R` - Token estimation and limits
+- `context-memory.R` - Memory file operations for persistent knowledge
 
 ### Agentic System (5 files)
 - `agentic-chat.R` - Main agentic loop and orchestration
 - `agentic-workflow.R` - Direct parsing of tool decisions from responses
-- `agentic-tools.R` - Tool registry with 7 built-in tools
+- `agentic-tools.R` - Tool registry with 8 built-in tools (includes memory)
 - `agentic-approval.R` - Interactive approval system for risky operations
 - `agentic-helpers.R` - User utilities (list tools, tool presets)
 

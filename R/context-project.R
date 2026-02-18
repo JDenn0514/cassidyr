@@ -12,6 +12,8 @@
 #' @param include_config Whether to include cassidy.md or similar config files.
 #'   When TRUE (default), searches recursively up the directory tree.
 #' @param include_skills Whether to include available skills metadata. Default TRUE.
+#' @param include_memory Whether to include memory directory listing. Default TRUE.
+#'   Shows available memory files with sizes and timestamps (~100 tokens).
 #'
 #' @return An object of class \code{cassidy_context} containing project information
 #' @export
@@ -34,7 +36,8 @@ cassidy_context_project <- function(
   level = c("standard", "minimal", "comprehensive"),
   max_size = 8000,
   include_config = TRUE,
-  include_skills = TRUE
+  include_skills = TRUE,
+  include_memory = TRUE
 ) {
   level <- match.arg(level)
 
@@ -58,6 +61,14 @@ cassidy_context_project <- function(
     skills_ctx <- cassidy_context_skills(location = "all", format = "text")
     if (!is.null(skills_ctx) && nchar(skills_ctx$text) > 0) {
       context_parts$skills <- skills_ctx$text
+    }
+  }
+
+  # Include memory directory listing (lightweight, ~100 tokens)
+  if (include_memory) {
+    memory_listing <- cassidy_format_memory_listing()
+    if (!is.null(memory_listing) && nchar(memory_listing) > 0) {
+      context_parts$memory <- memory_listing
     }
   }
 

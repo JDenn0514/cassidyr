@@ -229,6 +229,77 @@
       result <- cassidy_describe_df(obj, method = method)
       result$text
     }
+  ),
+
+  memory = list(
+    description = paste0(
+      "Manage persistent memory files for workflow state and learned insights. ",
+      "Memory persists across sessions and compaction. Commands: ",
+      "view (list files), read (get file content), write (create/update file), ",
+      "delete (remove file), rename (move/rename file)"
+    ),
+    risky = FALSE,  # File operations in dedicated directory, not risky
+    parameters = list(
+      command = "Command: 'view', 'read', 'write', 'delete', or 'rename'",
+      path = "File path (relative to memory directory)",
+      content = "Content to write (for 'write' command)",
+      new_path = "New path (for 'rename' command)"
+    ),
+    handler = function(command, path = NULL, content = NULL, new_path = NULL) {
+      # Validate command
+      valid_commands <- c("view", "read", "write", "delete", "rename")
+      if (!command %in% valid_commands) {
+        stop(paste0(
+          "Invalid memory command: ", command, ". ",
+          "Use: ", paste(valid_commands, collapse = ", ")
+        ))
+      }
+
+      # Execute command
+      result <- switch(
+        command,
+        view = {
+          listing <- cassidy_format_memory_listing()
+          listing
+        },
+        read = {
+          if (is.null(path)) {
+            stop("'path' parameter required for 'read' command")
+          }
+          content <- cassidy_read_memory_file(path)
+          paste0("File: ", path, "\n\n", content)
+        },
+        write = {
+          if (is.null(path)) {
+            stop("'path' parameter required for 'write' command")
+          }
+          if (is.null(content)) {
+            stop("'content' parameter required for 'write' command")
+          }
+          cassidy_write_memory_file(path, content)
+          paste0("Memory file written: ", path)
+        },
+        delete = {
+          if (is.null(path)) {
+            stop("'path' parameter required for 'delete' command")
+          }
+          cassidy_delete_memory_file(path)
+          paste0("Memory file deleted: ", path)
+        },
+        rename = {
+          if (is.null(path)) {
+            stop("'path' parameter required for 'rename' command")
+          }
+          if (is.null(new_path)) {
+            stop("'new_path' parameter required for 'rename' command")
+          }
+          cassidy_rename_memory_file(path, new_path)
+          paste0("Memory file renamed: ", path, " -> ", new_path)
+        }
+      )
+
+      result
+    }
   )
 )
 
