@@ -177,13 +177,15 @@ cassidy_create_thread <- function(
 #' Send Message to Cassidy Thread
 #'
 #' Sends a message to an existing Cassidy thread and retrieves the assistant's
-#' response.
+#' response. Automatically retries with chunking guidance if a timeout occurs.
 #'
 #' @param thread_id Character. The thread ID from [cassidy_create_thread()].
 #' @param message Character. The message content to send.
 #' @param api_key Character. Cassidy API key. Defaults to
 #'   `CASSIDY_API_KEY` environment variable.
-#' @param timeout Numeric. Request timeout in seconds. Default is 120.
+#' @param timeout Numeric. Request timeout in seconds. Default is 300.
+#' @param retry_on_timeout Logical. Whether to retry with chunking guidance
+#'   if timeout occurs. Default TRUE.
 #'
 #' @return A `cassidy_response` object containing:
 #'   - `content`: The assistant's response text
@@ -196,7 +198,8 @@ cassidy_send_message <- function(
   thread_id,
   message,
   api_key = Sys.getenv("CASSIDY_API_KEY"),
-  timeout = 300
+  timeout = 300,
+  retry_on_timeout = TRUE
 ) {
   if (!nzchar(api_key)) {
     cli::cli_abort(c(
@@ -213,60 +216,111 @@ cassidy_send_message <- function(
     cli::cli_abort("Message cannot be empty")
   }
 
-  tryCatch(
-    {
-      req <- httr2::request(
-        "https://app.cassidyai.com/api/assistants/message/create"
-      ) |>
-        httr2::req_method("POST") |>
-        httr2::req_headers(
-          `x-api-key` = api_key,
-          `Content-Type` = "application/json"
+  # Track retry attempts
+  max_timeout_retries <- 1L  # Only retry once with chunking guidance
+  timeout_retry_count <- 0L
+
+  # Store original message for retry
+  original_message <- message
+
+  # Repeat loop for timeout retry
+  repeat {
+    result <- tryCatch(
+      {
+        req <- httr2::request(
+          "https://app.cassidyai.com/api/assistants/message/create"
         ) |>
-        httr2::req_body_json(
+          httr2::req_method("POST") |>
+          httr2::req_headers(
+            `x-api-key` = api_key,
+            `Content-Type` = "application/json"
+          ) |>
+          httr2::req_body_json(
+            list(
+              thread_id = thread_id,
+              message = message
+            )
+          ) |>
+          httr2::req_timeout(timeout) |>
+          httr2::req_retry(
+            max_tries = 3,
+            is_transient = function(resp) {
+              status <- httr2::resp_status(resp)
+              # Retry on rate limits and server errors (but NOT timeout)
+              status %in% c(429, 503, 504)
+            }
+          ) |>
+          httr2::req_error(body = .parse_api_error)
+
+        resp <- httr2::req_perform(req)
+        body <- httr2::resp_body_json(resp)
+
+        # Extract response content
+        content <- body$message %||% body$response %||% body$content %||% ""
+
+        if (!nzchar(content)) {
+          cli::cli_warn("API returned empty response")
+        }
+
+        structure(
           list(
+            content = content,
             thread_id = thread_id,
-            message = message
-          )
-        ) |>
-        httr2::req_timeout(timeout) |>
-        httr2::req_retry(
-          max_tries = 3,
-          is_transient = function(resp) {
-            status <- httr2::resp_status(resp)
-            status %in% c(429, 503, 504)
+            timestamp = Sys.time()
+          ),
+          class = "cassidy_response"
+        )
+      },
+      error = function(e) {
+        # Check if this is a timeout error
+        error_msg <- e$message
+        is_timeout <- any(vapply(
+          .CASSIDY_TIMEOUT_ERROR_PATTERNS,
+          function(pattern) grepl(pattern, error_msg, ignore.case = TRUE),
+          logical(1)
+        ))
+
+        if (is_timeout && retry_on_timeout && timeout_retry_count < max_timeout_retries) {
+          # Increment retry counter
+          timeout_retry_count <<- timeout_retry_count + 1L
+
+          # Notify user
+          cli::cli_alert_warning("Request timed out (Error 524)")
+          cli::cli_alert_info("Retrying with chunking guidance to prevent timeout...")
+
+          # Retry with chunking prompt prepended
+          message <<- paste0(.timeout_retry_prompt(), original_message)
+
+          # Return NULL to continue loop
+          return(NULL)
+        }
+
+        # Not a timeout, or retry limit reached - propagate error
+        if (inherits(e, "httr2_error")) {
+          if (!is.null(e$body) && nzchar(e$body)) {
+            cli::cli_abort(e$body)
+          } else {
+            cli::cli_abort(e$message)
           }
-        ) |>
-        httr2::req_error(body = .parse_api_error)
-
-      resp <- httr2::req_perform(req)
-      body <- httr2::resp_body_json(resp)
-
-      # Extract response content
-      content <- body$message %||% body$response %||% body$content %||% ""
-
-      if (!nzchar(content)) {
-        cli::cli_warn("API returned empty response")
+        } else {
+          # Regular error
+          cli::cli_abort(e$message)
+        }
       }
+    )
 
-      structure(
-        list(
-          content = content,
-          thread_id = thread_id,
-          timestamp = Sys.time()
-        ),
-        class = "cassidy_response"
-      )
-    },
-    httr2_error = function(e) {
-      # Re-throw with the detailed error message from the body
-      if (!is.null(e$body) && nzchar(e$body)) {
-        cli::cli_abort(e$body)
-      } else {
-        cli::cli_abort(e$message)
+    # If we got a result, break the loop
+    if (!is.null(result)) {
+      # If retry was successful, notify user
+      if (timeout_retry_count > 0) {
+        cli::cli_alert_success("Retry successful with chunked response")
+        cli::cli_alert_info(
+          "For large tasks, consider breaking your requests into smaller parts"
+        )
       }
+      return(result)
     }
-  )
+  }
 }
 
 
