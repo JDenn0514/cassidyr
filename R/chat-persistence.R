@@ -59,6 +59,9 @@ cassidy_load_conversation <- function(conv_id) {
       conv$sent_data_frames <- conv$sent_data_frames %||% character()
       conv$context_files <- conv$context_files %||% character()
 
+      # NEW: Ensure token_estimate exists (backward compatibility)
+      conv$token_estimate <- conv$token_estimate %||% 0L
+
       # ADD THIS: Ensure thread_id exists (even if NULL, make it explicit)
       if (is.null(conv$thread_id)) {
         cli::cli_warn("Loaded conversation {conv_id} has no thread_id")

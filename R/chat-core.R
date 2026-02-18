@@ -17,6 +17,10 @@
 #'   message for efficiency.
 #' @param api_key Character. Your CassidyAI API key. Defaults to
 #'   the `CASSIDY_API_KEY` environment variable.
+#' @param compact_at Numeric. Fraction of token limit at which to trigger
+#'   auto-compaction (default 0.85 = 85%).
+#' @param auto_compact Logical. Whether to automatically compact conversation
+#'   when approaching token limit (default TRUE).
 #'
 #' @return A `cassidy_session` S3 object containing:
 #'   \describe{
@@ -25,6 +29,10 @@
 #'     \item{messages}{List of messages in this session}
 #'     \item{created_at}{When the session was created}
 #'     \item{context}{Stored context (sent with first message)}
+#'     \item{token_estimate}{Estimated token usage for this session}
+#'     \item{token_limit}{Token limit (200,000 for CassidyAI)}
+#'     \item{compact_at}{Auto-compaction threshold}
+#'     \item{auto_compact}{Whether auto-compaction is enabled}
 #'   }
 #'
 #' @family chat-functions
@@ -46,7 +54,9 @@
 cassidy_session <- function(
   assistant_id = Sys.getenv("CASSIDY_ASSISTANT_ID"),
   context = NULL,
-  api_key = Sys.getenv("CASSIDY_API_KEY")
+  api_key = Sys.getenv("CASSIDY_API_KEY"),
+  compact_at = .CASSIDY_DEFAULT_COMPACT_AT,
+  auto_compact = TRUE
 ) {
   # Create thread
   thread_id <- cassidy_create_thread(assistant_id, api_key)
@@ -60,7 +70,16 @@ cassidy_session <- function(
       created_at = Sys.time(),
       api_key = api_key,
       context = context,
-      context_sent = FALSE # Track if context has been sent
+      context_sent = FALSE, # Track if context has been sent
+      # Token tracking fields
+      token_estimate = 0L,           # Current estimated token usage
+      token_limit = .CASSIDY_TOKEN_LIMIT,
+      compact_at = compact_at,       # Fraction of limit to trigger compaction
+      auto_compact = auto_compact,   # Whether to auto-compact
+      compaction_count = 0L,         # Number of times compacted
+      last_compaction = NULL,        # Timestamp of last compaction
+      # Tool overhead tracking
+      tool_overhead = 0L             # Estimated tokens for tool definitions
     ),
     class = "cassidy_session"
   )
@@ -161,6 +180,26 @@ chat <- function(x, message, ...) {
 #' @export
 #' @export
 chat.cassidy_session <- function(x, message, ...) {
+  # Estimate tokens for new message
+  new_msg_tokens <- cassidy_estimate_tokens(message)
+
+  # Check if we need to warn about token usage
+  if (!is.null(x$token_estimate) && !is.null(x$token_limit)) {
+    threshold_tokens <- floor(x$token_limit * .CASSIDY_WARNING_AT)
+    current_tokens <- x$token_estimate
+    projected_tokens <- current_tokens + new_msg_tokens + (x$tool_overhead %||% 0L)
+
+    if (projected_tokens > threshold_tokens) {
+      pct <- round(100 * projected_tokens / x$token_limit, 1)
+      cli::cli_alert_warning(
+        "Token usage is high: {format(projected_tokens, big.mark = ',')} / {format(x$token_limit, big.mark = ',')} ({pct}%)"
+      )
+      cli::cli_alert_info(
+        "Consider using {.fn cassidy_compact} to reduce conversation length"
+      )
+    }
+  }
+
   # If this is the first message and we have context, include it
   if (!x$context_sent && !is.null(x$context)) {
     result <- cassidy_chat(
@@ -170,6 +209,12 @@ chat.cassidy_session <- function(x, message, ...) {
       api_key = x$api_key
     )
     x$context_sent <- TRUE
+
+    # Add context tokens to estimate
+    if (!is.null(x$context$text)) {
+      context_tokens <- cassidy_estimate_tokens(x$context$text)
+      x$token_estimate <- x$token_estimate + context_tokens
+    }
   } else {
     result <- cassidy_chat(
       message = message,
@@ -178,18 +223,28 @@ chat.cassidy_session <- function(x, message, ...) {
     )
   }
 
-  # Update session with new messages
-  x$messages <- c(
-    x$messages,
-    list(
-      list(role = "user", content = message, timestamp = Sys.time()),
-      list(
-        role = "assistant",
-        content = result$response$content,
-        timestamp = result$response$timestamp
-      )
-    )
+  # Estimate assistant response tokens
+  assistant_tokens <- cassidy_estimate_tokens(result$response$content)
+
+  # Update session with new messages (now with token tracking)
+  user_msg <- list(
+    role = "user",
+    content = message,
+    timestamp = Sys.time(),
+    tokens = new_msg_tokens
   )
+
+  assistant_msg <- list(
+    role = "assistant",
+    content = result$response$content,
+    timestamp = result$response$timestamp,
+    tokens = assistant_tokens
+  )
+
+  x$messages <- c(x$messages, list(user_msg, assistant_msg))
+
+  # Update total token estimate
+  x$token_estimate <- x$token_estimate + new_msg_tokens + assistant_tokens
 
   # Print response
   print(result$response)
@@ -229,6 +284,19 @@ print.cassidy_session <- function(x, ...) {
     "{.field Created}: {.val {format(x$created_at, '%Y-%m-%d %H:%M:%S')}}"
   )
 
+  # Token usage display
+  if (!is.null(x$token_estimate) && x$token_estimate > 0) {
+    pct <- round(100 * x$token_estimate / x$token_limit, 1)
+
+    cli::cli_text(
+      "{.field Tokens}: {format(x$token_estimate, big.mark = ',')} / {format(x$token_limit, big.mark = ',')} ({pct}%)"
+    )
+
+    if (pct > 80) {
+      cli::cli_alert_warning("Token usage is high - consider compacting")
+    }
+  }
+
   # Show recent messages if any
   if (length(x$messages) > 0) {
     cli::cli_text("")
@@ -238,7 +306,6 @@ print.cassidy_session <- function(x, ...) {
     recent <- utils::tail(x$messages, 3)
     for (msg in recent) {
       role_icon <- if (msg$role == "user") "-->" else "<--"
-      role_color <- if (msg$role == "user") "blue" else "green"
 
       # Truncate long messages
       content <- msg$content
@@ -246,8 +313,15 @@ print.cassidy_session <- function(x, ...) {
         content <- paste0(substr(content, 1, 97), "...")
       }
 
+      # Show tokens if available
+      token_info <- if (!is.null(msg$tokens)) {
+        paste0(" (", msg$tokens, " tokens)")
+      } else {
+        ""
+      }
+
       cli::cli_alert_info(
-        "{.emph {role_icon} {msg$role}}: {content}"
+        "{.emph {role_icon} {msg$role}}: {content}{token_info}"
       )
     }
 
@@ -255,6 +329,9 @@ print.cassidy_session <- function(x, ...) {
       cli::cli_text("{.emph ... and {length(x$messages) - 3} more messages}")
     }
   }
+
+  cli::cli_text("")
+  cli::cli_text("Use {.fn cassidy_session_stats} for detailed diagnostics")
 
   invisible(x)
 }

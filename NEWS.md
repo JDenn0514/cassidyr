@@ -10,6 +10,16 @@
 
 ## New Features
 
+* **Automatic timeout recovery** in `cassidy_send_message()`
+  - Detects 524 Gateway Timeout errors from complex tasks or large inputs
+  - Automatically retries once with chunking guidance to prevent timeout
+  - Complex task detection for tasks like "implementation plan" or "comprehensive analysis"
+  - Input size validation warns about large messages (>100k characters)
+  - Clear user notifications during timeout and retry
+  - Helper functions: `.is_complex_task()`, `.validate_message_size()`, `.add_chunking_guidance()`
+  - Timeout prevention prompt encourages incremental responses
+  - No user action required - all automatic
+
 * **Enhanced file rendering** in `cassidy_app()` chat interface
   - Markdown, Quarto, and R Markdown files now display as styled blocks with raw content
   - Files no longer rendered as HTML (prevents nested chunk issues)

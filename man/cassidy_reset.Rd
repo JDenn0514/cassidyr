@@ -32,6 +32,7 @@ Other chat-functions:
 \code{\link{cassidy_conversations}()},
 \code{\link{cassidy_current}()},
 \code{\link{cassidy_session}()},
+\code{\link{cassidy_session_stats}()},
 \code{\link{cassidy_write_code}()},
 \code{\link{cassidy_write_file}()},
 \code{\link{chat}()},

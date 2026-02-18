@@ -8,7 +8,8 @@ cassidy_send_message(
   thread_id,
   message,
   api_key = Sys.getenv("CASSIDY_API_KEY"),
-  timeout = 300
+  timeout = 300,
+  retry_on_timeout = TRUE
 )
 }
 \arguments{
@@ -19,7 +20,10 @@ cassidy_send_message(
 \item{api_key}{Character. Cassidy API key. Defaults to
 \code{CASSIDY_API_KEY} environment variable.}
 
-\item{timeout}{Numeric. Request timeout in seconds. Default is 120.}
+\item{timeout}{Numeric. Request timeout in seconds. Default is 300.}
+
+\item{retry_on_timeout}{Logical. Whether to retry with chunking guidance
+if timeout occurs. Default TRUE.}
 }
 \value{
 A \code{cassidy_response} object containing:
@@ -31,7 +35,7 @@ A \code{cassidy_response} object containing:
 }
 \description{
 Sends a message to an existing Cassidy thread and retrieves the assistant's
-response.
+response. Automatically retries with chunking guidance if a timeout occurs.
 }
 \seealso{
 Other api-functions: 

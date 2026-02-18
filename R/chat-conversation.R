@@ -22,7 +22,10 @@ ConversationManager <- S7::new_class(
     # NEW: Track items queued for refresh (re-send)
     pending_refresh_files = S7::class_any,
     pending_refresh_data = S7::class_any,
-    pending_refresh_skills = S7::class_any
+    pending_refresh_skills = S7::class_any,
+    # NEW: Token tracking
+    token_estimate = S7::class_any,
+    token_limit = S7::class_any
   ),
   constructor = function() {
     S7::new_object(
@@ -40,7 +43,10 @@ ConversationManager <- S7::new_class(
       sent_skills = shiny::reactiveVal(character()),
       pending_refresh_files = shiny::reactiveVal(character()),
       pending_refresh_data = shiny::reactiveVal(character()),
-      pending_refresh_skills = shiny::reactiveVal(character())
+      pending_refresh_skills = shiny::reactiveVal(character()),
+      # NEW: Token tracking
+      token_estimate = shiny::reactiveVal(0L),
+      token_limit = shiny::reactiveVal(.CASSIDY_TOKEN_LIMIT)
     )
   }
 )
@@ -184,6 +190,14 @@ conv_set_pending_refresh_skills <- S7::new_generic(
   "x"
 )
 
+#' Get token estimate
+#' @keywords internal
+conv_token_estimate <- S7::new_generic("conv_token_estimate", "x")
+
+#' Set token estimate
+#' @keywords internal
+conv_set_token_estimate <- S7::new_generic("conv_set_token_estimate", "x")
+
 # ---- Methods ----
 
 S7::method(conv_get_all, ConversationManager) <- function(x) {
@@ -309,6 +323,15 @@ S7::method(conv_set_pending_refresh_skills, ConversationManager) <- function(
   invisible(x)
 }
 
+S7::method(conv_token_estimate, ConversationManager) <- function(x) {
+  x@token_estimate()
+}
+
+S7::method(conv_set_token_estimate, ConversationManager) <- function(x, value) {
+  x@token_estimate(value)
+  invisible(x)
+}
+
 S7::method(conv_get_current, ConversationManager) <- function(x) {
   convs <- x@conversations()
   current_id <- x@current_id()
@@ -375,6 +398,8 @@ S7::method(conv_create_new, ConversationManager) <- function(
     sent_data_frames = character(),
     context_skills = character(),
     sent_skills = character(),
+    # NEW: Initialize token tracking
+    token_estimate = 0L,
     created_at = Sys.time()
   )
 
@@ -394,6 +419,8 @@ S7::method(conv_create_new, ConversationManager) <- function(
   x@pending_refresh_files(character())
   x@pending_refresh_data(character())
   x@pending_refresh_skills(character())
+  # NEW: Reset token tracking
+  x@token_estimate(0L)
 
   if (!is.null(session)) {
     session$sendCustomMessage("clearInput", list())
@@ -442,6 +469,8 @@ S7::method(conv_switch_to, ConversationManager) <- function(
     x@pending_refresh_files(character())
     x@pending_refresh_data(character())
     x@pending_refresh_skills(character())
+    # NEW: Restore token estimate
+    x@token_estimate(conv$token_estimate %||% 0L)
 
     if (!is.null(session)) {
       session$sendCustomMessage("clearInput", list())
@@ -510,6 +539,8 @@ S7::method(conv_delete, ConversationManager) <- function(x, conv_id) {
       x@sent_data_frames(convs[[1]]$sent_data_frames %||% character())
       x@context_skills(convs[[1]]$context_skills %||% character())
       x@sent_skills(convs[[1]]$sent_skills %||% character())
+      # NEW: Restore token estimate
+      x@token_estimate(convs[[1]]$token_estimate %||% 0L)
     } else {
       x@current_id(NULL)
       x@context_sent(FALSE)
@@ -519,6 +550,8 @@ S7::method(conv_delete, ConversationManager) <- function(x, conv_id) {
       x@sent_data_frames(character())
       x@context_skills(character())
       x@sent_skills(character())
+      # NEW: Clear token estimate
+      x@token_estimate(0L)
     }
     # NEW: Clear pending on delete
     x@pending_refresh_files(character())
@@ -622,6 +655,8 @@ S7::method(conv_load_and_set, ConversationManager) <- function(
     x@pending_refresh_files(character())
     x@pending_refresh_data(character())
     x@pending_refresh_skills(character())
+    # NEW: Restore token estimate
+    x@token_estimate(conv$token_estimate %||% 0L)
 
     if (!is.null(session)) {
       session$sendCustomMessage("clearInput", list())

@@ -34,6 +34,7 @@ cassidyr/
 │   ├── context-config.R                ✓ Complete (read CASSIDY.md files)
 │   ├── context-git.R                   ✓ Complete (Git status context)
 │   ├── context-tools.R                 ✓ Complete (internal helpers)
+│   ├── context-tokens.R                ✓ Complete (token estimation & limits)
 │   │
 │   ├── agentic-approval.R              ✓ Complete (User approval for risky actions)
 │   ├── agentic-chat.R                  ✓ Complete (Main agentic loop)
@@ -59,6 +60,7 @@ cassidyr/
 │   │   ├── test-context-data.R       ✓ Complete
 │   │   ├── test-context-environment.R ✓ Complete
 │   │   ├── test-context-tools.R      ✓ Complete
+│   │   ├── test-context-tokens.R     ✓ Complete
 │   │   ├── test-agentic-chat.R       ✓ Complete
 │   │   ├── test-agentic-helpers.R    ✓ Complete
 │   │   ├── test-agentic-parsing.R    ✓ Complete
@@ -106,7 +108,7 @@ The package follows a modular organization with clear separation of concerns:
 - `chat-handlers-context-data.R` - Data frame selection handlers
 - `chat-handlers-context-files.R` - File selection/refresh handlers
 
-### Context System (9 files)
+### Context System (10 files)
 - `context-project.R` - Project-level context
 - `context-data.R` - Data frame descriptions
 - `context-env.R` - Environment information
@@ -116,6 +118,7 @@ The package follows a modular organization with clear separation of concerns:
 - `context-config.R` - Read CASSIDY.md configuration files
 - `context-git.R` - Git repository status
 - `context-tools.R` - Internal helper functions
+- `context-tokens.R` - Token estimation and limits
 
 ### Agentic System (5 files)
 - `agentic-chat.R` - Main agentic loop and orchestration

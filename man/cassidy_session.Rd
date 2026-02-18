@@ -7,7 +7,9 @@
 cassidy_session(
   assistant_id = Sys.getenv("CASSIDY_ASSISTANT_ID"),
   context = NULL,
-  api_key = Sys.getenv("CASSIDY_API_KEY")
+  api_key = Sys.getenv("CASSIDY_API_KEY"),
+  compact_at = .CASSIDY_DEFAULT_COMPACT_AT,
+  auto_compact = TRUE
 )
 }
 \arguments{
@@ -20,6 +22,12 @@ message for efficiency.}
 
 \item{api_key}{Character. Your CassidyAI API key. Defaults to
 the \code{CASSIDY_API_KEY} environment variable.}
+
+\item{compact_at}{Numeric. Fraction of token limit at which to trigger
+auto-compaction (default 0.85 = 85\%).}
+
+\item{auto_compact}{Logical. Whether to automatically compact conversation
+when approaching token limit (default TRUE).}
 }
 \value{
 A \code{cassidy_session} S3 object containing:
@@ -29,6 +37,10 @@ A \code{cassidy_session} S3 object containing:
 \item{messages}{List of messages in this session}
 \item{created_at}{When the session was created}
 \item{context}{Stored context (sent with first message)}
+\item{token_estimate}{Estimated token usage for this session}
+\item{token_limit}{Token limit (200,000 for CassidyAI)}
+\item{compact_at}{Auto-compaction threshold}
+\item{auto_compact}{Whether auto-compaction is enabled}
 }
 }
 \description{
@@ -58,6 +70,7 @@ Other chat-functions:
 \code{\link{cassidy_conversations}()},
 \code{\link{cassidy_current}()},
 \code{\link{cassidy_reset}()},
+\code{\link{cassidy_session_stats}()},
 \code{\link{cassidy_write_code}()},
 \code{\link{cassidy_write_file}()},
 \code{\link{chat}()},
