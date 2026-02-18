@@ -41,6 +41,17 @@
   - Fully backward compatible with `thread_id` parameter (legacy mode)
   - Session-based `cassidy_session()` objects remain available for programmatic use
 
+* **Token tracking for console chat** in `cassidy_chat()`
+  - Automatic token estimation for all messages and context (enabled by default)
+  - Warning messages when approaching token limit (default: 80% threshold)
+  - New parameters: `track_tokens` (default TRUE), `warn_at` (default 0.80), `auto_compact` (default FALSE)
+  - Conversation objects now include `token_estimate` and `token_limit` fields
+  - Individual messages track token counts for detailed diagnostics
+  - `cassidy_current()` displays token usage with percentage and warnings
+  - Suggests using `cassidy_session()` for long conversations with auto-compaction
+  - Customizable warning threshold via `warn_at` parameter
+  - Fully backward compatible with existing conversations
+
 * Enhanced `cassidy_create_skill()` with custom metadata parameters
   - `description` parameter for custom skill description
   - `auto_invoke` parameter to control automatic invocation

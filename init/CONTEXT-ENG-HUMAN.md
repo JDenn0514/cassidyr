@@ -346,7 +346,7 @@ session <- cassidy_session(auto_compact = FALSE)
 
 ### Threshold: 85% Before Compaction
 
-**Decision:** Auto-compact at **170K tokens** (85% of 200K limit).
+**Decision:** Auto-compact at **160K tokens** (80% of 200K limit).
 
 **Why:**
 - Gives room for a large message + response after compaction

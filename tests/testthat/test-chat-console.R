@@ -556,3 +556,363 @@ test_that("conversation includes skill tracking", {
 
   expect_s3_class(result, "cassidy_chat")
 })
+
+# ===========================================================================
+# PHASE 7: TOKEN TRACKING IN CONSOLE CHAT
+# ===========================================================================
+
+test_that("new conversation includes token tracking when enabled", {
+  skip_on_cran()
+
+  # Mock functions
+  local_mocked_bindings(
+    cassidy_create_thread = function(...) "thread_token_test",
+    cassidy_send_message = function(...) {
+      structure(
+        list(content = "Response with some content here", timestamp = Sys.time()),
+        class = "cassidy_response"
+      )
+    },
+    gather_context = function(...) paste(rep("context", 100), collapse = " "),
+    cassidy_save_conversation = function(conv) {
+      # Check that token fields are present and non-zero
+      expect_true("token_estimate" %in% names(conv))
+      expect_true("token_limit" %in% names(conv))
+      expect_type(conv$token_estimate, "integer")
+      expect_gt(conv$token_estimate, 0L)
+      expect_equal(conv$token_limit, .CASSIDY_TOKEN_LIMIT)
+
+      # Check that messages have token counts
+      expect_true("tokens" %in% names(conv$messages[[1]]))
+      expect_type(conv$messages[[1]]$tokens, "integer")
+      expect_gt(conv$messages[[1]]$tokens, 0L)
+
+      invisible(NULL)
+    },
+    .package = "cassidyr"
+  )
+
+  cassidyr:::.clear_state()
+
+  # Create conversation with token tracking
+  result <- cassidy_chat("Test message", track_tokens = TRUE)
+
+  expect_s3_class(result, "cassidy_chat")
+})
+
+test_that("new conversation omits token tracking when disabled", {
+  skip_on_cran()
+
+  # Mock functions
+  local_mocked_bindings(
+    cassidy_create_thread = function(...) "thread_no_token",
+    cassidy_send_message = function(...) {
+      structure(
+        list(content = "Response", timestamp = Sys.time()),
+        class = "cassidy_response"
+      )
+    },
+    gather_context = function(...) "Context",
+    cassidy_save_conversation = function(conv) {
+      # Check that token estimate is 0 when disabled
+      expect_equal(conv$token_estimate, 0L)
+      expect_equal(conv$messages[[1]]$tokens, 0L)
+      invisible(NULL)
+    },
+    .package = "cassidyr"
+  )
+
+  cassidyr:::.clear_state()
+
+  # Create conversation without token tracking
+  result <- cassidy_chat("Test", track_tokens = FALSE)
+
+  expect_s3_class(result, "cassidy_chat")
+})
+
+test_that("continuation warns when approaching token limit", {
+  skip_on_cran()
+
+  # Setup: conversation with high token usage
+  high_token_conv <- list(
+    id = "conv_high_tokens",
+    title = "High token conversation",
+    thread_id = "thread_high",
+    messages = list(
+      list(role = "user", content = "Message 1", timestamp = Sys.time(), tokens = 50000L),
+      list(role = "assistant", content = "Response 1", timestamp = Sys.time(), tokens = 50000L),
+      list(role = "user", content = "Message 2", timestamp = Sys.time(), tokens = 50000L),
+      list(role = "assistant", content = "Response 2", timestamp = Sys.time(), tokens = 50000L)
+    ),
+    context_sent = TRUE,
+    context_level = "standard",
+    context_files = character(),
+    created_at = Sys.time(),
+    updated_at = Sys.time(),
+    token_estimate = 165000L,  # 82.5% of 200,000
+    token_limit = .CASSIDY_TOKEN_LIMIT
+  )
+
+  # Mock functions
+  local_mocked_bindings(
+    cassidy_load_conversation = function(conv_id) high_token_conv,
+    cassidy_send_message = function(...) {
+      structure(
+        list(content = "Response", timestamp = Sys.time()),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_save_conversation = function(conv) invisible(NULL),
+    .package = "cassidyr"
+  )
+
+  cassidyr:::.set_current_conv_id("conv_high_tokens")
+
+  # Should warn about high usage
+  expect_message(
+    cassidy_chat("Continue", track_tokens = TRUE),
+    "Token usage is high"
+  )
+})
+
+test_that("continuation with auto_compact suggests cassidy_session", {
+  skip_on_cran()
+
+  # Setup: conversation approaching limit
+  high_conv <- list(
+    id = "conv_auto_compact_test",
+    title = "Test",
+    thread_id = "thread_test",
+    messages = list(
+      list(role = "user", content = "Msg", timestamp = Sys.time(), tokens = 80000L),
+      list(role = "assistant", content = "Resp", timestamp = Sys.time(), tokens = 85000L)
+    ),
+    context_sent = TRUE,
+    context_level = "standard",
+    context_files = character(),
+    created_at = Sys.time(),
+    updated_at = Sys.time(),
+    token_estimate = 165000L,
+    token_limit = .CASSIDY_TOKEN_LIMIT
+  )
+
+  local_mocked_bindings(
+    cassidy_load_conversation = function(conv_id) high_conv,
+    cassidy_send_message = function(...) {
+      structure(
+        list(content = "Response", timestamp = Sys.time()),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_save_conversation = function(conv) invisible(NULL),
+    .package = "cassidyr"
+  )
+
+  cassidyr:::.set_current_conv_id("conv_auto_compact_test")
+
+  # Should mention cassidy_session when auto_compact is TRUE
+  expect_message(
+    cassidy_chat("Test", track_tokens = TRUE, auto_compact = TRUE),
+    "cassidy_session"
+  )
+})
+
+test_that("continuation updates token estimate correctly", {
+  skip_on_cran()
+
+  # Setup: conversation with initial tokens
+  test_conv <- list(
+    id = "conv_update_tokens",
+    title = "Test",
+    thread_id = "thread_test",
+    messages = list(
+      list(role = "user", content = "First", timestamp = Sys.time(), tokens = 10L),
+      list(role = "assistant", content = "Response", timestamp = Sys.time(), tokens = 20L)
+    ),
+    context_sent = TRUE,
+    context_level = "standard",
+    context_files = character(),
+    created_at = Sys.time(),
+    updated_at = Sys.time(),
+    token_estimate = 30L,
+    token_limit = .CASSIDY_TOKEN_LIMIT
+  )
+
+  saved_estimate <- NULL
+
+  local_mocked_bindings(
+    cassidy_load_conversation = function(conv_id) test_conv,
+    cassidy_send_message = function(...) {
+      structure(
+        list(content = "New response", timestamp = Sys.time()),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_save_conversation = function(conv) {
+      # Capture the updated token estimate
+      saved_estimate <<- conv$token_estimate
+      invisible(NULL)
+    },
+    .package = "cassidyr"
+  )
+
+  cassidyr:::.set_current_conv_id("conv_update_tokens")
+
+  # Send a message
+  result <- cassidy_chat("New message", track_tokens = TRUE)
+
+  # Token estimate should have increased
+  expect_true(!is.null(saved_estimate))
+  expect_gt(saved_estimate, 30L)
+})
+
+test_that("cassidy_current displays token usage", {
+  # Setup conversation with token tracking
+  conv_with_tokens <- list(
+    id = "conv_with_tokens",
+    title = "Token test",
+    thread_id = "thread_tokens",
+    messages = list(),
+    context_sent = FALSE,
+    context_level = "standard",
+    created_at = Sys.time(),
+    updated_at = Sys.time(),
+    token_estimate = 50000L,
+    token_limit = .CASSIDY_TOKEN_LIMIT
+  )
+
+  cassidyr:::.set_current_conv_id("conv_with_tokens")
+
+  local_mocked_bindings(
+    cassidy_load_conversation = function(conv_id) conv_with_tokens,
+    .package = "cassidyr"
+  )
+
+  # Should display without error
+  result <- cassidy_current()
+
+  expect_type(result, "list")
+  expect_equal(result$token_estimate, 50000L)
+})
+
+test_that("cassidy_current warns about high token usage", {
+  # Setup conversation with high token usage (>80%)
+  conv_high_tokens <- list(
+    id = "conv_high_warn",
+    title = "High usage",
+    thread_id = "thread_high",
+    messages = list(),
+    context_sent = FALSE,
+    context_level = "standard",
+    created_at = Sys.time(),
+    updated_at = Sys.time(),
+    token_estimate = 170000L,  # 85% of 200,000
+    token_limit = .CASSIDY_TOKEN_LIMIT
+  )
+
+  cassidyr:::.set_current_conv_id("conv_high_warn")
+
+  local_mocked_bindings(
+    cassidy_load_conversation = function(conv_id) conv_high_tokens,
+    .package = "cassidyr"
+  )
+
+  # Should show warning
+  expect_message(
+    cassidy_current(),
+    "Token usage is high"
+  )
+})
+
+test_that("token tracking handles backward compatibility", {
+  skip_on_cran()
+
+  # Old conversation without token fields
+  old_conv <- list(
+    id = "conv_old_format",
+    title = "Old",
+    thread_id = "thread_old",
+    messages = list(
+      list(role = "user", content = "Message", timestamp = Sys.time())
+    ),
+    context_sent = TRUE,
+    context_level = "standard",
+    context_files = character(),
+    created_at = Sys.time(),
+    updated_at = Sys.time()
+    # No token_estimate or token_limit fields
+  )
+
+  local_mocked_bindings(
+    cassidy_load_conversation = function(conv_id) old_conv,
+    cassidy_send_message = function(...) {
+      structure(
+        list(content = "Response", timestamp = Sys.time()),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_save_conversation = function(conv) {
+      # Should add token tracking on save
+      expect_true("token_estimate" %in% names(conv))
+      invisible(NULL)
+    },
+    .package = "cassidyr"
+  )
+
+  cassidyr:::.set_current_conv_id("conv_old_format")
+
+  # Should work without errors
+  expect_no_error(
+    cassidy_chat("Continue", track_tokens = TRUE)
+  )
+})
+
+test_that("warn_at parameter customizes warning threshold", {
+  skip_on_cran()
+
+  # Conversation at 70% usage (below default 80% but above custom 60%)
+  conv_70pct <- list(
+    id = "conv_custom_warn",
+    title = "Test",
+    thread_id = "thread_test",
+    messages = list(
+      list(role = "user", content = "Msg", timestamp = Sys.time(), tokens = 70000L),
+      list(role = "assistant", content = "Resp", timestamp = Sys.time(), tokens = 70000L)
+    ),
+    context_sent = TRUE,
+    context_level = "standard",
+    context_files = character(),
+    created_at = Sys.time(),
+    updated_at = Sys.time(),
+    token_estimate = 140000L,  # 70% of 200,000
+    token_limit = .CASSIDY_TOKEN_LIMIT
+  )
+
+  local_mocked_bindings(
+    cassidy_load_conversation = function(conv_id) conv_70pct,
+    cassidy_send_message = function(...) {
+      structure(
+        list(content = "Response", timestamp = Sys.time()),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_save_conversation = function(conv) invisible(NULL),
+    .package = "cassidyr"
+  )
+
+  cassidyr:::.set_current_conv_id("conv_custom_warn")
+
+  # With default warn_at (0.80), should NOT warn
+  expect_no_message(
+    result1 <- cassidy_chat("Test", track_tokens = TRUE, warn_at = 0.80)
+  )
+
+  # Reset for next test
+  cassidyr:::.set_current_conv_id("conv_custom_warn")
+
+  # With custom warn_at (0.60), SHOULD warn
+  expect_message(
+    result2 <- cassidy_chat("Test", track_tokens = TRUE, warn_at = 0.60),
+    "Token usage is high"
+  )
+})

@@ -14,6 +14,9 @@ cassidy_chat(
   include_files = NULL,
   include_skills = NULL,
   timeout = 300,
+  track_tokens = TRUE,
+  warn_at = .CASSIDY_WARNING_AT,
+  auto_compact = FALSE,
   thread_id = NULL,
   context = NULL
 )
@@ -48,6 +51,17 @@ context for new conversations.}
 in context for new conversations.}
 
 \item{timeout}{Numeric. Request timeout in seconds. Default is 300.}
+
+\item{track_tokens}{Logical. Whether to track token usage and warn when
+approaching limits. Default is TRUE.}
+
+\item{warn_at}{Numeric. Fraction of token limit at which to warn about high
+usage (default 0.80 = 80\%).}
+
+\item{auto_compact}{Logical. Whether to automatically compact conversation
+when approaching token limit. Default is FALSE to maintain console
+simplicity. For long conversations with auto-compaction, use
+\code{\link[=cassidy_session]{cassidy_session()}} instead.}
 
 \item{thread_id}{Character or NULL. \strong{Deprecated.} For backward
 compatibility only. If provided, uses legacy behavior without state
@@ -94,6 +108,17 @@ Conversations are automatically saved to disk after each message, so you can
 resume them later even after restarting R.
 }
 
+\subsection{Token Management}{
+
+By default, the function tracks token usage and warns when usage exceeds
+80\% of the limit (200,000 tokens). This helps prevent API failures due to
+token limit errors.
+
+For long conversations, consider using \code{\link[=cassidy_session]{cassidy_session()}} which provides
+automatic compaction when approaching token limits. Console chat keeps
+\code{auto_compact = FALSE} by default to maintain simplicity.
+}
+
 \subsection{State Management Functions}{
 \itemize{
 \item \code{\link[=cassidy_conversations]{cassidy_conversations()}} - List saved conversations
@@ -124,6 +149,20 @@ cassidy_chat(
   conversation = "new",
   context_level = "comprehensive"
 )
+
+# Check current conversation including token usage
+cassidy_current()
+
+# Token tracking warns when approaching limit
+# (Happens automatically when usage > 80\%)
+cassidy_chat("Continue our discussion")
+
+# Disable token tracking if not needed
+cassidy_chat("Quick question", track_tokens = FALSE)
+
+# For long conversations with auto-compaction, use cassidy_session()
+session <- cassidy_session(auto_compact = TRUE)
+chat(session, "This will auto-compact when needed")
 
 # Switch to a previous conversation
 convs <- cassidy_conversations()

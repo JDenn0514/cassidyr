@@ -147,6 +147,14 @@
 #' @param include_skills Character vector. Optional skill names to include
 #'   in context for new conversations.
 #' @param timeout Numeric. Request timeout in seconds. Default is 300.
+#' @param track_tokens Logical. Whether to track token usage and warn when
+#'   approaching limits. Default is TRUE.
+#' @param warn_at Numeric. Fraction of token limit at which to warn about high
+#'   usage (default 0.80 = 80%).
+#' @param auto_compact Logical. Whether to automatically compact conversation
+#'   when approaching token limit. Default is FALSE to maintain console
+#'   simplicity. For long conversations with auto-compaction, use
+#'   [cassidy_session()] instead.
 #' @param thread_id Character or NULL. **Deprecated.** For backward
 #'   compatibility only. If provided, uses legacy behavior without state
 #'   management.
@@ -181,6 +189,16 @@
 #' Conversations are automatically saved to disk after each message, so you can
 #' resume them later even after restarting R.
 #'
+#' ## Token Management
+#'
+#' By default, the function tracks token usage and warns when usage exceeds
+#' 80% of the limit (200,000 tokens). This helps prevent API failures due to
+#' token limit errors.
+#'
+#' For long conversations, consider using [cassidy_session()] which provides
+#' automatic compaction when approaching token limits. Console chat keeps
+#' `auto_compact = FALSE` by default to maintain simplicity.
+#'
 #' ## State Management Functions
 #'
 #' - [cassidy_conversations()] - List saved conversations
@@ -213,6 +231,20 @@
 #'   context_level = "comprehensive"
 #' )
 #'
+#' # Check current conversation including token usage
+#' cassidy_current()
+#'
+#' # Token tracking warns when approaching limit
+#' # (Happens automatically when usage > 80%)
+#' cassidy_chat("Continue our discussion")
+#'
+#' # Disable token tracking if not needed
+#' cassidy_chat("Quick question", track_tokens = FALSE)
+#'
+#' # For long conversations with auto-compaction, use cassidy_session()
+#' session <- cassidy_session(auto_compact = TRUE)
+#' chat(session, "This will auto-compact when needed")
+#'
 #' # Switch to a previous conversation
 #' convs <- cassidy_conversations()
 #' cassidy_chat("Continue where we left off", conversation = convs$id[2])
@@ -231,6 +263,9 @@ cassidy_chat <- function(
   include_files = NULL,
   include_skills = NULL,
   timeout = 300,
+  track_tokens = TRUE,
+  warn_at = .CASSIDY_WARNING_AT,
+  auto_compact = FALSE,
   thread_id = NULL,
   context = NULL
 ) {
@@ -270,7 +305,8 @@ cassidy_chat <- function(
         include_data = include_data,
         include_files = include_files,
         include_skills = include_skills,
-        timeout = timeout
+        timeout = timeout,
+        track_tokens = track_tokens
       )
     } else {
       # Continue current conversation
@@ -278,7 +314,10 @@ cassidy_chat <- function(
         message = message,
         conv_id = current_conv_id,
         api_key = api_key,
-        timeout = timeout
+        timeout = timeout,
+        track_tokens = track_tokens,
+        warn_at = warn_at,
+        auto_compact = auto_compact
       )
     }
   } else if (conversation == "new") {
@@ -291,7 +330,8 @@ cassidy_chat <- function(
       include_data = include_data,
       include_files = include_files,
       include_skills = include_skills,
-      timeout = timeout
+      timeout = timeout,
+      track_tokens = track_tokens
     )
   } else {
     # Switch to specific conversation
@@ -299,7 +339,10 @@ cassidy_chat <- function(
       message = message,
       conv_id = conversation,
       api_key = api_key,
-      timeout = timeout
+      timeout = timeout,
+      track_tokens = track_tokens,
+      warn_at = warn_at,
+      auto_compact = auto_compact
     )
   }
 
@@ -320,7 +363,8 @@ cassidy_chat <- function(
   include_data,
   include_files,
   include_skills,
-  timeout
+  timeout,
+  track_tokens
 ) {
   # Generate conversation ID
   conv_id <- .generate_conv_id()
@@ -365,6 +409,16 @@ cassidy_chat <- function(
     timeout = timeout
   )
 
+  # Estimate tokens if tracking enabled
+  user_msg_tokens <- if (track_tokens) cassidy_estimate_tokens(original_message) else 0L
+  assistant_msg_tokens <- if (track_tokens) cassidy_estimate_tokens(response$content) else 0L
+  context_tokens <- if (track_tokens && !is.null(context_text)) {
+    cassidy_estimate_tokens(context_text)
+  } else {
+    0L
+  }
+  total_tokens <- user_msg_tokens + assistant_msg_tokens + context_tokens
+
   # Create conversation object
   conversation <- list(
     id = conv_id,
@@ -374,12 +428,14 @@ cassidy_chat <- function(
       list(
         role = "user",
         content = original_message,
-        timestamp = Sys.time()
+        timestamp = Sys.time(),
+        tokens = user_msg_tokens
       ),
       list(
         role = "assistant",
         content = response$content,
-        timestamp = response$timestamp
+        timestamp = response$timestamp,
+        tokens = assistant_msg_tokens
       )
     ),
     context_sent = !is.null(context_text),
@@ -389,7 +445,10 @@ cassidy_chat <- function(
     sent_data_frames = character(),
     sent_skills = if (!is.null(include_skills)) include_skills else character(),
     created_at = Sys.time(),
-    updated_at = Sys.time()
+    updated_at = Sys.time(),
+    # Token tracking fields
+    token_estimate = total_tokens,
+    token_limit = .CASSIDY_TOKEN_LIMIT
   )
 
   # Save conversation
@@ -420,7 +479,10 @@ cassidy_chat <- function(
   message,
   conv_id,
   api_key,
-  timeout
+  timeout,
+  track_tokens,
+  warn_at,
+  auto_compact
 ) {
   # Load conversation
   conversation <- cassidy_load_conversation(conv_id)
@@ -440,6 +502,36 @@ cassidy_chat <- function(
     ))
   }
 
+  # Check token usage if tracking enabled
+  if (track_tokens) {
+    current_tokens <- conversation$token_estimate %||% 0L
+    new_msg_tokens <- cassidy_estimate_tokens(message)
+    projected_tokens <- current_tokens + new_msg_tokens
+
+    token_limit <- conversation$token_limit %||% .CASSIDY_TOKEN_LIMIT
+    threshold_tokens <- floor(token_limit * warn_at)
+
+    if (projected_tokens > threshold_tokens) {
+      pct <- round(100 * projected_tokens / token_limit, 1)
+      cli::cli_alert_warning(
+        "Token usage is high: {format(projected_tokens, big.mark = ',')} / {format(token_limit, big.mark = ',')} ({pct}%)"
+      )
+
+      if (auto_compact) {
+        cli::cli_alert_info(
+          "Auto-compaction is not supported for console chat conversations."
+        )
+        cli::cli_alert_info(
+          "For long conversations with auto-compaction, use {.fn cassidy_session} instead"
+        )
+      } else {
+        cli::cli_alert_info(
+          "Consider starting a new conversation or using {.fn cassidy_session} for auto-compaction"
+        )
+      }
+    }
+  }
+
   # Send message to existing thread
   response <- cassidy_send_message(
     thread_id = conversation$thread_id,
@@ -448,6 +540,10 @@ cassidy_chat <- function(
     timeout = timeout
   )
 
+  # Estimate tokens for new messages
+  user_msg_tokens <- if (track_tokens) cassidy_estimate_tokens(message) else 0L
+  assistant_msg_tokens <- if (track_tokens) cassidy_estimate_tokens(response$content) else 0L
+
   # Update conversation
   conversation$messages <- c(
     conversation$messages,
@@ -455,16 +551,24 @@ cassidy_chat <- function(
       list(
         role = "user",
         content = message,
-        timestamp = Sys.time()
+        timestamp = Sys.time(),
+        tokens = user_msg_tokens
       ),
       list(
         role = "assistant",
         content = response$content,
-        timestamp = response$timestamp
+        timestamp = response$timestamp,
+        tokens = assistant_msg_tokens
       )
     )
   )
   conversation$updated_at <- Sys.time()
+
+  # Update token estimate if tracking
+  if (track_tokens) {
+    current_estimate <- conversation$token_estimate %||% 0L
+    conversation$token_estimate <- current_estimate + user_msg_tokens + assistant_msg_tokens
+  }
 
   # Save updated conversation
   cassidy_save_conversation(conversation)
@@ -490,7 +594,10 @@ cassidy_chat <- function(
   message,
   conv_id,
   api_key,
-  timeout
+  timeout,
+  track_tokens,
+  warn_at,
+  auto_compact
 ) {
   # Load conversation
   conversation <- cassidy_load_conversation(conv_id)
@@ -513,7 +620,10 @@ cassidy_chat <- function(
     message = message,
     conv_id = conv_id,
     api_key = api_key,
-    timeout = timeout
+    timeout = timeout,
+    track_tokens = track_tokens,
+    warn_at = warn_at,
+    auto_compact = auto_compact
   )
 }
 
@@ -657,6 +767,19 @@ cassidy_current <- function() {
     "{.field Updated}: {.val {format(conversation$updated_at, '%Y-%m-%d %H:%M:%S')}}"
   )
   cli::cli_text("{.field Messages}: {.val {length(conversation$messages)}}")
+
+  # Show token usage if available
+  if (!is.null(conversation$token_estimate) && conversation$token_estimate > 0) {
+    token_limit <- conversation$token_limit %||% .CASSIDY_TOKEN_LIMIT
+    pct <- round(100 * conversation$token_estimate / token_limit, 1)
+    cli::cli_text(
+      "{.field Tokens}: {format(conversation$token_estimate, big.mark = ',')} / {format(token_limit, big.mark = ',')} ({pct}%)"
+    )
+
+    if (pct > 80) {
+      cli::cli_alert_warning("Token usage is high - consider starting a new conversation")
+    }
+  }
 
   if (conversation$context_sent) {
     cli::cli_text(

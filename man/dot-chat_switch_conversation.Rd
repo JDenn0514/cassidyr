@@ -4,7 +4,15 @@
 \alias{.chat_switch_conversation}
 \title{Switch to different conversation and continue}
 \usage{
-.chat_switch_conversation(message, conv_id, api_key, timeout)
+.chat_switch_conversation(
+  message,
+  conv_id,
+  api_key,
+  timeout,
+  track_tokens,
+  warn_at,
+  auto_compact
+)
 }
 \description{
 Switch to different conversation and continue

@@ -12,7 +12,8 @@
   include_data,
   include_files,
   include_skills,
-  timeout
+  timeout,
+  track_tokens
 )
 }
 \description{

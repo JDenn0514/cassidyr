@@ -4,7 +4,15 @@
 \alias{.chat_continue_conversation}
 \title{Continue existing conversation}
 \usage{
-.chat_continue_conversation(message, conv_id, api_key, timeout)
+.chat_continue_conversation(
+  message,
+  conv_id,
+  api_key,
+  timeout,
+  track_tokens,
+  warn_at,
+  auto_compact
+)
 }
 \description{
 Continue existing conversation
