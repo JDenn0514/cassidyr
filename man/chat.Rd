@@ -14,18 +14,45 @@ chat(x, message, ...)
 \item{...}{Additional arguments passed to methods.}
 }
 \value{
-A \code{cassidy_chat} object.
+When used with a \code{cassidy_session}, returns the updated session
+invisibly. When used with a thread_id, returns a \code{cassidy_chat} object.
 }
 \description{
 Generic function for sending messages. Works with both \code{cassidy_session}
 objects and directly with thread IDs.
 }
+\details{
+When used with a \code{cassidy_session} object, this function:
+\itemize{
+\item Tracks token usage for each message
+\item Automatically compacts conversation history when approaching token limits
+(if \code{auto_compact = TRUE} in the session)
+\item Provides warnings when token usage is high
+\item Maintains conversation state across multiple messages
+}
+
+The session object is returned invisibly with updated state, so you must
+capture the return value to preserve changes:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{session <- chat(session, "message")  # Correct
+chat(session, "message")             # Wrong - loses state
+}\if{html}{\out{</div>}}
+}
 \examples{
 \dontrun{
 # With a session
 session <- cassidy_session()
-result <- chat(session, "Hello!")
-result2 <- chat(session, "How are you?")
+session <- chat(session, "Hello!")
+session <- chat(session, "How are you?")
+
+# Auto-compaction triggers when approaching token limit
+session <- cassidy_session(auto_compact = TRUE)
+# ... many messages ...
+session <- chat(session, "Continue")  # May auto-compact
+
+# Disable auto-compaction
+session <- cassidy_session(auto_compact = FALSE)
+session <- chat(session, "Message")  # Only warns, never compacts
 
 # With a thread_id directly
 result <- chat("thread_abc123", "Hello!")

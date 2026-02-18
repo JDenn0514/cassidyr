@@ -154,11 +154,27 @@ cassidy_continue <- function(
 #' Generic function for sending messages. Works with both `cassidy_session`
 #' objects and directly with thread IDs.
 #'
+#' When used with a `cassidy_session` object, this function:
+#' - Tracks token usage for each message
+#' - Automatically compacts conversation history when approaching token limits
+#'   (if `auto_compact = TRUE` in the session)
+#' - Provides warnings when token usage is high
+#' - Maintains conversation state across multiple messages
+#'
+#' The session object is returned invisibly with updated state, so you must
+#' capture the return value to preserve changes:
+#'
+#' ```r
+#' session <- chat(session, "message")  # Correct
+#' chat(session, "message")             # Wrong - loses state
+#' ```
+#'
 #' @param x A `cassidy_session` object or character thread_id.
 #' @param message Character. The message to send.
 #' @param ... Additional arguments passed to methods.
 #'
-#' @return A `cassidy_chat` object.
+#' @return When used with a `cassidy_session`, returns the updated session
+#'   invisibly. When used with a thread_id, returns a `cassidy_chat` object.
 #'
 #' @family chat-functions
 #' @export
@@ -167,8 +183,17 @@ cassidy_continue <- function(
 #' \dontrun{
 #' # With a session
 #' session <- cassidy_session()
-#' result <- chat(session, "Hello!")
-#' result2 <- chat(session, "How are you?")
+#' session <- chat(session, "Hello!")
+#' session <- chat(session, "How are you?")
+#'
+#' # Auto-compaction triggers when approaching token limit
+#' session <- cassidy_session(auto_compact = TRUE)
+#' # ... many messages ...
+#' session <- chat(session, "Continue")  # May auto-compact
+#'
+#' # Disable auto-compaction
+#' session <- cassidy_session(auto_compact = FALSE)
+#' session <- chat(session, "Message")  # Only warns, never compacts
 #'
 #' # With a thread_id directly
 #' result <- chat("thread_abc123", "Hello!")
@@ -178,25 +203,49 @@ chat <- function(x, message, ...) {
 }
 
 #' @export
-#' @export
 chat.cassidy_session <- function(x, message, ...) {
   # Estimate tokens for new message
   new_msg_tokens <- cassidy_estimate_tokens(message)
 
-  # Check if we need to warn about token usage
+  # Check if we need to compact BEFORE sending
   if (!is.null(x$token_estimate) && !is.null(x$token_limit)) {
-    threshold_tokens <- floor(x$token_limit * .CASSIDY_WARNING_AT)
     current_tokens <- x$token_estimate
-    projected_tokens <- current_tokens + new_msg_tokens + (x$tool_overhead %||% 0L)
+    tool_overhead <- x$tool_overhead %||% 0L
+    projected_tokens <- current_tokens + new_msg_tokens + tool_overhead
 
-    if (projected_tokens > threshold_tokens) {
-      pct <- round(100 * projected_tokens / x$token_limit, 1)
-      cli::cli_alert_warning(
-        "Token usage is high: {format(projected_tokens, big.mark = ',')} / {format(x$token_limit, big.mark = ',')} ({pct}%)"
-      )
-      cli::cli_alert_info(
-        "Consider using {.fn cassidy_compact} to reduce conversation length"
-      )
+    if (x$auto_compact) {
+      # Auto-compact is enabled - check threshold
+      threshold_tokens <- floor(x$token_limit * x$compact_at)
+
+      if (projected_tokens > threshold_tokens) {
+        pct <- round(100 * projected_tokens / x$token_limit, 1)
+        cli::cli_alert_warning(
+          "Approaching token limit ({format(current_tokens, big.mark = ',')} + {format(new_msg_tokens, big.mark = ',')} = {format(projected_tokens, big.mark = ',')} tokens, threshold: {format(threshold_tokens, big.mark = ',')})"
+        )
+        cli::cli_alert_info("Auto-compacting conversation history...")
+
+        # Perform compaction (creates new thread with summary)
+        x <- cassidy_compact(x, preserve_recent = 2)
+
+        cli::cli_alert_success("Compaction complete. Continuing with your message...")
+
+        # Recalculate projected tokens after compaction
+        current_tokens <- x$token_estimate
+        projected_tokens <- current_tokens + new_msg_tokens + tool_overhead
+      }
+    } else {
+      # Auto-compact disabled - just warn
+      threshold_tokens <- floor(x$token_limit * .CASSIDY_WARNING_AT)
+
+      if (projected_tokens > threshold_tokens) {
+        pct <- round(100 * projected_tokens / x$token_limit, 1)
+        cli::cli_alert_warning(
+          "Token usage is high: {format(projected_tokens, big.mark = ',')} / {format(x$token_limit, big.mark = ',')} ({pct}%)"
+        )
+        cli::cli_alert_info(
+          "Consider running {.fn cassidy_compact} or the conversation may fail soon"
+        )
+      }
     }
   }
 

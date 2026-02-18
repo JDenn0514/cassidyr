@@ -498,3 +498,214 @@ test_that("Sessions track messages correctly", {
   expect_equal(session$messages[[3]]$role, "user")
   expect_equal(session$messages[[4]]$role, "assistant")
 })
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEST: Auto-compaction in chat.cassidy_session()
+# ══════════════════════════════════════════════════════════════════════════════
+
+test_that("chat.cassidy_session() triggers auto-compaction when threshold exceeded", {
+  # Create session approaching token limit
+  session <- structure(
+    list(
+      thread_id = "thread_123",
+      assistant_id = "asst_test",
+      messages = list(),
+      created_at = Sys.time(),
+      api_key = "test_key",
+      context = NULL,
+      context_sent = FALSE,
+      token_estimate = 180000L,  # 90% of 200k limit
+      token_limit = 200000L,
+      compact_at = 0.85,  # 85% threshold
+      auto_compact = TRUE,
+      compaction_count = 0L,
+      last_compaction = NULL,
+      tool_overhead = 0L
+    ),
+    class = "cassidy_session"
+  )
+
+  # Mock functions
+  local_mocked_bindings(
+    cassidy_send_message = function(thread_id, message, ...) {
+      structure(
+        list(
+          content = "Response",
+          thread_id = thread_id,
+          timestamp = Sys.time(),
+          raw = list()
+        ),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_compact = function(x, ...) {
+      # Return compacted session with lower token count
+      x$token_estimate <- 50000L
+      x$compaction_count <- x$compaction_count + 1L
+      x$last_compaction <- Sys.time()
+      x$thread_id <- "thread_new_456"
+      x
+    }
+  )
+
+  # Should trigger compaction
+  result <- suppressMessages(chat(session, "Test message"))
+
+  # Check that compaction was called
+  expect_equal(result$compaction_count, 1L)
+  expect_equal(result$thread_id, "thread_new_456")
+  expect_lt(result$token_estimate, 180000L)
+})
+
+test_that("chat.cassidy_session() does not compact when auto_compact is FALSE", {
+  # Create session approaching token limit
+  session <- structure(
+    list(
+      thread_id = "thread_123",
+      assistant_id = "asst_test",
+      messages = list(),
+      created_at = Sys.time(),
+      api_key = "test_key",
+      context = NULL,
+      context_sent = FALSE,
+      token_estimate = 180000L,  # 90% of limit
+      token_limit = 200000L,
+      compact_at = 0.85,
+      auto_compact = FALSE,  # Disabled
+      compaction_count = 0L,
+      last_compaction = NULL,
+      tool_overhead = 0L
+    ),
+    class = "cassidy_session"
+  )
+
+  # Mock functions
+  local_mocked_bindings(
+    cassidy_send_message = function(thread_id, message, ...) {
+      structure(
+        list(
+          content = "Response",
+          thread_id = thread_id,
+          timestamp = Sys.time(),
+          raw = list()
+        ),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_compact = function(x, ...) {
+      # Should not be called
+      stop("cassidy_compact should not be called")
+    }
+  )
+
+  # Should NOT trigger compaction, just warn
+  result <- suppressMessages(chat(session, "Test message"))
+
+  # Check that compaction was NOT called
+  expect_equal(result$compaction_count, 0L)
+  expect_equal(result$thread_id, "thread_123")
+})
+
+test_that("chat.cassidy_session() does not compact below threshold", {
+  # Create session well below threshold
+  session <- structure(
+    list(
+      thread_id = "thread_123",
+      assistant_id = "asst_test",
+      messages = list(),
+      created_at = Sys.time(),
+      api_key = "test_key",
+      context = NULL,
+      context_sent = FALSE,
+      token_estimate = 50000L,  # Only 25% of limit
+      token_limit = 200000L,
+      compact_at = 0.85,
+      auto_compact = TRUE,
+      compaction_count = 0L,
+      last_compaction = NULL,
+      tool_overhead = 0L
+    ),
+    class = "cassidy_session"
+  )
+
+  # Mock functions
+  local_mocked_bindings(
+    cassidy_send_message = function(thread_id, message, ...) {
+      structure(
+        list(
+          content = "Response",
+          thread_id = thread_id,
+          timestamp = Sys.time(),
+          raw = list()
+        ),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_compact = function(x, ...) {
+      # Should not be called
+      stop("cassidy_compact should not be called")
+    }
+  )
+
+  # Should NOT trigger compaction
+  result <- suppressMessages(chat(session, "Test message"))
+
+  # Check that compaction was NOT called
+  expect_equal(result$compaction_count, 0L)
+  expect_equal(result$thread_id, "thread_123")
+})
+
+test_that("chat.cassidy_session() includes tool overhead in threshold calculation", {
+  # Create session with tool overhead
+  session <- structure(
+    list(
+      thread_id = "thread_123",
+      assistant_id = "asst_test",
+      messages = list(),
+      created_at = Sys.time(),
+      api_key = "test_key",
+      context = NULL,
+      context_sent = FALSE,
+      token_estimate = 160000L,  # 80% of limit
+      token_limit = 200000L,
+      compact_at = 0.85,
+      auto_compact = TRUE,
+      compaction_count = 0L,
+      last_compaction = NULL,
+      tool_overhead = 10000L  # 10k token overhead
+    ),
+    class = "cassidy_session"
+  )
+
+  compaction_triggered <- FALSE
+
+  # Mock functions
+  local_mocked_bindings(
+    cassidy_send_message = function(thread_id, message, ...) {
+      structure(
+        list(
+          content = "Response",
+          thread_id = thread_id,
+          timestamp = Sys.time(),
+          raw = list()
+        ),
+        class = "cassidy_response"
+      )
+    },
+    cassidy_compact = function(x, ...) {
+      compaction_triggered <<- TRUE
+      x$token_estimate <- 50000L
+      x$compaction_count <- x$compaction_count + 1L
+      x$thread_id <- "thread_new_456"
+      x
+    }
+  )
+
+  # With tool overhead, projected tokens should exceed threshold
+  # 160k + ~2k (message) + 10k (overhead) = ~172k > 170k (85% of 200k)
+  result <- suppressMessages(chat(session, "Test message"))
+
+  # Should trigger compaction due to tool overhead
+  expect_true(compaction_triggered)
+  expect_equal(result$compaction_count, 1L)
+})

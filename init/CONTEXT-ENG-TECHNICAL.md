@@ -1,6 +1,6 @@
 # Context Engineering System - Technical Implementation Plan
 
-**Status:** Phase 3 Complete (Manual Compaction)
+**Status:** Phase 4 Complete (Automatic Compaction)
 **Date:** 2026-02-18
 **Target:** cassidyr package context management system
 
@@ -38,6 +38,20 @@
 - All 1225 package tests passing
 - Package passes R CMD check with 0 errors, 0 warnings, 0 notes
 
+**Phase 4: Automatic Compaction (Complete)**
+- chat.cassidy_session() now checks token threshold BEFORE sending messages
+- Auto-compaction triggers when projected tokens exceed compact_at threshold (default 85%)
+- Calculates projected tokens: current + new message + tool overhead
+- Calls cassidy_compact() automatically with preserve_recent = 2
+- Provides clear user feedback during auto-compaction (warning, info, success messages)
+- When auto_compact = FALSE, warns user but doesn't compact
+- Recalculates projected tokens after compaction
+- 4 new unit tests for auto-compaction behavior (test-chat-core.R)
+- Tests verify: threshold triggering, auto_compact = FALSE behavior, tool overhead inclusion
+- Updated documentation for chat() generic to explain auto-compaction
+- All tests passing (59 tests in test-chat-core.R)
+- Package passes R CMD check with 0 errors, 0 warnings
+
 **Phase 9: Timeout Management (Complete)**
 - Timeout detection and retry logic
 - Input size validation
@@ -46,37 +60,50 @@
 
 ### What to Do Next
 
-**Implement Phase 4: Automatic Compaction**
+**Implement Phase 5: Shiny UI Integration**
 
-**Estimated Effort:** 4-6 hours
+**Estimated Effort:** 8-10 hours
 
 **Tasks:**
-1. Modify `chat.cassidy_session()` in `R/chat-core.R`
-2. Add auto-compaction logic before sending messages
-3. Check if projected tokens will exceed threshold
-4. Trigger cassidy_compact() automatically when needed
-5. Add user notifications (warnings before compaction)
-6. Test auto-compaction threshold behavior
-7. Document auto-compaction in function docs
-8. Ensure auto_compact parameter works correctly (default: TRUE)
+1. Add token usage display to Shiny UI in `R/chat-ui.R` and `R/chat-ui-components.R`
+2. Create compact button in context panel
+3. Implement compaction handler in appropriate chat-handlers-*.R file
+4. Update ConversationManager to handle token tracking in reactive context
+5. Update message handlers in `R/chat-handlers-message.R` to track tokens
+6. Add visual warnings for high token usage (color-coded alerts)
+7. Test in live Shiny app with real conversations
+8. Polish UI feedback and error handling
+9. Update documentation
+10. Test, commit, and push changes
 
 **Key Files to Modify:**
-- `R/chat-core.R` - Update chat.cassidy_session() method
+- `R/chat-ui-components.R` - Add token usage display to context panel
+- `R/chat-ui.R` - Add server logic for token display (renderUI)
+- `R/chat-handlers-message.R` - Update to track tokens in Shiny context
+- `R/chat-handlers-conversation.R` or new file - Add compact button handler
 
 **Important Design Decisions:**
-- Check token threshold BEFORE sending new message (not after)
-- Calculate projected tokens: current + new message + tool overhead
-- Auto-compact is opt-out (enabled by default with auto_compact = TRUE)
-- Provide clear user feedback during auto-compaction
-- Preserve recent messages to maintain conversation continuity
+- Token display should be color-coded: green (<60%), yellow (60-80%), red (>80%)
+- Display format: "Estimated Tokens: X / 200,000 (XX%)"
+- Compact button should show in context panel
+- Compaction in Shiny requires handling ConversationManager state
+- Show warnings/success messages using showNotification()
 
 **Testing Strategy:**
-- Unit tests for threshold checking logic
-- Manual tests with real API to verify auto-compaction triggers
-- Test that auto_compact = FALSE disables auto-compaction
-- Verify warnings are shown when approaching limit without auto-compact
+- Manual testing in live Shiny app
+- Test token display updates after each message
+- Test compact button triggers compaction
+- Verify ConversationManager state updates correctly
+- Test conversation persistence after compaction
 
-See **Section 3** (chat.cassidy_session updates) in implementation plan below for detailed code.
+See **Section 5** (Shiny UI Integration) in implementation plan below for detailed code.
+
+**After Phase 5 Completion:**
+- Update this section with Phase 5 completion notes
+- Run all tests and verify they pass
+- Commit changes with message: "Implement Phase 5: Shiny UI Integration"
+- Push to remote repository
+- Update CURRENT STATUS SUMMARY below
 
 ---
 
@@ -86,9 +113,10 @@ See **Section 3** (chat.cassidy_session updates) in implementation plan below fo
 - ✅ Phase 1: Token Estimation (2026-02-17)
 - ✅ Phase 2: Session Tracking (2026-02-18)
 - ✅ Phase 3: Manual Compaction (2026-02-18)
+- ✅ Phase 4: Automatic Compaction (2026-02-18)
 - ✅ Phase 9: Timeout Management (2026-02-17)
 
-**Next Phase:** Phase 4 - Automatic Compaction
+**Next Phase:** Phase 5 - Shiny UI Integration
 
 ---
 
@@ -2370,13 +2398,30 @@ The context management system is successful if:
 - All 1225 package tests passing
 - Package passes R CMD check (0 errors, 0 warnings, 0 notes)
 
-### Phase 4: Automatic Compaction
-- [ ] Add auto-compaction to `chat.cassidy_session()`
-- [ ] Implement threshold checking
-- [ ] Add user notifications
-- [ ] Test auto-compaction behavior
-- [ ] Document auto-compaction
-- [ ] Add disable option
+### Phase 4: Automatic Compaction ✅ COMPLETE
+- [x] Add auto-compaction to `chat.cassidy_session()`
+- [x] Implement threshold checking
+- [x] Add user notifications
+- [x] Test auto-compaction behavior
+- [x] Document auto-compaction
+- [x] Add disable option
+
+**Implementation Notes:**
+- Modified chat.cassidy_session() in R/chat-core.R to check token threshold BEFORE sending messages
+- Auto-compaction triggers when projected tokens exceed compact_at threshold (default 85%)
+- Calculates projected tokens: current + new message + tool overhead
+- When auto_compact = TRUE: automatically calls cassidy_compact() with preserve_recent = 2
+- When auto_compact = FALSE: warns user but doesn't compact (uses 80% warning threshold)
+- Provides clear user feedback: warning (approaching limit), info (compacting), success (complete)
+- Recalculates projected tokens after compaction to ensure message can be sent
+- Added 4 new unit tests in test-chat-core.R:
+  - Test auto-compaction triggers when threshold exceeded
+  - Test auto-compaction disabled when auto_compact = FALSE
+  - Test no compaction below threshold
+  - Test tool overhead included in threshold calculation
+- Updated documentation for chat() generic with auto-compaction examples
+- All 59 tests passing in test-chat-core.R
+- Package passes R CMD check (0 errors, 0 warnings, 1 note about time verification)
 
 ### Phase 5: Shiny UI
 - [ ] Add token display to UI
