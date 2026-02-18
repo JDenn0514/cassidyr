@@ -1464,6 +1464,475 @@ Add `tool_create_skill()` function and register it.
 
 ---
 
+## Phase 6.5: Tool-Aware Token Budgeting (2-3 hours)
+
+**Goal:** Estimate and track token overhead for tools to improve context management
+
+**Context:** Moved from context engineering system - makes more sense with enhanced tool metadata
+
+### Why This Belongs Here
+
+Tool overhead tracking integrates perfectly with the new tool system:
+- **Enhanced metadata** - Add `token_overhead` field to tool definitions
+- **Tool registry** - Centralized place to track overhead per tool
+- **Validation system** - Check token budgets before tool execution
+- **Tool documentation** - Include overhead in tool help/info
+
+### 6.5.1 Add Token Overhead Metadata
+
+**File:** `R/tools-registry.R`
+
+Update `cassidy_create_tool()` to include token overhead:
+
+```r
+cassidy_create_tool <- function(
+  name,
+  title = NULL,
+  description,
+  handler,
+  group = "custom",
+  risky = FALSE,
+  hints = list(),
+  parameters = list(),
+  examples = list(),
+  tags = character(),
+  deprecated = NULL,
+  can_register = function() TRUE,
+  token_overhead = NULL  # NEW: estimated tokens for tool definition
+) {
+  # ... validation ...
+
+  # Auto-calculate token overhead if not provided
+  if (is.null(token_overhead)) {
+    token_overhead <- .estimate_single_tool_overhead(
+      description = description,
+      parameters = parameters,
+      examples = examples
+    )
+  }
+
+  structure(
+    list(
+      name = name,
+      title = title %||% tools::toTitleCase(gsub("_", " ", name)),
+      description = description,
+      group = group,
+      risky = risky,
+      hints = hints,
+      parameters = parameters,
+      examples = examples,
+      tags = tags,
+      deprecated = deprecated,
+      handler = handler,
+      can_register = can_register,
+      token_overhead = as.integer(token_overhead)  # NEW
+    ),
+    class = "cassidy_tool"
+  )
+}
+```
+
+### 6.5.2 Tool Overhead Estimation
+
+**File:** `R/tools-overhead.R` (new file)
+
+```r
+#' Estimate token overhead for a single tool definition
+#'
+#' @description Calculate tokens needed to describe a tool to the LLM
+#' @param description Tool description
+#' @param parameters Parameter list
+#' @param examples Example list
+#' @return Integer token estimate
+#' @keywords internal
+.estimate_single_tool_overhead <- function(description, parameters, examples) {
+  # Base overhead: tool name + description
+  overhead <- cassidy_estimate_tokens(description)
+
+  # Add parameter documentation
+  if (length(parameters) > 0) {
+    param_text <- paste(
+      sapply(names(parameters), function(pname) {
+        param <- parameters[[pname]]
+        paste0(pname, " (", param$type, "): ", param$description)
+      }),
+      collapse = "\n"
+    )
+    overhead <- overhead + cassidy_estimate_tokens(param_text)
+  }
+
+  # Add first example if present (others usually not sent)
+  if (length(examples) > 0 && !is.null(examples[[1]]$code)) {
+    overhead <- overhead + cassidy_estimate_tokens(examples[[1]]$code)
+  }
+
+  # Add format overhead (10% for JSON structure, formatting, etc.)
+  overhead <- ceiling(overhead * 1.1)
+
+  as.integer(overhead)
+}
+
+#' Estimate total tool overhead for a set of tools
+#'
+#' @description Calculate total tokens needed for tool system + definitions
+#' @param tool_names Character vector of tool names to include
+#' @param include_results Logical. Whether to estimate tokens for tool results
+#'   in history (requires session object)
+#' @param session Optional cassidy_session object to count tool result tokens
+#' @return Integer. Estimated token overhead
+#' @keywords internal
+.estimate_tool_overhead <- function(tool_names, include_results = FALSE, session = NULL) {
+  all_tools <- .get_all_tools()
+
+  # Base overhead for tool system instructions
+  # (Instructions on how to use tools, format, etc.)
+  base_overhead <- 500L
+
+  # Sum individual tool overheads
+  tool_overhead <- 0L
+  for (tool_name in tool_names) {
+    tool <- all_tools[[tool_name]]
+    if (!is.null(tool) && !is.null(tool$token_overhead)) {
+      tool_overhead <- tool_overhead + tool$token_overhead
+    } else {
+      # Fallback: assume 150 tokens per tool
+      tool_overhead <- tool_overhead + 150L
+    }
+  }
+
+  total_overhead <- base_overhead + tool_overhead
+
+  # Optionally count tool results in history
+  if (include_results && !is.null(session)) {
+    tool_result_tokens <- 0L
+    for (msg in session$messages) {
+      if (!is.null(msg$is_tool_result) && msg$is_tool_result) {
+        tool_result_tokens <- tool_result_tokens +
+          (msg$tokens %||% cassidy_estimate_tokens(msg$content))
+      }
+    }
+    total_overhead <- total_overhead + tool_result_tokens
+  }
+
+  as.integer(total_overhead)
+}
+
+#' Get tool overhead for display
+#'
+#' @description Get formatted tool overhead information
+#' @param tool_names Character vector of tool names
+#' @return List with overhead details
+#' @export
+cassidy_tool_overhead <- function(tool_names) {
+  all_tools <- .get_all_tools()
+
+  overhead_by_tool <- sapply(tool_names, function(name) {
+    tool <- all_tools[[name]]
+    if (!is.null(tool)) {
+      list(
+        name = name,
+        overhead = tool$token_overhead %||% 150L,
+        description = tool$description
+      )
+    } else {
+      list(name = name, overhead = 150L, description = "Unknown tool")
+    }
+  }, simplify = FALSE)
+
+  total_overhead <- .estimate_tool_overhead(tool_names)
+
+  structure(
+    list(
+      tools = overhead_by_tool,
+      base_overhead = 500L,
+      total_overhead = total_overhead,
+      tool_count = length(tool_names)
+    ),
+    class = "cassidy_tool_overhead"
+  )
+}
+
+#' @export
+print.cassidy_tool_overhead <- function(x, ...) {
+  cli::cli_h2("Tool Overhead Estimate")
+
+  cli::cli_text("Base system overhead: {format(x$base_overhead, big.mark = ',')} tokens")
+  cli::cli_text("")
+
+  cli::cli_h3("Individual Tools ({x$tool_count})")
+  for (tool in x$tools) {
+    cli::cli_text(
+      "  {.field {tool$name}}: {format(tool$overhead, big.mark = ',')} tokens"
+    )
+  }
+  cli::cli_text("")
+
+  cli::cli_text(
+    "{.strong Total overhead}: {format(x$total_overhead, big.mark = ',')} tokens"
+  )
+
+  pct <- round(100 * x$total_overhead / 200000, 1)
+  cli::cli_text("({pct}% of 200k token limit)")
+
+  invisible(x)
+}
+```
+
+### 6.5.3 Update Built-in Tools with Overhead
+
+**File:** `R/tools-builtin.R`
+
+Add token overhead estimates to all built-in tools:
+
+```r
+.register_builtin_tools <- function() {
+  # Read file - simple tool, low overhead
+  cassidy_register_tool(cassidy_create_tool(
+    name = "read_file",
+    title = "Read File",
+    description = "Read contents of a file",
+    handler = tool_read_file,
+    group = "files",
+    risky = FALSE,
+    hints = list(read_only = TRUE, idempotent = TRUE),
+    parameters = list(
+      filepath = list(
+        type = "string",
+        description = "Path to the file to read",
+        required = TRUE
+      ),
+      working_dir = list(
+        type = "string",
+        description = "Working directory",
+        required = FALSE,
+        default = "getwd()"
+      )
+    ),
+    examples = list(
+      list(
+        code = 'read_file("script.R")',
+        description = "Read an R script"
+      )
+    ),
+    tags = c("io", "read"),
+    token_overhead = 120L  # NEW: Manually calibrated or auto-calculated
+  ))
+
+  # Write file - slightly higher overhead (more parameters)
+  cassidy_register_tool(cassidy_create_tool(
+    name = "write_file",
+    title = "Write File",
+    description = "Write content to a file",
+    handler = tool_write_file,
+    group = "files",
+    risky = TRUE,
+    hints = list(read_only = FALSE, idempotent = FALSE),
+    parameters = list(
+      filepath = list(
+        type = "string",
+        description = "Path to write to",
+        required = TRUE
+      ),
+      content = list(
+        type = "string",
+        description = "Content to write",
+        required = TRUE
+      ),
+      working_dir = list(
+        type = "string",
+        description = "Working directory",
+        required = FALSE,
+        default = "getwd()"
+      )
+    ),
+    tags = c("io", "write"),
+    token_overhead = 150L  # NEW
+  ))
+
+  # ... similar for all other tools
+}
+```
+
+### 6.5.4 Integrate with Agentic System
+
+**File:** `R/agentic-chat.R`
+
+Update `cassidy_agentic_task()` to track tool overhead:
+
+```r
+cassidy_agentic_task <- function(
+  task,
+  assistant_id = Sys.getenv("CASSIDY_ASSISTANT_ID"),
+  api_key = Sys.getenv("CASSIDY_API_KEY"),
+  tools = names(.cassidy_tools),
+  working_dir = getwd(),
+  max_iterations = 10,
+  initial_context = NULL,
+  safe_mode = TRUE,
+  approval_callback = NULL,
+  verbose = TRUE
+) {
+  # ... existing validation ...
+
+  # NEW: Estimate tool overhead
+  tool_overhead <- .estimate_tool_overhead(tools)
+
+  if (verbose) {
+    cli::cli_alert_info(
+      "Tool overhead: {format(tool_overhead, big.mark = ',')} tokens ({length(tools)} tools)"
+    )
+  }
+
+  # Reserve headroom for tools in messages
+  # (This information could be passed to context gathering functions
+  #  so they know how much space they have available)
+  effective_context_limit <- 200000L - tool_overhead - 10000L  # Reserve 10k for response
+
+  # ... rest of function ...
+
+  # Track tool overhead in result
+  result$tool_overhead <- tool_overhead
+  result$effective_limit <- effective_context_limit
+
+  result
+}
+```
+
+### 6.5.5 Show Tool Overhead in Help
+
+**File:** `R/tools-help.R`
+
+Update `cassidy_tool_help()` to show overhead:
+
+```r
+cassidy_tool_help <- function(tool_name) {
+  tool <- .get_tool_definition(tool_name)
+
+  # ... existing code ...
+
+  # NEW: Show token overhead
+  if (!is.null(tool$token_overhead)) {
+    cli::cli_text("")
+    cli::cli_alert_info(
+      "Token overhead: {format(tool$token_overhead, big.mark = ',')} tokens"
+    )
+    cli::cli_text(
+      "{.emph (Tokens needed to describe this tool to the LLM)}"
+    )
+  }
+
+  # ... rest of function ...
+}
+```
+
+### 6.5.6 Integration with Console Chat
+
+**File:** `R/chat-core.R`
+
+When tools are used in `cassidy_chat()`, track overhead:
+
+```r
+chat.cassidy_session <- function(x, message, tools = NULL, ...) {
+  # ... existing code ...
+
+  # NEW: If tools are active, add overhead to token estimate
+  if (!is.null(tools) && length(tools) > 0) {
+    tool_overhead <- .estimate_tool_overhead(tools)
+    x$tool_overhead <- tool_overhead
+
+    # Warn if tools consume significant context
+    if (tool_overhead > 20000) {  # >10% of limit
+      cli::cli_alert_warning(
+        "Tools consume {format(tool_overhead, big.mark = ',')} tokens ({round(100 * tool_overhead / 200000)}%)"
+      )
+    }
+  }
+
+  # ... rest of function ...
+}
+```
+
+### Testing
+
+**File:** `tests/testthat/test-tools-overhead.R`
+
+```r
+test_that("tool overhead estimation works", {
+  # Single tool
+  overhead <- .estimate_single_tool_overhead(
+    description = "Read a file",
+    parameters = list(
+      path = list(type = "string", description = "File path", required = TRUE)
+    ),
+    examples = list()
+  )
+
+  expect_type(overhead, "integer")
+  expect_gt(overhead, 0)
+  expect_lt(overhead, 500)  # Reasonable upper bound
+})
+
+test_that("multiple tool overhead sums correctly", {
+  tools <- c("read_file", "write_file", "list_files")
+  overhead <- .estimate_tool_overhead(tools)
+
+  expect_type(overhead, "integer")
+  expect_gt(overhead, 500)  # At least base overhead
+})
+
+test_that("cassidy_tool_overhead formats correctly", {
+  result <- cassidy_tool_overhead(c("read_file", "write_file"))
+
+  expect_s3_class(result, "cassidy_tool_overhead")
+  expect_equal(result$tool_count, 2)
+  expect_true(result$total_overhead > 0)
+})
+```
+
+### Documentation
+
+Add to tool vignette:
+
+```markdown
+## Tool Token Overhead
+
+When using tools, the AI assistant needs to know what tools are available.
+This information consumes tokens from your context budget.
+
+### Understanding Overhead
+
+- **Base overhead**: ~500 tokens for tool system instructions
+- **Per-tool overhead**: 100-200 tokens per tool (varies by complexity)
+- **Tool results**: Variable (depends on what the tool returns)
+
+### Checking Overhead
+
+```r
+# See overhead for specific tools
+cassidy_tool_overhead(c("read_file", "write_file", "execute_code"))
+
+# Output:
+# Tool Overhead Estimate
+# Base system overhead: 500 tokens
+#
+# Individual Tools (3)
+#   read_file: 120 tokens
+#   write_file: 150 tokens
+#   execute_code: 180 tokens
+#
+# Total overhead: 950 tokens (0.5% of 200k token limit)
+```
+
+### Best Practices
+
+1. **Limit tool count**: Only enable tools you actually need
+2. **Tool presets**: Use presets (read_only, code_generation) to avoid loading all tools
+3. **Monitor overhead**: Check `cassidy_tool_overhead()` for large tool sets
+4. **Context budgeting**: Reserve tokens for tools when gathering context
+```
+
+---
+
 ## Phase 7: Testing (3-4 hours)
 
 ### Test Files

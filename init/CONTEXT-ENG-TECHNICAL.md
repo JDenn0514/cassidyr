@@ -74,21 +74,19 @@
 
 ### What to Do Next
 
-**Implement Phase 6: Tool-Aware Token Budgeting** (Optional)
+**Phase 6: Tool-Aware Token Budgeting** - MOVED TO TOOLING UPDATE
 
-**Estimated Effort:** 4-6 hours
+**Note:** This phase has been moved to `init/TOOLING-UPDATE.md` Phase 6.5 where it integrates better with the comprehensive tool system refactor. Tool overhead tracking makes more sense with:
+- Enhanced tool metadata
+- New tool registry system
+- Tool validation framework
+- Comprehensive tool documentation
 
-**Tasks:**
-1. Implement `.estimate_tool_overhead()` function
-2. Update `cassidy_agentic_task()` to track tool overhead
-3. Reserve headroom for tool definitions in token budget
-4. Test with tool-heavy conversations
-5. Document tool token implications
-6. Update tests
+See `init/TOOLING-UPDATE.md` Phase 6.5 for implementation details.
 
-See **Section 6** (Tool-Aware Token Budgeting) in implementation plan below for detailed code.
+---
 
-**Alternative: Implement Phase 7: Console Chat Integration** (Polish)
+**Implement Phase 7: Console Chat Integration** (Next Phase)
 
 **Estimated Effort:** 4-6 hours
 
@@ -119,7 +117,7 @@ See **Section 7** (Console Chat Integration) in implementation plan below for de
 - ✅ Phase 5: Shiny UI Integration (2026-02-18)
 - ✅ Phase 9: Timeout Management (2026-02-17)
 
-**Next Phase:** Phase 6 - Tool-Aware Token Budgeting (optional) OR Phase 7 - Console Chat Integration
+**Next Phase:** Phase 7 - Console Chat Integration (Phase 6 moved to tooling update)
 
 ---
 
@@ -849,72 +847,15 @@ observeEvent(input$compact_conversation, {
 
 ## 6. TOOL-AWARE TOKEN BUDGETING
 
-**File:** `R/agentic-tools.R` (modifications)
+**NOTE:** This section has been moved to `init/TOOLING-UPDATE.md` Phase 6.5.
 
-### Estimate Tool Overhead
+Tool-aware token budgeting integrates better with the comprehensive tool system refactor where:
+- Enhanced tool metadata can include `token_overhead` fields
+- New tool registry provides centralized overhead tracking
+- Tool validation framework can check token budgets
+- Tool documentation can display overhead information
 
-Add function to estimate token overhead from tool definitions:
-
-```r
-#' Estimate token overhead for tool system
-#'
-#' When tools are active, they add token overhead:
-#' - System prompt with tool instructions
-#' - Tool schemas and examples
-#' - Tool results in conversation history
-#'
-#' @param tools Character vector of tool names to include
-#' @param include_results Logical. Whether to estimate tokens for tool results
-#'   in history (requires session object)
-#' @param session Optional cassidy_session object to count tool result tokens
-#'
-#' @return Integer. Estimated token overhead
-#' @keywords internal
-.estimate_tool_overhead <- function(tools, include_results = FALSE, session = NULL) {
-  # Base overhead for tool system prompt
-  base_overhead <- 500L  # Estimated tokens for tool instructions
-
-  # Per-tool overhead for schemas
-  tool_overhead <- length(tools) * 150L  # ~150 tokens per tool definition
-
-  total_overhead <- base_overhead + tool_overhead
-
-  # Optionally count tool results in history
-  if (include_results && !is.null(session)) {
-    tool_result_tokens <- 0L
-    for (msg in session$messages) {
-      if (!is.null(msg$is_tool_result) && msg$is_tool_result) {
-        tool_result_tokens <- tool_result_tokens +
-          (msg$tokens %||% cassidy_estimate_tokens(msg$content))
-      }
-    }
-    total_overhead <- total_overhead + tool_result_tokens
-  }
-
-  as.integer(total_overhead)
-}
-```
-
-### Update cassidy_agentic_task
-
-Integrate tool overhead tracking:
-
-```r
-# In cassidy_agentic_task() function
-
-# Estimate tool overhead
-tool_overhead <- .estimate_tool_overhead(names(tools))
-
-# If session tracking, update session object
-if (inherits(session, "cassidy_session")) {
-  session$tool_overhead <- tool_overhead
-}
-
-# Reserve headroom for tools when checking token budget
-effective_limit <- session$token_limit - tool_overhead
-
-# Use effective_limit for compaction threshold calculations
-```
+See `init/TOOLING-UPDATE.md` for full implementation details.
 
 ---
 
@@ -2447,11 +2388,13 @@ The context management system is successful if:
 - All 1234 tests passing
 - Package passes R CMD check (1 NOTE about time verification only)
 
-### Phase 6: Tool Integration
-- [ ] Implement `.estimate_tool_overhead()`
-- [ ] Update agentic functions
-- [ ] Test with tool-heavy tasks
-- [ ] Document tool implications
+### Phase 6: Tool Integration - MOVED TO TOOLING UPDATE
+- [ ] ~~Implement `.estimate_tool_overhead()`~~ → Moved to `init/TOOLING-UPDATE.md` Phase 6.5
+- [ ] ~~Update agentic functions~~ → Better integrated with tool system refactor
+- [ ] ~~Test with tool-heavy tasks~~ → Will be tested with new tool system
+- [ ] ~~Document tool implications~~ → Part of comprehensive tool documentation
+
+**Rationale:** Tool overhead tracking makes more sense as part of the comprehensive tool system refactor where it can leverage enhanced metadata, the new registry system, and improved validation framework.
 
 ### Phase 7: Console Chat
 - [ ] Add token tracking to `cassidy_chat()`
