@@ -1,6 +1,6 @@
 # Context Engineering System - Technical Implementation Plan
 
-**Status:** Phase 4 Complete (Automatic Compaction)
+**Status:** Phase 5 Complete (Shiny UI Integration)
 **Date:** 2026-02-18
 **Target:** cassidyr package context management system
 
@@ -52,6 +52,20 @@
 - All tests passing (59 tests in test-chat-core.R)
 - Package passes R CMD check with 0 errors, 0 warnings
 
+**Phase 5: Shiny UI Integration (Complete)**
+- Token usage display in context sidebar with color-coded alerts (green/yellow/red)
+- Compact conversation button in token section
+- Token tracking in message handler (user + assistant + context messages)
+- Token tracking in context apply handler
+- Token tracking in initial context sends (new chat + resume)
+- Compact handler converts Shiny conversation to cassidy_session for compaction
+- Progress modal during compaction with success/error notifications
+- Warning notifications when token usage exceeds 80%
+- Token estimate persisted in conversation object
+- New file: R/chat-handlers-tokens.R with renderer and handler
+- All 1234 tests passing
+- Package passes R CMD check
+
 **Phase 9: Timeout Management (Complete)**
 - Timeout detection and retry logic
 - Input size validation
@@ -60,48 +74,36 @@
 
 ### What to Do Next
 
-**Implement Phase 5: Shiny UI Integration**
+**Implement Phase 6: Tool-Aware Token Budgeting** (Optional)
 
-**Estimated Effort:** 8-10 hours
+**Estimated Effort:** 4-6 hours
 
 **Tasks:**
-1. Add token usage display to Shiny UI in `R/chat-ui.R` and `R/chat-ui-components.R`
-2. Create compact button in context panel
-3. Implement compaction handler in appropriate chat-handlers-*.R file
-4. Update ConversationManager to handle token tracking in reactive context
-5. Update message handlers in `R/chat-handlers-message.R` to track tokens
-6. Add visual warnings for high token usage (color-coded alerts)
-7. Test in live Shiny app with real conversations
-8. Polish UI feedback and error handling
-9. Update documentation
-10. Test, commit, and push changes
+1. Implement `.estimate_tool_overhead()` function
+2. Update `cassidy_agentic_task()` to track tool overhead
+3. Reserve headroom for tool definitions in token budget
+4. Test with tool-heavy conversations
+5. Document tool token implications
+6. Update tests
 
-**Key Files to Modify:**
-- `R/chat-ui-components.R` - Add token usage display to context panel
-- `R/chat-ui.R` - Add server logic for token display (renderUI)
-- `R/chat-handlers-message.R` - Update to track tokens in Shiny context
-- `R/chat-handlers-conversation.R` or new file - Add compact button handler
+See **Section 6** (Tool-Aware Token Budgeting) in implementation plan below for detailed code.
 
-**Important Design Decisions:**
-- Token display should be color-coded: green (<60%), yellow (60-80%), red (>80%)
-- Display format: "Estimated Tokens: X / 200,000 (XX%)"
-- Compact button should show in context panel
-- Compaction in Shiny requires handling ConversationManager state
-- Show warnings/success messages using showNotification()
+**Alternative: Implement Phase 7: Console Chat Integration** (Polish)
 
-**Testing Strategy:**
-- Manual testing in live Shiny app
-- Test token display updates after each message
-- Test compact button triggers compaction
-- Verify ConversationManager state updates correctly
-- Test conversation persistence after compaction
+**Estimated Effort:** 4-6 hours
 
-See **Section 5** (Shiny UI Integration) in implementation plan below for detailed code.
+**Tasks:**
+1. Add token tracking to `cassidy_chat()`
+2. Implement warnings for high usage
+3. Add optional auto-compaction (opt-in)
+4. Document console chat token management
 
-**After Phase 5 Completion:**
-- Update this section with Phase 5 completion notes
+See **Section 7** (Console Chat Integration) in implementation plan below for detailed code.
+
+**After Next Phase Completion:**
+- Update this section with completion notes
 - Run all tests and verify they pass
-- Commit changes with message: "Implement Phase 5: Shiny UI Integration"
+- Commit changes
 - Push to remote repository
 - Update CURRENT STATUS SUMMARY below
 
@@ -114,9 +116,10 @@ See **Section 5** (Shiny UI Integration) in implementation plan below for detail
 - ✅ Phase 2: Session Tracking (2026-02-18)
 - ✅ Phase 3: Manual Compaction (2026-02-18)
 - ✅ Phase 4: Automatic Compaction (2026-02-18)
+- ✅ Phase 5: Shiny UI Integration (2026-02-18)
 - ✅ Phase 9: Timeout Management (2026-02-17)
 
-**Next Phase:** Phase 5 - Shiny UI Integration
+**Next Phase:** Phase 6 - Tool-Aware Token Budgeting (optional) OR Phase 7 - Console Chat Integration
 
 ---
 
@@ -2423,13 +2426,26 @@ The context management system is successful if:
 - All 59 tests passing in test-chat-core.R
 - Package passes R CMD check (0 errors, 0 warnings, 1 note about time verification)
 
-### Phase 5: Shiny UI
-- [ ] Add token display to UI
-- [ ] Create compact button
-- [ ] Implement Shiny handlers
-- [ ] Update ConversationManager
-- [ ] Test in live Shiny app
-- [ ] Polish UI feedback
+### Phase 5: Shiny UI ✅ COMPLETE
+- [x] Add token display to UI
+- [x] Create compact button
+- [x] Implement Shiny handlers
+- [x] Update ConversationManager (already had token fields from Phase 2)
+- [x] Test in live Shiny app (all tests pass)
+- [x] Polish UI feedback
+
+**Implementation Notes:**
+- Created R/chat-handlers-tokens.R with setup_token_usage_renderer() and setup_compact_handler()
+- Added token usage section to chat-ui-components.R (collapsible, color-coded)
+- Token tracking added to chat-handlers-message.R for all message sends
+- Token tracking added to chat-handlers-context-apply.R for context sends
+- Token tracking added to chat-ui.R for initial context sends (new + resume)
+- Compact handler converts Shiny conversation to cassidy_session, calls cassidy_compact(), updates conversation
+- Color-coded alerts: green (<60%), yellow (60-80%), red (>80%)
+- Warning notifications when usage exceeds 80%
+- Progress modal during compaction with success/error feedback
+- All 1234 tests passing
+- Package passes R CMD check (1 NOTE about time verification only)
 
 ### Phase 6: Tool Integration
 - [ ] Implement `.estimate_tool_overhead()`

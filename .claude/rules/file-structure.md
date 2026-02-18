@@ -19,11 +19,12 @@ cassidyr/
 │   ├── chat-css.R                      ✓ Complete (App styling + copy code button)
 │   ├── chat-js.R                       ✓ Complete (App JavaScript + copy code button)
 │   │
-│   ├── chat-handlers-message.R         ✓ Complete (Message handling)
+│   ├── chat-handlers-message.R         ✓ Complete (Message handling + token tracking)
 │   ├── chat-handlers-conversation.R    ✓ Complete (Conversation management)
-│   ├── chat-handlers-context-apply.R   ✓ Complete (Apply context to messages)
+│   ├── chat-handlers-context-apply.R   ✓ Complete (Apply context + token tracking)
 │   ├── chat-handlers-context-data.R    ✓ Complete (Data frame context handlers)
 │   ├── chat-handlers-context-files.R   ✓ Complete (File context handlers)
+│   ├── chat-handlers-tokens.R          ✓ Complete (Token usage display & compaction)
 │   │
 │   ├── context-project.R               ✓ Complete (project context)
 │   ├── context-data.R                  ✓ Complete (data frame context)
@@ -101,12 +102,13 @@ The package follows a modular organization with clear separation of concerns:
 - `chat-css.R` - Styling
 - `chat-js.R` - Client-side JavaScript
 
-### Chat Handlers (5 files, split for maintainability)
-- `chat-handlers-message.R` - Send message logic
+### Chat Handlers (6 files, split for maintainability)
+- `chat-handlers-message.R` - Send message logic with token tracking
 - `chat-handlers-conversation.R` - New/switch/delete conversations
-- `chat-handlers-context-apply.R` - Apply context when sending messages
+- `chat-handlers-context-apply.R` - Apply context when sending messages with token tracking
 - `chat-handlers-context-data.R` - Data frame selection handlers
 - `chat-handlers-context-files.R` - File selection/refresh handlers
+- `chat-handlers-tokens.R` - Token usage display and conversation compaction
 
 ### Context System (10 files)
 - `context-project.R` - Project-level context

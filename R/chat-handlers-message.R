@@ -131,6 +131,46 @@ setup_send_message_handler <- function(
         # Add assistant message
         conv_add_message(conv_manager, "assistant", response$content)
 
+        # === NEW: TRACK TOKENS ===
+        # Estimate tokens for both messages
+        user_msg_tokens <- cassidy_estimate_tokens(user_message)
+        assistant_msg_tokens <- cassidy_estimate_tokens(response$content)
+
+        # Update token estimate
+        current_estimate <- conv_token_estimate(conv_manager)
+        new_estimate <- current_estimate + user_msg_tokens + assistant_msg_tokens
+
+        # If context was sent with this message, add those tokens too
+        if (!conv_context_sent(conv_manager) && !is.null(context_text)) {
+          context_tokens <- cassidy_estimate_tokens(context_text)
+          new_estimate <- new_estimate + context_tokens
+        }
+
+        # Update conversation manager
+        conv_set_token_estimate(conv_manager, new_estimate)
+
+        # Update conversation object with token estimate
+        conv_update_current(conv_manager, list(token_estimate = new_estimate))
+
+        # Check if approaching limit and warn
+        limit <- conv_manager@token_limit()
+        pct <- round(100 * new_estimate / limit)
+        if (pct > 80) {
+          shiny::showNotification(
+            paste0(
+              "Token usage is high: ",
+              format(new_estimate, big.mark = ","),
+              " / ",
+              format(limit, big.mark = ","),
+              " (",
+              pct,
+              "%)"
+            ),
+            type = "warning",
+            duration = 10
+          )
+        }
+
         # === NEW: CHECK FOR FILE REQUESTS AND AUTO-FETCH ===
         file_request <- .detect_file_requests(response$content)
 
@@ -202,6 +242,14 @@ setup_send_message_handler <- function(
 
               # Add Cassidy's response after reviewing files
               conv_add_message(conv_manager, "assistant", response2$content)
+
+              # === NEW: TRACK TOKENS FOR FILE FETCH ===
+              file_msg_tokens <- cassidy_estimate_tokens(file_message)
+              response2_tokens <- cassidy_estimate_tokens(response2$content)
+              current_estimate <- conv_token_estimate(conv_manager)
+              new_estimate <- current_estimate + file_msg_tokens + response2_tokens
+              conv_set_token_estimate(conv_manager, new_estimate)
+              conv_update_current(conv_manager, list(token_estimate = new_estimate))
 
               cli::cli_alert_success("Cassidy reviewed requested files")
             }

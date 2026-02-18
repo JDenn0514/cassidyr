@@ -276,6 +276,13 @@ cassidy_app <- function(
                 # Mark as sent
                 conv_set_context_sent(conv_manager, TRUE)
 
+                # === NEW: TRACK TOKENS ===
+                context_msg_tokens <- cassidy_estimate_tokens(context_message)
+                response_tokens <- cassidy_estimate_tokens(response$content)
+                new_estimate <- context_msg_tokens + response_tokens
+                conv_set_token_estimate(conv_manager, new_estimate)
+                conv_update_current(conv_manager, list(token_estimate = new_estimate))
+
                 # Clear loading
                 conv_set_loading(conv_manager, FALSE)
                 session$sendCustomMessage("setLoading", FALSE)
@@ -369,6 +376,13 @@ cassidy_app <- function(
                 conv_set_context_sent(conv_manager, TRUE)
                 conv_update_current(conv_manager, list(context_sent = TRUE))
 
+                # === NEW: TRACK TOKENS ===
+                context_msg_tokens <- cassidy_estimate_tokens(context_message)
+                response_tokens <- cassidy_estimate_tokens(response$content)
+                new_estimate <- context_msg_tokens + response_tokens
+                conv_set_token_estimate(conv_manager, new_estimate)
+                conv_update_current(conv_manager, list(token_estimate = new_estimate))
+
                 cli::cli_alert_success("Context sent successfully!")
               },
               error = function(e) {
@@ -396,6 +410,7 @@ cassidy_app <- function(
     setup_message_renderer(output, conv_manager)
     setup_conversation_list_renderer(output, conv_manager)
     setup_file_context_renderer(output, conv_manager)
+    setup_token_usage_renderer(output, conv_manager)
 
     # Setup context renderers and handlers
     setup_context_data_renderer(output, input, conv_manager)
@@ -448,6 +463,14 @@ cassidy_app <- function(
       timeout
     )
     setup_new_chat_confirm_handler(
+      input,
+      session,
+      conv_manager,
+      assistant_id,
+      api_key,
+      timeout
+    )
+    setup_compact_handler(
       input,
       session,
       conv_manager,

@@ -13,7 +13,11 @@
       "WebFetch(domain:docs.cassidy.ai)",
       "Bash(grep:*)",
       "Bash(cassidy --help:*)",
-      "Bash(cassidy agent:*)"
+      "Bash(cassidy agent:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git checkout:*)",
+      "Bash(R:*)"
     ]
   }
 }

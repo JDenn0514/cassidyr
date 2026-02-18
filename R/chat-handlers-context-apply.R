@@ -140,6 +140,15 @@ setup_apply_context_handler <- function(
         conv_set_context_sent(conv_manager, TRUE)
         conv_update_current(conv_manager, list(context_sent = TRUE))
 
+        # === NEW: TRACK TOKENS ===
+        context_msg_tokens <- cassidy_estimate_tokens(context_message)
+        response_tokens <- cassidy_estimate_tokens(response$content)
+        current_estimate <- conv_token_estimate(conv_manager)
+        new_estimate <- current_estimate + context_msg_tokens + response_tokens
+
+        conv_set_token_estimate(conv_manager, new_estimate)
+        conv_update_current(conv_manager, list(token_estimate = new_estimate))
+
         # === NEW: Update sent tracking ===
         current_sent_files <- conv_sent_context_files(conv_manager)
         current_sent_data <- conv_sent_data_frames(conv_manager)

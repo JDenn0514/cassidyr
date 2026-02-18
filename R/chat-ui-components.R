@@ -285,6 +285,31 @@ chat_context_sidebar_ui <- function() {
             shiny::uiOutput("context_skills_ui")
           )
         )
+      ),
+
+      # Token Usage & Compaction section
+      shiny::div(
+        class = "context-section",
+        shiny::div(
+          class = "context-section-header",
+          onclick = "toggleContextSection('tokens')",
+          shiny::icon("chevron-down", class = "section-chevron"),
+          shiny::icon("microchip"),
+          " Token Usage"
+        ),
+        shiny::div(
+          class = "context-section-body",
+          id = "context_section_tokens",
+          shiny::div(
+            class = "token-usage-container",
+            shiny::uiOutput("token_usage_display"),
+            shiny::actionButton(
+              "compact_conversation",
+              shiny::tagList(shiny::icon("compress"), " Compact Conversation"),
+              class = "btn btn-sm btn-outline-secondary w-100 mt-2"
+            )
+          )
+        )
       )
     ),
 

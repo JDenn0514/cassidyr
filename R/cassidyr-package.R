@@ -23,7 +23,7 @@
 #' @importFrom shiny actionButton br checkboxGroupInput checkboxInput div h4 h5
 #'   helpText hr HTML icon isolate modalButton modalDialog observe observeEvent
 #'   onSessionEnded p reactiveVal removeModal removeNotification renderUI
-#'   selectInput shinyApp showModal showNotification span tagList tags
+#'   selectInput shinyApp showModal showNotification span strong tagList tags
 #'   textAreaInput uiOutput updateCheckboxInput
 #' @importFrom skimr skim
 #' @importFrom stats median quantile sd setNames
