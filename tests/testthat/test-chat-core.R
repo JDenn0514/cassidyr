@@ -44,7 +44,14 @@ test_that("cassidy_session() creates correct structure", {
       "created_at",
       "api_key",
       "context",
-      "context_sent"
+      "context_sent",
+      "token_estimate",
+      "token_limit",
+      "compact_at",
+      "auto_compact",
+      "compaction_count",
+      "last_compaction",
+      "tool_overhead"
     )
   )
   expect_equal(session$thread_id, "thread_mock_123")
